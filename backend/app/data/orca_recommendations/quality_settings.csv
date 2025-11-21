@@ -1,0 +1,10 @@
+# OrcaSlicer Recommendations - Print Quality Settings
+# Source: OrcaSlicer tuning guides
+# Purpose: Settings for different quality levels
+
+Quality_Level,Layer_Height,Line_Width,Infill_Density,Perimeters,Top_Layers,Bottom_Layers,Print_Speed,Travel_Speed,Notes
+Draft,0.28,0.48,10,2,3,3,80,150,"Fast prints, visible layers"
+Normal,0.20,0.42,15,3,4,4,60,120,"Balanced speed and quality"
+Quality,0.16,0.40,20,3,5,5,50,100,"Good surface finish"
+Fine,0.12,0.40,20,4,6,6,40,80,"Excellent detail, slow"
+Ultra,0.08,0.38,25,4,8,8,30,60,"Maximum detail, very slow"

@@ -1,0 +1,13 @@
+# OrcaSlicer Recommendations - Common Issues
+# Source: Community troubleshooting guides
+# Purpose: Map symptoms to likely causes and fixes
+
+Issue_Type,Symptom,Likely_Cause,Slicer_Setting,Klipper_Setting,Mechanical_Fix,Notes
+Under_Extrusion,Gaps in walls,Flow rate too low,Increase flow rate by 2-5%,Calibrate rotation distance,Check for clog,"Also check filament diameter"
+Over_Extrusion,Blobs and zits,Flow rate too high,Decrease flow rate by 2-5%,Recalibrate e-steps,Check nozzle wear,"Elephant foot on first layer"
+Stringing,Thin strings between parts,Retraction insufficient,Increase retraction 0.5mm,Enable firmware retraction,Check hotend assembly,"Lower temp by 5°C"
+Layer Shift,Misaligned layers,Mechanical issue,Reduce speed/accel,Check max_accel limits,Tighten belts,"Could be electrical interference"
+Warping,Corners lifting,Poor bed adhesion,Increase bed temp 5°C,N/A,Level bed or add brim,"Use enclosure for ABS"
+Ringing,Wave patterns on walls,Vibrations,Reduce speed/accel,Enable input shaping,Tighten frame,"Ghost/echo artifacts"
+Poor_Bridging,Sagging bridges,Cooling insufficient,Increase fan to 100%,N/A,N/A,"Lower speed for bridges"
+Layer_Separation,Layers splitting,Temp too low or weak bond,Increase nozzle temp 5-10°C,N/A,Check cooling,"Increase layer height"

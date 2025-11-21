@@ -1,0 +1,12 @@
+# Klipper Calibrations - Pressure Advance
+# Source: Klipper pressure advance calibration
+# Purpose: Optimize extrusion pressure compensation
+
+Name,Description,Formula,Units,Expected_Range,Notes
+Start PA,Starting pressure advance value,0.0,seconds,0.0-0.2,Start from 0 or manufacturer recommendation
+PA Increment,Test increment for calibration,0.005,seconds,0.001-0.01,Smaller = more precise but longer test
+Test Speed,Print speed for calibration,100,mm/s,50-150,Use typical printing speed
+Layer Height,Layer height for test,0.2,mm,0.1-0.3,Use typical layer height
+Line Width,Extrusion width,0.4,mm,0.3-0.6,Usually matches nozzle diameter
+Optimal PA,Best value from visual inspection,N/A,seconds,0.02-0.1,"Look for sharpest corners, no bulging"
+Material Type,Filament material,N/A,text,N/A,"PLA: 0.03-0.06, PETG: 0.06-0.08, ABS: 0.04-0.07"

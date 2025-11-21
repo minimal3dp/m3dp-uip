@@ -1,0 +1,10 @@
+# Klipper Calibrations - Extruder Rotation Distance
+# Source: Klipper documentation and community best practices
+# Purpose: Calculate correct rotation distance for extruder stepper motor
+
+Name,Description,Formula,Units,Expected_Range,Notes
+Rotation Distance,Current rotation distance from printer.cfg,N/A,mm,30-35,"Default is usually 33.5 for BMG, 22.7 for Orbiter"
+Requested Extrusion,Amount of filament requested to extrude,100,mm,50-150,Standard calibration uses 100mm
+Actual Extrusion,Amount actually extruded (measured),N/A,mm,95-105,Measure with calipers
+New Rotation Distance,Calculated correction,(current_rotation_distance * actual_extruded) / requested_extrusion,mm,30-35,This is the value to update in printer.cfg
+Tolerance,Acceptable deviation from requested,±2,mm,0-5,Re-calibrate if outside tolerance
