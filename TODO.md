@@ -177,11 +177,12 @@ Development roadmap organized by feature branches. The `main` branch contains on
 
 ## Phase 2: Backend Core 🔄
 
-**Branch**: `feature/vision-api-integration`
-**Status**: IN PROGRESS (Core implementation complete, testing/enhancement pending)
+**Branch**: `feature/phase-2-api-calculators` (Current)
+**Previous Branches**: `feature/vision-api-integration` (merged), `feature/phase-2.5-csv-enhancements` (merged)
+**Status**: IN PROGRESS (Vision/Router complete ✅, API endpoints & calculators pending)
 **Priority**: HIGH
-**Dependencies**: ✅ Phase 1 (CSV data loaded and validated)
-**Goal**: Integrate Gemini Vision API and implement router logic
+**Dependencies**: ✅ Phase 1 (CSV data), ✅ Phase 2.5 (Enhanced troubleshooting data)
+**Goal**: Complete API endpoints and implement calculator logic
 
 ### ✅ Completed (Commit: 90534aa)
 - [x] Install semantic-router library (36 packages)
@@ -295,18 +296,42 @@ Development roadmap organized by feature branches. The `main` branch contains on
 - [ ] Benchmark vision API accuracy against known classifications
 - [ ] Fine-tune system prompt based on misclassifications
 
-#### API Endpoints
+#### API Endpoints (Current Focus)
 - [ ] Complete `/api/v1/analyze/image` endpoint
+  - Wire up VisionService integration
+  - Add request validation (file upload, size limits)
+  - Format response with recommendations
 - [ ] Complete `/api/v1/analyze/text` endpoint
+  - Wire up RouterService integration
+  - Add context parameter handling
+  - Format response with CSV data
 - [ ] Add `/api/v1/calculators` endpoint
-- [ ] Implement calculator-specific endpoints
+  - List available calculators
+  - Provide calculator metadata
+- [ ] Implement calculator-specific endpoints:
+  - [ ] `/api/v1/calculators/rotation-distance` - POST with measurements
+  - [ ] `/api/v1/calculators/pressure-advance` - POST with test results
+  - [ ] `/api/v1/calculators/flow-rate` - POST with calibration data
 
-#### Calculator Logic
+#### Calculator Logic (Current Focus)
 - [ ] Port rotation distance formula from CSV
+  - Formula: `new_rotation_distance = (current * actual) / requested`
+  - Input validation: positive numbers, reasonable ranges
+  - Output: Klipper config snippet
 - [ ] Port pressure advance formula
+  - Formula from CSV: pattern analysis method
+  - Input: test pattern results
+  - Output: `pressure_advance` value + config
 - [ ] Port flow rate formula
-- [ ] Add input validation
+  - YOLO method (OrcaSlicer 2.3.1+)
+  - Input: calibration measurements
+  - Output: flow multiplier + config
+- [ ] Add input validation for all calculators
+  - Type checking, range validation
+  - Clear error messages
 - [ ] Generate Klipper config output
+  - Formatted config snippets
+  - Copy-to-clipboard friendly
 
 ### Testing Requirements
 
@@ -788,16 +813,21 @@ git push -u origin feature/your-feature-name
 
 ### Completed ✅
 1. ✅ Phase 0 (Setup) - All tooling, documentation, scripts configured
-2. ✅ Phase 1 (CSV Foundation) - 6 CSVs, schema validation, loader service, 12 tests passing
+2. ✅ Phase 1 (CSV Foundation) - 6 CSVs, schema validation, loader service
    - Commits: bd9148b (implementation), faa19ed (data files)
-   - Test coverage: 73% overall (86% csv_loader, 85% csv_schemas)
-   - All CSVs validated against schemas
+   - Test coverage: 86% csv_loader, 85% csv_schemas
+3. ✅ Phase 2 Core Services - Vision API, Semantic Router, RouterService
+   - Commits: 90534aa (implementation), d01f869 (tests)
+   - Test coverage: 96% vision_service, 89% semantic_router, 85% overall
+4. ✅ Phase 2.5 CSV Enhancement - 8 → 64 defects with visual markers
+   - Commits: cb87780 (data), 40a48bd (router fixes), 021a556 (docs)
+   - Merged to main: 1800daf
 
-### Immediate (This Week)
-1. 🎯 **Merge Phase 1 to develop/main** - Feature branch ready
-2. 🎯 **Phase 2 Planning** - Review research insights for vision API architecture
-3. 🎯 **Semantic Router Research** - Evaluate `aurelio-labs/semantic-router` implementation
-4. Research validation: Cross-reference CSV formulas with Klipper documentation
+### Immediate (This Week - Branch: feature/phase-2-api-calculators)
+1. 🎯 **Complete API Endpoints** - Wire up diagnosis endpoints with services
+2. 🎯 **Implement Calculators** - Port formulas from CSV to Python logic
+3. 🎯 **Add Request/Response Models** - Pydantic validation for all endpoints
+4. 🎯 **Write Endpoint Tests** - Integration tests for API layer
 
 ### Short Term (Next 2 Weeks)
 1. Start Phase 2 (Vision API Integration)
