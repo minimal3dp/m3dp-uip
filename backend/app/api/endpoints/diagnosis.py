@@ -213,6 +213,9 @@ async def list_calculators():
     """
     List available calculators and their CSV sources.
 
+    **Deprecated**: Use `/api/v1/calculators` instead.
+    This endpoint is maintained for backward compatibility.
+
     Returns metadata about each calculator type available.
     """
     return {
@@ -223,6 +226,7 @@ async def list_calculators():
                 "category": "Mechanical",
                 "csv_source": "Klipper Calibrations - Extruder Rotation Distance.csv",
                 "description": "Calculate correct rotation distance for extruder stepper motor",
+                "endpoint": "/api/v1/calculators/rotation-distance",
             },
             {
                 "id": "pressure_advance",
@@ -230,13 +234,7 @@ async def list_calculators():
                 "category": "Mechanical",
                 "csv_source": "Klipper Calibrations - Pressure Advance.csv",
                 "description": "Optimize pressure advance for better corner quality",
-            },
-            {
-                "id": "flow_rate",
-                "name": "Flow Rate",
-                "category": "Material",
-                "csv_source": "Klipper Calibrations - Flow Rate.csv",
-                "description": "Calculate correct flow multiplier for filament",
+                "endpoint": "/api/v1/calculators/pressure-advance",
             },
         ]
     }
