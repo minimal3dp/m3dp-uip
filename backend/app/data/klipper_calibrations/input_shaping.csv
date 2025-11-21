@@ -1,0 +1,12 @@
+# Klipper Calibrations - Input Shaping
+# Source: Klipper resonance compensation documentation
+# Purpose: Reduce ringing/ghosting artifacts
+
+Name,Description,Formula,Units,Expected_Range,Notes
+Test Type,Input shaper test method,N/A,text,N/A,"Options: manual, ADXL345 accelerometer"
+X Frequency,Resonance frequency for X axis,N/A,Hz,30-80,Measured from test
+Y Frequency,Resonance frequency for Y axis,N/A,Hz,30-80,Measured from test
+X Shaper,Recommended shaper type for X,N/A,text,N/A,"Options: MZV, ZV, EI, 2HUMP_EI, 3HUMP_EI"
+Y Shaper,Recommended shaper type for Y,N/A,text,N/A,"Options: MZV, ZV, EI, 2HUMP_EI, 3HUMP_EI"
+Max Accel,Maximum safe acceleration,N/A,mm/s²,1000-10000,Based on shaper recommendations
+Square Corner Velocity,Corner velocity limit,5.0,mm/s,3-8,Lower = sharper corners but slower
