@@ -1,0 +1,46 @@
+# GitHub Actions workflow to automatically convert research PDFs to markdown
+name: Convert Research PDFs
+
+on:
+  push:
+    paths:
+      - 'research/**/*.pdf'
+  workflow_dispatch:  # Allow manual trigger
+
+jobs:
+  convert-pdfs:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Full history for proper commits
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: |
+          pip install pymupdf pypdf
+          sudo apt-get update
+          sudo apt-get install -y poppler-utils
+
+      - name: Convert PDFs to Markdown
+        run: |
+          python scripts/convert_research_pdfs.py
+
+      - name: Commit markdown files
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add research/**/*.md research/.conversion_metadata.json
+          git diff --staged --quiet || git commit -m "docs: auto-convert research PDFs to markdown [skip ci]"
+
+      - name: Push changes
+        uses: ad-m/github-push-action@master
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          branch: ${{ github.ref }}

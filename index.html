@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Minimal 3DP | Unified Diagnostics</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+    </style>
+</head>
+<body class="bg-zinc-950 text-zinc-100 min-h-screen flex flex-col">
+
+    <!-- Header -->
+    <header class="border-b border-zinc-800 bg-zinc-900/50 sticky top-0 z-50">
+        <div class="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
+            <div class="flex items-center gap-2">
+                <i data-lucide="box" class="text-orange-500"></i>
+                <span class="font-bold text-lg tracking-tight">Minimal <span class="text-orange-500">3DP</span> Analysis</span>
+            </div>
+            <nav class="text-sm font-medium text-zinc-400 flex gap-4">
+                <a href="#" class="hover:text-white">Dashboard</a>
+                <a href="#" class="hover:text-white">Calibrations</a>
+                <a href="#" class="hover:text-white">Filament DB</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="flex-1 max-w-4xl mx-auto w-full p-6">
+
+        <!-- Intro Section -->
+        <div class="mb-12 text-center">
+            <h1 class="text-4xl font-bold mb-4">What needs tuning today?</h1>
+            <p class="text-zinc-400 max-w-xl mx-auto">Upload a failure photo or describe your issue. We'll cross-reference your problem against the Minimal 3DP Knowledge Base and OrcaSlicer Wiki.</p>
+        </div>
+
+        <!-- Diagnostic Workflow Container -->
+        <div id="app-container" class="space-y-6">
+
+            <!-- Step 1: Input (Image/Text) -->
+            <div class="glass-panel rounded-2xl p-8 bg-zinc-900">
+                <div class="flex gap-4 border-b border-zinc-800 pb-6 mb-6">
+                    <button class="flex-1 py-3 rounded-lg bg-zinc-800 hover:bg-zinc-700 transition font-medium text-sm flex justify-center items-center gap-2 active-tab" onclick="toggleInput('image')">
+                        <i data-lucide="image"></i> Upload Photo
+                    </button>
+                    <button class="flex-1 py-3 rounded-lg bg-transparent hover:bg-zinc-800 transition font-medium text-sm flex justify-center items-center gap-2" onclick="toggleInput('text')">
+                        <i data-lucide="type"></i> Describe Issue
+                    </button>
+                </div>
+
+                <!-- Drag Drop Area -->
+                <div id="drop-zone" class="border-2 border-dashed border-zinc-700 rounded-xl h-64 flex flex-col items-center justify-center text-zinc-500 hover:border-orange-500 hover:bg-zinc-800/30 transition cursor-pointer relative overflow-hidden group">
+                    <input type="file" class="absolute inset-0 opacity-0 cursor-pointer" onchange="handleFileUpload(this)">
+                    <div class="flex flex-col items-center transition-all duration-300" id="upload-prompt">
+                        <i data-lucide="scan-line" class="w-12 h-12 mb-4 text-zinc-600 group-hover:text-orange-500"></i>
+                        <p class="font-medium">Drag & drop print photo here</p>
+                        <p class="text-xs mt-2 text-zinc-600">Supports .jpg, .png</p>
+                    </div>
+                    <div id="preview-container" class="hidden absolute inset-0 w-full h-full bg-zinc-900">
+                        <img id="image-preview" class="w-full h-full object-contain" />
+                    </div>
+                </div>
+
+                <div class="mt-6 flex justify-end">
+                    <button onclick="runAnalysis()" class="bg-orange-600 hover:bg-orange-700 text-white px-6 py-2 rounded-lg font-medium flex items-center gap-2 transition">
+                        <i data-lucide="sparkles"></i> Analyze Defect
+                    </button>
+                </div>
+            </div>
+
+            <!-- Step 2: AI Analysis Result (Mocked) -->
+            <div id="analysis-result" class="hidden glass-panel rounded-2xl p-8 bg-zinc-900 border-l-4 border-orange-500 animate-fade-in">
+                <h3 class="text-xl font-bold mb-2 flex items-center gap-2">
+                    <i data-lucide="microscope" class="text-orange-500"></i> Analysis Result
+                </h3>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
+                    <div class="col-span-2 space-y-4">
+                        <p class="text-zinc-300">Based on the visual artifacts, this appears to be a <strong class="text-white">Calibration Issue</strong> related to extrusion consistency.</p>
+                        <ul class="space-y-2 text-sm text-zinc-400">
+                            <li class="flex items-center gap-2"><i data-lucide="alert-circle" class="text-yellow-500 w-4 h-4"></i> Probability: High (Over-extrusion / Incorrect Steps)</li>
+                            <li class="flex items-center gap-2"><i data-lucide="check-circle" class="text-green-500 w-4 h-4"></i> Source: Klipper Config Check</li>
+                        </ul>
+                    </div>
+                    <div class="bg-zinc-950 p-4 rounded-lg border border-zinc-800">
+                        <h4 class="text-xs uppercase tracking-wider font-bold text-zinc-500 mb-3">Recommended Action</h4>
+                        <button onclick="showCalculator()" class="w-full bg-zinc-100 text-zinc-900 hover:bg-white py-2 rounded font-bold text-sm">
+                            Verify Rotation Distance
+                        </button>
+                        <p class="text-xs text-center mt-2 text-zinc-500">Ref: Klipper Calibrations CSV</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 3: Dynamic Calculator (Based on User's CSV) -->
+            <div id="calculator-module" class="hidden glass-panel rounded-2xl p-0 bg-zinc-900 overflow-hidden animate-slide-up">
+                <div class="bg-zinc-800/50 p-4 border-b border-zinc-700 flex justify-between items-center">
+                    <span class="font-bold text-sm">Calculator: Extruder Rotation Distance</span>
+                    <span class="text-xs bg-orange-500/20 text-orange-400 px-2 py-1 rounded">Formula: (Steps * Micro) / E-Steps</span>
+                </div>
+
+                <div class="p-8 grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <!-- Inputs -->
+                    <div class="space-y-4">
+                        <h4 class="font-semibold text-zinc-400 text-sm uppercase mb-4">Current Config</h4>
+
+                        <div>
+                            <label class="block text-xs font-medium text-zinc-500 mb-1">Full Steps Per Rotation</label>
+                            <select id="fullSteps" class="w-full bg-zinc-950 border border-zinc-700 rounded p-2 text-sm focus:border-orange-500 outline-none text-white">
+                                <option value="200">200 (1.8° Stepper)</option>
+                                <option value="400">400 (0.9° Stepper)</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-medium text-zinc-500 mb-1">Micro Steps</label>
+                            <input type="number" id="microSteps" value="32" class="w-full bg-zinc-950 border border-zinc-700 rounded p-2 text-sm focus:border-orange-500 outline-none text-white">
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-medium text-zinc-500 mb-1">Requested Extrude Dist. (mm)</label>
+                            <input type="number" id="requestedDist" value="100" class="w-full bg-zinc-950 border border-zinc-700 rounded p-2 text-sm focus:border-orange-500 outline-none text-white">
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-medium text-zinc-500 mb-1">Actual Extrude Dist. (mm)</label>
+                            <input type="number" id="actualDist" placeholder="Measure result..." class="w-full bg-zinc-950 border border-zinc-700 rounded p-2 text-sm focus:border-orange-500 outline-none text-white border-l-4 border-l-orange-500">
+                            <p class="text-[10px] text-zinc-500 mt-1">Measure how much filament actually moved.</p>
+                        </div>
+
+                        <div>
+                             <label class="block text-xs font-medium text-zinc-500 mb-1">Current Rotation Distance</label>
+                            <input type="number" id="currentRotDist" value="20.313" class="w-full bg-zinc-950 border border-zinc-700 rounded p-2 text-sm focus:border-orange-500 outline-none text-white">
+                        </div>
+                    </div>
+
+                    <!-- Results -->
+                    <div class="bg-zinc-950 rounded-xl p-6 border border-zinc-800 flex flex-col justify-center">
+                        <div class="text-center mb-6">
+                            <p class="text-zinc-500 text-sm mb-1">New Rotation Distance</p>
+                            <div id="result-display" class="text-4xl font-bold text-orange-500">--</div>
+                        </div>
+
+                        <button onclick="calculateRotationDistance()" class="w-full bg-white text-black font-bold py-3 rounded hover:bg-zinc-200 transition mb-3">
+                            Calculate New Value
+                        </button>
+
+                        <div class="bg-zinc-900 p-3 rounded text-xs text-zinc-400 font-mono break-all">
+                            rotation_distance: <span id="config-snippet">...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <script>
+        lucide.createIcons();
+
+        // --- Logic replicating "Klipper Calibrations - Extruder Rotation Distance.csv" ---
+
+        function calculateRotationDistance() {
+            // 1. Get Inputs
+            const fullSteps = parseFloat(document.getElementById('fullSteps').value);
+            const microSteps = parseFloat(document.getElementById('microSteps').value);
+            const requested = parseFloat(document.getElementById('requestedDist').value);
+            const actual = parseFloat(document.getElementById('actualDist').value);
+            const currentRotDist = parseFloat(document.getElementById('currentRotDist').value);
+
+            if (!actual) {
+                alert("Please enter the Actual Extruded Distance measured.");
+                return;
+            }
+
+            // 2. The Formula from CSV:
+            // New Rotation Distance = previous_rotation_distance * actual_extrude_distance / requested_extrude_distance
+
+            // Note: The CSV has two calculation flows. One for E-steps, one for Rotation Distance adjustment.
+            // We are implementing the "Measure and Trim" logic from row 18-22 of the CSV.
+
+            const newRotDist = (currentRotDist * actual) / requested;
+
+            // 3. Update UI
+            const resultEl = document.getElementById('result-display');
+            resultEl.textContent = newRotDist.toFixed(3);
+
+            const snippetEl = document.getElementById('config-snippet');
+            snippetEl.textContent = newRotDist.toFixed(3);
+
+            // Visual feedback
+            resultEl.classList.remove('text-orange-500');
+            resultEl.classList.add('text-green-400');
+            setTimeout(() => {
+                resultEl.classList.remove('text-green-400');
+                resultEl.classList.add('text-orange-500');
+            }, 500);
+        }
+
+
+        // --- UI Interactions ---
+
+        function handleFileUpload(input) {
+            if (input.files && input.files[0]) {
+                var reader = new FileReader();
+                reader.onload = function(e) {
+                    document.getElementById('image-preview').src = e.target.result;
+                    document.getElementById('preview-container').classList.remove('hidden');
+                    document.getElementById('upload-prompt').classList.add('hidden');
+                }
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        function runAnalysis() {
+            const btn = document.querySelector('button[onclick="runAnalysis()"]');
+            const originalText = btn.innerHTML;
+
+            // Mock loading state
+            btn.innerHTML = '<i data-lucide="loader-2" class="animate-spin"></i> Analyzing...';
+
+            setTimeout(() => {
+                btn.innerHTML = originalText;
+                lucide.createIcons();
+                document.getElementById('analysis-result').classList.remove('hidden');
+                // Scroll to result
+                document.getElementById('analysis-result').scrollIntoView({ behavior: 'smooth' });
+            }, 1500);
+        }
+
+        function showCalculator() {
+            document.getElementById('calculator-module').classList.remove('hidden');
+            document.getElementById('calculator-module').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function toggleInput(type) {
+            // Simple tab switching logic visualization
+            // In a real React app this would be state managed
+        }
+    </script>
+</body>
+</html>
