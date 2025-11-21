@@ -207,7 +207,20 @@ Development roadmap organized by feature branches. The `main` branch contains on
 ### 🎯 Enhancement Tasks (NEW - Based on Industry Research)
 
 **Expand troubleshooting.csv with Industry Defect Taxonomy:**
-- [ ] **Add 40+ defect types** from comprehensive troubleshooting guides:
+- [ ] **Extract defects from local research** (Phase 2.5a - Week 1):
+  - [ ] Parse F0Q5PYLJMV0TH4G.md: 20 defect categories
+    - Not extruding (4 sub-causes), bed adhesion (6 sub-causes)
+    - Extrusion amount issues, holes/gaps, stringing, overheating
+    - Layer problems (shifting, separation), grinding, clogging
+    - Specific parameter ranges: temps (190-250°C), speeds (20-60mm/s), distances (0.5-6.5mm)
+  - [ ] Parse 3DP-2018-2.md: 6 root cause categories
+    - Platform misalignment → layer adhesion problems
+    - Nozzle misalignment → shifted layers, missing layers
+    - Material depletion → incomplete prints, snapped filament
+    - Adhesion loss → warping, elephant's foot, edge bending
+    - Vibration → visual waves, surface artifacts
+    - Printer settings → stringing, hanging strands, small holes
+- [ ] **Add 40+ defect types** from online guides (Phase 2.5a - Week 1):
   - All3DP: Common issues with visual markers
   - Prusa Knowledge Base: Photo-documented solutions
   - Simplify3D: 23 quality issues with comparisons
@@ -351,6 +364,7 @@ Development roadmap organized by feature branches. The `main` branch contains on
 
 ### External Resources
 
+**Online Resources:**
 1. **All3DP**: 40+ issues → https://all3dp.com/1/common-3d-printing-problems-troubleshooting-3d-printer-issues/
 2. **Prusa KB**: Photo guides → https://help.prusa3d.com/category/print-quality-troubleshooting_225
 3. **Simplify3D**: 23 issues → https://www.simplify3d.com/resources/print-quality-troubleshooting/
@@ -358,11 +372,54 @@ Development roadmap organized by feature branches. The `main` branch contains on
 5. **3DXTech**: 27 FDM issues → https://www.3dxtech.com/blogs/trouble-shooting/27-common-fdm-3d-printing-problems-and-how-to-fix-them
 6. **RealVision**: 12 problems → https://realvisiononline.com/blog/the-12-most-common-problems-in-3d-printing-and-how-to-fix-them
 
+**Local Research Documents (research/ folder):**
+7. **3DP-2018-2.md**: Academic paper with 6 root cause categories (mechanical, material, settings)
+   - Platform/nozzle misalignment defects
+   - Material flow disruption patterns
+   - Vibration-induced defects
+   - Scientific validation for troubleshooting logic
+8. **F0Q5PYLJMV0TH4G.md**: 20-section comprehensive troubleshooting guide
+   - Not extruding, bed adhesion, stringing, overheating, layer problems
+   - Specific parameter recommendations (temps, speeds, distances)
+   - Direct CSV field mappings available
+
+### Immediate Actionable Insights from New Research
+
+**From F0Q5PYLJMV0TH4G.md (3D Print Quality Troubleshooting Guide):**
+- ✅ **20 defect categories** ready for CSV integration
+- ✅ **Specific parameter ranges** for each fix:
+  - Retraction: 0.5-6.5mm distance, 20-70mm/s speed
+  - Temperature: 190-250°C (material-dependent)
+  - Speed: 20-60mm/s print speed, 10-40mm/s first layer
+  - Layer height: 0.1-0.3mm recommendations
+- ✅ **Visual markers** for vision prompt engineering:
+  - "Stringing": thin plastic threads between parts
+  - "Warping": corners lifting from bed
+  - "Layer separation": horizontal gaps between layers
+  - "Overheating": drooping/sagging on overhangs
+
+**From 3DP-2018-2.md (Academic FDM Defects Paper):**
+- ✅ **Root cause analysis** for systematic troubleshooting:
+  - Mechanical issues (platform/nozzle alignment, belts, pulleys)
+  - Material flow (blocked nozzle, filament quality, temperature)
+  - Environmental (vibration, temperature fluctuations)
+  - Settings (layer height, print speed, cooling)
+- ✅ **Preventive maintenance** checklist items:
+  - Belt tightness, grub screw security, rod lubrication
+  - Nozzle cleaning methods (acetone soak, high-temp burn-off, manual push)
+  - Platform preparation (glue, tape, texture, heated bed)
+- ✅ **Defect hierarchy** for router classification:
+  - Primary: Mechanical | Material | Settings
+  - Secondary: Platform | Nozzle | Flow | Adhesion | Vibration
+  - Tertiary: Specific symptoms (warping, shifting, stringing, etc.)
+
 ### Expected Impact
 
 - **Vision Accuracy**: +15-20% with enhanced prompts
 - **Coverage**: 40+ issues vs. 8 (5x improvement)
 - **User Value**: Comprehensive industry-standard solutions
+- **Parameter Precision**: Research-backed temp/speed/distance ranges
+- **Root Cause Analysis**: Scientific basis for troubleshooting logic
 
 ---
 
@@ -780,6 +837,14 @@ git push -u origin feature/your-feature-name
 **Primary Research Documents**:
 1. "The Cyber-Physical Convergence: Deterministic Firmware, Algorithmic Slicing, and the Rise of Multimodal AI in Additive Manufacturing" (Nov 2025)
 2. "Slice-100K: A Multimodal Dataset for Extrusion-based 3D Printing" (arXiv:2407.04180v1, July 2024)
+3. "Common FDM 3D Printing Defects" (3DP-2018-2, Academic Research Paper)
+   - **NEW**: Academic taxonomy of FDM production problems
+   - Categorizes defects by root cause (mechanical, material, thermal)
+   - Validates Phase 2 defect classification system
+4. "3D Print Quality Troubleshooting Guide" (F0Q5PYLJMV0TH4G)
+   - **NEW**: Comprehensive 20-section troubleshooting manual
+   - Visual examples with step-by-step fixes
+   - Excellent for CSV enhancement and vision prompt engineering
 
 **Industry Troubleshooting Resources** (High-Value for CSV Enhancement):
 - **All3DP**: https://all3dp.com/1/common-3d-printing-problems-troubleshooting-3d-printer-issues/
@@ -800,6 +865,18 @@ git push -u origin feature/your-feature-name
 - **Simplify3D**: https://www.simplify3d.com/resources/print-quality-troubleshooting/
   - 23 print quality issues with visual comparisons
   - Excellent slicer-specific recommendations
+
+**Academic Research Resources** (Local - research/ folder):
+- **"Common FDM 3D Printing Defects"** (3DP-2018-2.md)
+  - Academic taxonomy of FDM errors grouped by root cause
+  - 6 primary categories: Platform misalignment, nozzle misalignment, material depletion, adhesion loss, vibration, printer settings
+  - Real-world defect examples with mechanical explanations
+  - **Value**: Validates our 8-class defect taxonomy, provides scientific basis for troubleshooting
+- **"3D Print Quality Troubleshooting Guide"** (F0Q5PYLJMV0TH4G.md)
+  - 20 comprehensive defect sections with visual examples
+  - Covers: extrusion issues, bed adhesion, stringing, overheating, layer problems, mechanical issues
+  - Step-by-step solutions with parameter recommendations
+  - **Value**: Direct mappings to CSV fields (temperature ranges, speed settings, mechanical adjustments)
 
 ### Key Citations & Integration Points
 
