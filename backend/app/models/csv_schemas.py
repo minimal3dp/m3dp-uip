@@ -219,6 +219,46 @@ TROUBLESHOOTING_SCHEMA = CSVSchema(
         ColumnSchema("Klipper_Setting", DataType.STRING, required=False),
         ColumnSchema("Mechanical_Fix", DataType.STRING, required=False),
         ColumnSchema("Notes", DataType.STRING, required=False),
+        # Phase 2.5 enrichment columns
+        ColumnSchema(
+            "visual_markers",
+            DataType.STRING,
+            required=False,
+            description="Observable features for vision API",
+        ),
+        ColumnSchema(
+            "reference_image_url",
+            DataType.STRING,
+            required=False,
+            description="Link to reference defect image",
+        ),
+        ColumnSchema(
+            "severity",
+            DataType.STRING,
+            required=False,
+            allowed_values=["Critical", "High", "Medium", "Low"],
+            description="Severity level",
+        ),
+        ColumnSchema(
+            "printer_dependency",
+            DataType.STRING,
+            required=False,
+            allowed_values=["Generic", "Bowden", "Direct Drive"],
+            description="Printer-specific dependency",
+        ),
+        ColumnSchema(
+            "skill_level_required",
+            DataType.STRING,
+            required=False,
+            allowed_values=["Beginner", "Intermediate", "Advanced"],
+            description="Skill level to apply fix",
+        ),
+        ColumnSchema(
+            "related_defects",
+            DataType.STRING,
+            required=False,
+            description="Comma-separated related defects",
+        ),
     ],
 )
 

@@ -10,6 +10,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.api.endpoints import diagnosis
 from app.core.config import settings
 
 
@@ -77,7 +78,7 @@ async def health_check():
 
 
 # Include routers
-# app.include_router(diagnosis.router, prefix="/api/v1", tags=["diagnosis"])
+app.include_router(diagnosis.router, prefix="/api/v1/diagnosis", tags=["diagnosis"])
 
 
 if __name__ == "__main__":

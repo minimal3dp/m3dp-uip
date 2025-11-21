@@ -21,7 +21,7 @@ logger = logging.getLogger(__name__)
 class DiagnosisRequest(BaseModel):
     """Request model for text-based diagnosis."""
 
-    description: str = Field(..., min_length=10, description="Description of the issue")
+    query: str = Field(..., min_length=1, description="Description of the issue")
     printer_model: str | None = Field(None, description="Printer model (e.g., Ender 3)")
     filament_type: str | None = Field(None, description="Filament type (e.g., PLA, PETG)")
     filament_color: str | None = Field(
@@ -116,7 +116,9 @@ async def analyze_image(
     # Call router service
     try:
         router_service = get_router_service()
-        result = await router_service.diagnose_from_image(contents, context if context else None)
+        result = await router_service.diagnose_from_image(
+            contents, context=context if context else None
+        )
 
         return DiagnosisResponse(
             issue_type=result["issue_type"],
@@ -168,7 +170,7 @@ async def analyze_text(request: DiagnosisRequest):
     Raises:
         HTTPException: If query processing fails
     """
-    logger.info(f"Text analysis request: {request.description[:100]}...")
+    logger.info(f"Text analysis request: {request.query[:100]}...")
 
     # Build context dict
     context = {}
@@ -187,7 +189,7 @@ async def analyze_text(request: DiagnosisRequest):
     try:
         router_service = get_router_service()
         result = await router_service.diagnose_from_text(
-            request.description, context if context else None
+            request.query, context=context if context else None
         )
 
         return DiagnosisResponse(

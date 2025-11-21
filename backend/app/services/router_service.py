@@ -54,7 +54,8 @@ class RouterService:
         logger.info(f"Text diagnosis request: {query[:100]}...")
 
         # Step 1: Classify intent with semantic router
-        classification = self.semantic_router.classify_query(query)
+        semantic_router = get_semantic_router()
+        classification = semantic_router.classify_query(query)
         route_name = classification["route_name"]
         confidence = classification["confidence"]
 
@@ -63,7 +64,7 @@ class RouterService:
         # Step 2: Determine handler based on classification
         if classification["handler"] == "csv_lookup":
             # Direct CSV lookup - most efficient
-            result = await self._handle_csv_lookup(route_name, query, context)
+            result = await self._handle_csv_lookup(semantic_router, route_name, query, context)
         else:
             # Fallback to full LLM (not implemented yet)
             result = {
@@ -93,8 +94,9 @@ class RouterService:
         """
         logger.info("Image diagnosis request")
 
-        # Step 1: Analyze image with vision API
-        vision_result = await self.vision_service.analyze_image(image_data, context)
+        # Step 1: Analyze image with vision API (instantiate per-call for testability)
+        vision_service = VisionService()
+        vision_result = await vision_service.analyze_image(image_data, context)
 
         # Step 2: Route to appropriate CSV based on vision classification
         issue_type = vision_result["issue_type"]
@@ -118,6 +120,7 @@ class RouterService:
 
     async def _handle_csv_lookup(
         self,
+        semantic_router: Any,
         route_name: str,
         query: str,
         context: dict | None = None,
@@ -134,8 +137,8 @@ class RouterService:
             Structured response with CSV data
         """
         # Get CSV category and file
-        csv_category = self.semantic_router.get_csv_category(route_name)
-        csv_file = self.semantic_router.get_csv_file(route_name)
+        csv_category = semantic_router.get_csv_category(route_name)
+        csv_file = semantic_router.get_csv_file(route_name)
 
         if not csv_category:
             return {
@@ -189,12 +192,13 @@ class RouterService:
             List of recommendation dicts from CSV
         """
         recommendations = []
+        loader = get_csv_loader()
 
         # Map issue type to CSV category
         if issue_type == "Mechanical":
             # Search Klipper calibrations
             if "Extrusion" in classification or "Under_Extrusion" in classification:
-                data = self.csv_loader.get_rotation_distance_formula()
+                data = loader.get_rotation_distance_formula()
                 if data is not None:
                     recommendations.extend(data.to_dict("records"))
             # Could also check pressure advance, input shaping, etc.
@@ -203,19 +207,19 @@ class RouterService:
             # Search material profiles - extract material from vision result
             material_hint = self._extract_material_from_vision(vision_result)
             if material_hint:
-                data = self.csv_loader.get_material_recommendations(material_hint)
+                data = loader.get_material_recommendations(material_hint)
                 if data is not None:
                     recommendations.extend(data.to_dict("records"))
 
         elif issue_type == "Slicer":
             # Search quality settings or troubleshooting
-            data = self.csv_loader.get_troubleshooting_data(classification)
+            data = loader.get_troubleshooting_data(classification)
             if data is not None:
                 recommendations.extend(data.to_dict("records"))
 
         # If multi-factor or no specific match, search troubleshooting
         if not recommendations:
-            data = self.csv_loader.get_troubleshooting_data(classification)
+            data = loader.get_troubleshooting_data(classification)
             if data is not None:
                 recommendations.extend(data.to_dict("records"))
 
@@ -225,21 +229,31 @@ class RouterService:
         """Search Klipper calibration CSVs based on query keywords."""
         keywords = query.lower()
         recommendations = []
+        loader = get_csv_loader()
+
+        # Always perform a broad description search within Klipper category
+        try:
+            results = loader.search_by_description(query, category="klipper")
+            if results:
+                recommendations.extend(results)
+        except Exception as e:
+            # Safety: ignore search errors and continue with keyword paths
+            logger.debug("Calibration search_by_description failed: %s", e)
 
         if any(word in keywords for word in ["extruder", "e-step", "rotation", "extrusion"]):
-            data = self.csv_loader.get_rotation_distance_formula()
+            data = loader.get_rotation_distance_formula()
             if data is not None:
                 recommendations.extend(data.to_dict("records"))
 
         if any(word in keywords for word in ["pressure", "advance", "blob", "gap"]):
-            data = self.csv_loader.get_pressure_advance_formula()
+            data = loader.get_pressure_advance_formula()
             if data is not None:
                 recommendations.extend(data.to_dict("records"))
 
         if any(
             word in keywords for word in ["input", "shaping", "ringing", "ghosting", "resonance"]
         ):
-            data = self.csv_loader.get_input_shaping_data()
+            data = loader.get_input_shaping_data()
             if data is not None:
                 recommendations.extend(data.to_dict("records"))
 
@@ -247,6 +261,7 @@ class RouterService:
 
     def _get_troubleshooting_data(self, query: str) -> list[dict]:
         """Search troubleshooting CSV based on query keywords."""
+        loader = get_csv_loader()
         # Try to extract defect type from query
         defect_keywords = {
             "under extrusion": "Under_Extrusion",
@@ -264,34 +279,36 @@ class RouterService:
         query_lower = query.lower()
         for keyword, defect_type in defect_keywords.items():
             if keyword in query_lower:
-                data = self.csv_loader.get_troubleshooting_data(defect_type)
+                data = loader.get_troubleshooting_data(defect_type)
                 if data is not None and not data.empty:
                     return data.to_dict("records")
 
-        # Fallback: return all troubleshooting data
-        data = self.csv_loader.get_csv_by_name("troubleshooting", "orca")
+            # Fallback: return all troubleshooting data
+            data = loader.get_csv_by_name("troubleshooting", "orca")
         return data.to_dict("records") if data is not None else []
 
     def _get_material_data(self, material_type: str | None) -> list[dict]:
         """Get material profile data."""
+        loader = get_csv_loader()
         if material_type:
-            data = self.csv_loader.get_material_recommendations(material_type)
+            data = loader.get_material_recommendations(material_type)
             if data is not None and not data.empty:
                 return data.to_dict("records")
 
         # Fallback: return all materials
-        data = self.csv_loader.get_csv_by_name("material_profiles", "orca")
+        data = loader.get_csv_by_name("material_profiles", "orca")
         return data.to_dict("records") if data is not None else []
 
     def _get_quality_data(self, quality_level: str | None) -> list[dict]:
         """Get quality settings data."""
+        loader = get_csv_loader()
         if quality_level:
-            data = self.csv_loader.get_quality_settings(quality_level)
+            data = loader.get_quality_settings(quality_level)
             if data is not None and not data.empty:
                 return data.to_dict("records")
 
         # Fallback: return all quality levels
-        data = self.csv_loader.get_csv_by_name("quality_settings", "orca")
+        data = loader.get_csv_by_name("quality_settings", "orca")
         return data.to_dict("records") if data is not None else []
 
     def _extract_material_type(self, query: str, context: dict | None = None) -> str | None:
@@ -328,8 +345,9 @@ class RouterService:
         return None
 
 
-# Global singleton instance
+# Global singleton instances (compat aliases for tests)
 _router_instance: RouterService | None = None
+_router_service_instance: RouterService | None = None
 
 
 def get_router_service() -> RouterService:
@@ -339,7 +357,11 @@ def get_router_service() -> RouterService:
     Returns:
         RouterService singleton
     """
-    global _router_instance
-    if _router_instance is None:
-        _router_instance = RouterService()
-    return _router_instance
+    global _router_instance, _router_service_instance
+    # Prefer the compat name if tests reset it
+    if _router_service_instance is None:
+        # Always construct a fresh instance when the compat alias is reset by tests
+        instance = RouterService()
+        _router_service_instance = instance
+        _router_instance = instance
+    return _router_service_instance

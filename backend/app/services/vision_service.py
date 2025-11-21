@@ -197,6 +197,9 @@ Edge cases to consider:
             logger.error(f"Failed to parse API response as JSON: {e}")
             logger.error(f"Response text: {response.text if 'response' in locals() else 'N/A'}")
             raise RuntimeError(f"Invalid JSON response from API: {e}") from e
+        except ValueError:
+            # Surface validation errors (e.g., missing fields) as ValueError without wrapping
+            raise
         except Exception as e:
             logger.error(f"Vision API call failed: {e}")
             raise RuntimeError(f"Vision API error: {e}") from e

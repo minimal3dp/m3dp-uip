@@ -1,0 +1,14 @@
+# Defect Hierarchy Taxonomy (Phase 2.5)
+# Primary: Mechanical | Slicer | Material
+# Secondary: Extrusion | Motion | Thermal | Adhesion | Cooling | Support
+# Specific Defect: canonical key matching troubleshooting Issue_Type
+
+Primary,Secondary,Defect,Description,Related_Defects
+Mechanical,Motion,Layer Shift,Layer offset due to skipped steps or loose belts,"Ringing"
+Mechanical,Extrusion,Under_Extrusion,Insufficient material leading to gaps,"Layer_Separation, Clogging"
+Mechanical,Vibration,Ringing,Surface echoes from vibrations,"Layer Shift"
+Slicer,Extrusion,Over_Extrusion,Excess material leading to blobs and zits,"Stringing"
+Slicer,Retraction,Stringing,Filament oozing between moves,"Over_Extrusion"
+Material,Adhesion,Warping,Corners lifting due to shrinkage or poor adhesion,"Poor_Bridging"
+Slicer,Cooling,Poor_Bridging,Bridges sagging due to inadequate cooling,"Stringing"
+Material,Thermal,Layer_Separation,Insufficient bonding between layers due to low temperature,"Under_Extrusion"
