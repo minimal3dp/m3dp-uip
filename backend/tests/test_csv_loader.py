@@ -88,12 +88,12 @@ def test_troubleshooting_data(csv_loader: CSVLoader):
     # Get all troubleshooting data
     df = csv_loader.get_troubleshooting_data()
     assert df is not None
-    assert len(df) >= 8  # We have 8 issue types
+    assert len(df) >= 60  # Phase 2.5: We now have 60+ defects from research
 
-    # Test specific issue type
+    # Test specific issue type (multiple entries for comprehensive coverage)
     df = csv_loader.get_troubleshooting_data("Stringing")
     assert df is not None
-    assert len(df) == 1
+    assert len(df) >= 3  # Multiple Stringing entries with different causes
 
 
 def test_search_functionality(csv_loader: CSVLoader):
