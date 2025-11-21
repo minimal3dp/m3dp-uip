@@ -10,10 +10,14 @@ Uses aurelio-labs/semantic-router library for intent classification.
 import logging
 from typing import Any
 
-from semantic_router import Route, RouteLayer
+from semantic_router import Route
 from semantic_router.encoders import OpenAIEncoder
+from semantic_router.routers import SemanticRouter as SRRouter
 
 from app.core.config import settings
+
+# Backward-compatibility alias for older tests referring to RouteLayer
+RouteLayer = SRRouter
 
 logger = logging.getLogger(__name__)
 
@@ -39,6 +43,7 @@ class SemanticRouter:
                 self.encoder = OpenAIEncoder(
                     name="text-embedding-3-small"  # Fast, cost-effective
                 )
+                # semantic-router API: use SemanticRouter, exposed as RouteLayer alias for tests
                 self.route_layer = RouteLayer(encoder=self.encoder, routes=self.routes)
                 logger.info("Semantic router initialized with OpenAI encoder")
             except Exception as e:
