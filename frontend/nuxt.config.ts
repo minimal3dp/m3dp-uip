@@ -42,7 +42,7 @@ export default defineNuxtConfig({
         },
         {
           // Inline gtag init using 'innerHTML' key supported by Nuxt app.head
-          innerHTML: `window.dataLayer = window.dataLayer || [];function gtag(){dataLayer.push(arguments);}gtag('js', new Date());gtag('config', '${process.env.NUXT_PUBLIC_GA_ID || 'G-VQ8RPWC2MK'}');`,
+          innerHTML: `window.dataLayer = window.dataLayer || [];function gtag(){dataLayer.push(arguments);}gtag('js', new Date());gtag('config', '${process.env.NUXT_PUBLIC_GA_ID || 'G-VQ8RPWC2MK'}', { debug_mode: ${process.env.NUXT_PUBLIC_GA_DEBUG === 'true' ? 'true' : 'false'} });`,
           type: 'text/javascript'
         }
       ]
