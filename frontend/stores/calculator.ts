@@ -27,6 +27,12 @@ interface CalculatorState {
     nozzleDiameter: number | null
     result: any | null
   }
+  inputShaping: {
+    testType: string
+    xFrequency: number | null
+    yFrequency: number | null
+    result: any | null
+  }
   loading: boolean
   error: string | null
 }
@@ -55,6 +61,12 @@ export const useCalculatorStore = defineStore('calculator', {
       currentPa: null,
       printSpeed: null,
       nozzleDiameter: null,
+      result: null,
+    },
+    inputShaping: {
+      testType: 'ADXL345',
+      xFrequency: null,
+      yFrequency: null,
       result: null,
     },
     loading: false,
@@ -104,6 +116,28 @@ export const useCalculatorStore = defineStore('calculator', {
           nozzle_diameter: this.pressureAdvance.nozzleDiameter,
         })
         this.pressureAdvance.result = result
+      } catch (err: any) {
+        this.error = err.data?.detail || 'Calculation failed'
+      } finally {
+        this.loading = false
+      }
+    },
+
+    async calculateInputShaping() {
+      if (this.inputShaping.xFrequency === null || this.inputShaping.yFrequency === null) {
+        this.error = 'Please enter both X and Y frequencies'
+        return
+      }
+      this.loading = true
+      this.error = null
+      try {
+        const api = useCalculatorApi()
+        const result = await api.calculateInputShaping({
+          test_type: this.inputShaping.testType,
+          x_frequency: this.inputShaping.xFrequency,
+          y_frequency: this.inputShaping.yFrequency,
+        })
+        this.inputShaping.result = result
       } catch (err: any) {
         this.error = err.data?.detail || 'Calculation failed'
       } finally {
@@ -183,6 +217,12 @@ export const useCalculatorStore = defineStore('calculator', {
       this.pressureAdvance.printSpeed = null
       this.pressureAdvance.nozzleDiameter = null
       this.pressureAdvance.result = null
+      this.error = null
+    },
+    resetInputShaping() {
+      this.inputShaping.xFrequency = null
+      this.inputShaping.yFrequency = null
+      this.inputShaping.result = null
       this.error = null
     },
   },

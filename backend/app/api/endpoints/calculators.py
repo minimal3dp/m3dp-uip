@@ -220,7 +220,102 @@ async def list_calculators():
                 "endpoint": "/api/v1/calculators/pressure-advance",
                 "method": "POST",
             },
+            {
+                "id": "input-shaping",
+                "name": "Input Shaping",
+                "category": "Mechanical",
+                "csv_source": "klipper_calibrations/input_shaping.csv",
+                "description": "Recommend input shaper types based on resonance frequencies",
+                "endpoint": "/api/v1/calculators/input-shaping",
+                "method": "POST",
+            },
         ]
+    )
+
+
+class InputShapingRequest(BaseModel):
+    """Request for input shaping recommendations.
+
+    CSV: input_shaping.csv rows for X/Y Frequency and Shaper options.
+    Frequencies measured via accelerometer (ADXL345) or manual test.
+    """
+
+    test_type: str = Field(
+        "ADXL345",
+        description="Test method used (manual or ADXL345)",
+        examples=["ADXL345"],
+    )
+    x_frequency: float = Field(
+        ..., gt=10, le=200, description="Measured resonance frequency for X axis (Hz)", examples=[45.2]
+    )
+    y_frequency: float = Field(
+        ..., gt=10, le=200, description="Measured resonance frequency for Y axis (Hz)", examples=[37.8]
+    )
+
+
+class InputShapingResponse(BaseModel):
+    """Response with recommended shaper types and config."""
+
+    shaper_x: str = Field(..., description="Recommended shaper for X axis")
+    shaper_y: str = Field(..., description="Recommended shaper for Y axis")
+    max_accel: int = Field(..., description="Suggested max acceleration (mm/s²)")
+    square_corner_velocity: float = Field(..., description="Suggested square corner velocity (mm/s)")
+    klipper_config: str = Field(..., description="Klipper config snippet to copy")
+    notes: str = Field(..., description="Additional tuning notes")
+
+
+@router.post("/input-shaping", response_model=InputShapingResponse)
+async def calculate_input_shaping(request: InputShapingRequest):
+    """Recommend input shaper types based on resonance frequencies.
+
+    Placeholder heuristic until CSV formulas finalized (input_shaping.csv).
+    Mapping (temporary, reference Klipper docs):
+    - freq < 40 Hz -> EI (strong damping)
+    - 40-50 Hz -> MZV (balanced)
+    - 50-60 Hz -> 2HUMP_EI (higher frequency compensation)
+    - > 60 Hz -> 3HUMP_EI (broad suppression)
+
+    Acceleration suggestion (rough heuristic):
+    max_accel = min(int(min(request.x_frequency, request.y_frequency) * 100), 10000)
+    square_corner_velocity fixed at 5.0 (from CSV).
+    """
+    logger.info(
+        f"Input shaping calculation: test_type={request.test_type}, x_freq={request.x_frequency}, y_freq={request.y_frequency}"
+    )
+
+    def pick_shaper(freq: float) -> str:
+        if freq < 40:
+            return "EI"
+        if freq < 50:
+            return "MZV"
+        if freq < 60:
+            return "2HUMP_EI"
+        return "3HUMP_EI"
+
+    shaper_x = pick_shaper(request.x_frequency)
+    shaper_y = pick_shaper(request.y_frequency)
+
+    base_freq = min(request.x_frequency, request.y_frequency)
+    max_accel = min(int(base_freq * 100), 8000)
+    square_corner_velocity = 5.0  # From CSV constant row
+
+    klipper_config = (
+        f"[input_shaper]\nshaper_type_x: {shaper_x}\nshaper_freq_x: {request.x_frequency:.1f}\n"
+        f"shaper_type_y: {shaper_y}\nshaper_freq_y: {request.y_frequency:.1f}\n"
+        f"max_accel: {max_accel}\nsquare_corner_velocity: {square_corner_velocity:.1f}"
+    )
+
+    notes = (
+        "Run SHAPER_CALIBRATE in Klipper for precise frequencies. Adjust max_accel after verifying ringing is reduced."
+    )
+
+    return InputShapingResponse(
+        shaper_x=shaper_x,
+        shaper_y=shaper_y,
+        max_accel=max_accel,
+        square_corner_velocity=square_corner_velocity,
+        klipper_config=klipper_config,
+        notes=notes,
     )
 
 

@@ -63,3 +63,18 @@ export interface PressureAdvanceResponse {
   klipper_config: string
   calibration_method: string
 }
+
+export interface InputShapingRequest {
+  test_type: string
+  x_frequency: number
+  y_frequency: number
+}
+
+export interface InputShapingResponse {
+  shaper_x: string
+  shaper_y: string
+  max_accel: number
+  square_corner_velocity: number
+  klipper_config: string
+  notes: string
+}
