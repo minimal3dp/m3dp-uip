@@ -27,8 +27,9 @@ jobs:
         run: uv pip install -e '.[dev]'
 
       - name: Run backend tests (pytest w/ coverage)
-        working-directory: backend
-        run: pytest --cov=app --cov-report=html -q
+        env:
+          PYTHONPATH: backend
+        run: pytest --cov=app --cov-report=html:backend/htmlcov -q
 
       - name: Upload backend coverage report
         if: always()
