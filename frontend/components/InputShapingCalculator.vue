@@ -124,10 +124,19 @@
 
 <script setup lang="ts">
 import { useCalculatorStore } from '~/stores/calculator'
+import { useAnalytics } from '~/composables/useAnalytics'
 const store = useCalculatorStore()
 
+const { trackCalculatorUse } = useAnalytics()
 const handleSubmit = async () => {
   await store.calculateInputShaping()
+  if (store.inputShaping.result) {
+    trackCalculatorUse('input_shaping', {
+      shaper_x: store.inputShaping.result.shaper_x,
+      shaper_y: store.inputShaping.result.shaper_y,
+      max_accel: store.inputShaping.result.max_accel,
+    })
+  }
 }
 
 const copyToClipboard = async (text: string) => {

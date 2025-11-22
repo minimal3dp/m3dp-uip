@@ -146,11 +146,19 @@
 
 <script setup lang="ts">
 import { useCalculatorStore } from '~/stores/calculator'
+import { useAnalytics } from '~/composables/useAnalytics'
 
 const store = useCalculatorStore()
 
+const { trackCalculatorUse } = useAnalytics()
 const handleSubmit = async () => {
   await store.calculateOrcaSlicerFlowYolo()
+  if (store.orcaSlicerFlowYolo.result) {
+    trackCalculatorUse('orcaslicer_flow_yolo', {
+      new_flow: store.orcaSlicerFlowYolo.result.new_flow,
+      change_from_original: store.orcaSlicerFlowYolo.result.change_from_original,
+    })
+  }
 }
 
 const copyToClipboard = async (text: string) => {

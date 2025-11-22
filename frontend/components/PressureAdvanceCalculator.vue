@@ -166,11 +166,20 @@
 
 <script setup lang="ts">
 import { useCalculatorStore } from '~/stores/calculator'
+import { useAnalytics } from '~/composables/useAnalytics'
 
 const store = useCalculatorStore()
 
+const { trackCalculatorUse } = useAnalytics()
 const handleSubmit = async () => {
   await store.calculatePressureAdvance()
+  if (store.pressureAdvance.result) {
+    trackCalculatorUse('pressure_advance', {
+      material: store.pressureAdvance.materialType,
+      start_value: store.pressureAdvance.result.start_value,
+      increment: store.pressureAdvance.result.increment,
+    })
+  }
 }
 
 const copyToClipboard = async (text: string) => {

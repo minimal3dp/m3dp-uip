@@ -33,6 +33,18 @@ export default defineNuxtConfig({
       ],
       link: [
         { rel: 'icon', type: 'image/x-icon', href: '/favicon.ico' }
+      ],
+      script: [
+        // GA4 script (uses env var or fallback project ID)
+        {
+          src: `https://www.googletagmanager.com/gtag/js?id=${process.env.NUXT_PUBLIC_GA_ID || 'G-VQ8RPWC2MK'}`,
+          async: true
+        },
+        {
+          // Inline gtag init using 'innerHTML' key supported by Nuxt app.head
+          innerHTML: `window.dataLayer = window.dataLayer || [];function gtag(){dataLayer.push(arguments);}gtag('js', new Date());gtag('config', '${process.env.NUXT_PUBLIC_GA_ID || 'G-VQ8RPWC2MK'}');`,
+          type: 'text/javascript'
+        }
       ]
     }
   },
@@ -41,6 +53,7 @@ export default defineNuxtConfig({
   runtimeConfig: {
     public: {
       apiBase: process.env.NUXT_PUBLIC_API_BASE || 'http://localhost:8000',
+      gaMeasurementId: process.env.NUXT_PUBLIC_GA_ID || 'G-VQ8RPWC2MK'
     }
   },
 

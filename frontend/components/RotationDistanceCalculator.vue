@@ -147,11 +147,19 @@
 
 <script setup lang="ts">
 import { useCalculatorStore } from '~/stores/calculator'
+import { useAnalytics } from '~/composables/useAnalytics'
 
 const store = useCalculatorStore()
 
+const { trackCalculatorUse } = useAnalytics()
 const handleSubmit = async () => {
   await store.calculateRotationDistance()
+  if (store.rotationDistance.result) {
+    trackCalculatorUse('rotation_distance', {
+      change_percent: store.rotationDistance.result.change_percent,
+      within_tolerance: store.rotationDistance.result.within_tolerance,
+    })
+  }
 }
 
 const copyToClipboard = async (text: string) => {
