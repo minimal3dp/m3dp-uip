@@ -1,6 +1,8 @@
 # Minimal 3DP Unified Intelligence Platform (M3DP-UIP)
 
 [![Python 3.12+](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
+[![Coverage](https://raw.githubusercontent.com/minimal3dp/m3dp-uip/main/coverage-badge.svg)](./htmlcov/index.html)
+[![Frontend E2E](https://raw.githubusercontent.com/minimal3dp/m3dp-uip/main/frontend-e2e-badge.svg)](./frontend-e2e-badge.svg)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.115+-009688.svg)](https://fastapi.tiangolo.com/)
 [![Code style: ruff](https://img.shields.io/badge/code%20style-ruff-000000.svg)](https://github.com/astral-sh/ruff)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
@@ -133,8 +135,8 @@ graph LR
 # Run all tests
 ./scripts/run_tests.sh
 
-# Run with coverage
-pytest --cov=backend/app --cov-report=html
+# Run with coverage (configured via pyproject addopts)
+pytest --cov=app --cov-report=html
 
 # Run specific test
 pytest backend/tests/test_api.py::test_root_endpoint

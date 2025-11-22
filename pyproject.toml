@@ -94,7 +94,7 @@ asyncio_mode = "auto"
 addopts = [
     "--strict-markers",
     "--strict-config",
-    "--cov=backend/app",
+    "--cov=app",
     "--cov-report=term-missing",
     "--cov-report=html",
 ]
@@ -105,6 +105,7 @@ omit = [
     "*/tests/*",
     "*/__init__.py",
 ]
+disable_warnings = ["module-not-imported", "no-data-collected"]
 
 [tool.coverage.report]
 exclude_lines = [

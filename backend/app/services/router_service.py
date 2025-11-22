@@ -12,6 +12,7 @@ import logging
 from typing import Any
 
 from app.services.csv_loader import get_csv_loader
+from app.services.llm_service import get_llm_service
 from app.services.semantic_router import get_semantic_router
 from app.services.vision_service import VisionService
 
@@ -66,14 +67,8 @@ class RouterService:
             # Direct CSV lookup - most efficient
             result = await self._handle_csv_lookup(semantic_router, route_name, query, context)
         else:
-            # Fallback to full LLM (not implemented yet)
-            result = {
-                "classification": route_name,
-                "confidence": confidence,
-                "handler": "llm",
-                "message": "LLM handler not yet implemented",
-                "recommendations": [],
-            }
+            # Fallback to LLM for general queries
+            result = await self._handle_llm_diagnosis(route_name, confidence, query, context)
 
         return result
 
@@ -343,6 +338,59 @@ class RouterService:
             if material in causes:
                 return material
         return None
+
+    async def _handle_llm_diagnosis(
+        self,
+        route_name: str,
+        confidence: float,
+        query: str,
+        context: dict | None = None,
+    ) -> dict[str, Any]:
+        """
+        Handle diagnosis using LLM fallback.
+
+        Args:
+            route_name: Semantic route classification
+            confidence: Classification confidence
+            query: Original user query
+            context: Optional context
+
+        Returns:
+            Structured response with LLM-generated recommendations
+        """
+        llm_service = get_llm_service()
+
+        if not llm_service.is_configured():
+            # LLM not available - return placeholder
+            return {
+                "classification": route_name,
+                "confidence": confidence,
+                "handler": "llm",
+                "message": "LLM service not configured",
+                "recommendations": [],
+            }
+
+        try:
+            llm_result = await llm_service.diagnose(query, context)
+            return {
+                "classification": route_name,
+                "confidence": confidence,
+                "handler": "llm",
+                "diagnosis": llm_result["diagnosis"],
+                "likely_causes": llm_result["likely_causes"],
+                "recommendations": llm_result["recommendations"],
+                "csv_hint": llm_result.get("csv_hint"),
+            }
+        except Exception as e:
+            logger.error(f"LLM diagnosis failed: {e}")
+            return {
+                "classification": route_name,
+                "confidence": confidence,
+                "handler": "llm",
+                "error": str(e),
+                "message": "LLM diagnosis failed",
+                "recommendations": [],
+            }
 
 
 # Global singleton instances (compat aliases for tests)

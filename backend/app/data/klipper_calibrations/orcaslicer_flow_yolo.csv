@@ -1,0 +1,13 @@
+parameter,value,unit,description
+method,orcaslicer_yolo,,OrcaSlicer YOLO Flow calibration (single-pass quick method)
+old_flow_rate,1.0,,Current flow rate from slicer (default 1.0 = 100%)
+yolo_slide_value,-0.035,,Slide value with smoothest surface from YOLO test
+formula,new_flow = old_flow_rate + yolo_slide_value,,YOLO flow calculation (direct addition)
+reference_url,https://github.com/SoftFever/OrcaSlicer/releases/tag/v2.2.0-beta,,OrcaSlicer v2.2.0-beta release notes
+video_guide,,,Link to video guide (to be added)
+instructions_step_1,Open OrcaSlicer -> Calibration -> Flow Rate -> YOLO,,
+instructions_step_2,Feel each slide and determine the smoothest surface,,
+instructions_step_3,Note the slide value (e.g. -0.035),,
+instructions_step_4,Enter YOLO slide value to calculate new flow rate,,
+instructions_step_5,Use calculated flow rate in your slicer,,
+note,YOLO method is faster but less accurate than two-pass method,,Use for quick adjustments or when time is limited

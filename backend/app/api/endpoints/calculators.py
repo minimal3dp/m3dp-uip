@@ -8,6 +8,7 @@ All calculations are formula-based, not LLM-generated.
 """
 
 import logging
+from app.services.csv_loader import get_csv_loader
 
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
@@ -51,6 +52,76 @@ class RotationDistanceResponse(BaseModel):
     change_percent: float = Field(..., description="Percentage change from current value")
     within_tolerance: bool = Field(..., description="Whether change is within ±2mm tolerance")
     klipper_config: str = Field(..., description="Klipper config snippet to copy")
+    recommendation: str = Field(..., description="Action recommendation")
+
+
+class OrcaSlicerFlowRequest(BaseModel):
+    """Request for OrcaSlicer Flow Rate calibration (two-pass method)."""
+
+    old_flow_rate: float = Field(
+        1.0,
+        gt=0,
+        le=2,
+        description="Current flow rate from slicer (1.0 = 100%)",
+        examples=[0.99],
+    )
+    pass_1_slide_value: float = Field(
+        ...,
+        ge=-50,
+        le=50,
+        description="Slide number with smoothest surface from Pass 1 (e.g., -10 for 90% slide)",
+        examples=[-10],
+    )
+    pass_2_slide_value: float | None = Field(
+        None,
+        ge=-50,
+        le=50,
+        description="Slide number with smoothest surface from Pass 2 (optional for Pass 1 calculation)",
+        examples=[-1],
+    )
+
+
+class OrcaSlicerFlowYoloRequest(BaseModel):
+    """Request for OrcaSlicer Flow Rate YOLO calibration (single-pass method)."""
+
+    old_flow_rate: float = Field(
+        1.0,
+        gt=0,
+        le=2,
+        description="Current flow rate from slicer (1.0 = 100%)",
+        examples=[1.0],
+    )
+    yolo_slide_value: float = Field(
+        ...,
+        ge=-1,
+        le=1,
+        description="Slide value with smoothest surface from YOLO test (e.g., -0.035)",
+        examples=[-0.035],
+    )
+
+
+class OrcaSlicerFlowResponse(BaseModel):
+    """Response with calculated OrcaSlicer flow rate."""
+
+    pass_1_flow: float = Field(..., description="Flow rate after Pass 1")
+    pass_2_flow: float | None = Field(
+        None, description="Final flow rate after Pass 2 (if provided)"
+    )
+    change_from_original: float = Field(
+        ..., description="Percentage change from original flow rate"
+    )
+    slicer_config: str = Field(..., description="Slicer config value to copy")
+    recommendation: str = Field(..., description="Action recommendation")
+
+
+class OrcaSlicerFlowYoloResponse(BaseModel):
+    """Response with calculated OrcaSlicer YOLO flow rate."""
+
+    new_flow: float = Field(..., description="New flow rate after YOLO calibration")
+    change_from_original: float = Field(
+        ..., description="Percentage change from original flow rate"
+    )
+    slicer_config: str = Field(..., description="Slicer config value to copy")
     recommendation: str = Field(..., description="Action recommendation")
 
 
@@ -124,6 +195,24 @@ async def list_calculators():
                 "method": "POST",
             },
             {
+                "id": "orcaslicer-flow",
+                "name": "OrcaSlicer Flow Rate (Recommended)",
+                "category": "Extrusion",
+                "csv_source": "klipper_calibrations/flow_calibration.csv",
+                "description": "Two-pass flow calibration using OrcaSlicer's built-in tool",
+                "endpoint": "/api/v1/calculators/orcaslicer-flow",
+                "method": "POST",
+            },
+            {
+                "id": "orcaslicer-flow-yolo",
+                "name": "OrcaSlicer Flow YOLO (Quick)",
+                "category": "Extrusion",
+                "csv_source": "klipper_calibrations/orcaslicer_flow_yolo.csv",
+                "description": "Single-pass quick flow calibration for fast adjustments",
+                "endpoint": "/api/v1/calculators/orcaslicer-flow-yolo",
+                "method": "POST",
+            },
+            {
                 "id": "pressure-advance",
                 "name": "Pressure Advance",
                 "category": "Extrusion",
@@ -132,7 +221,163 @@ async def list_calculators():
                 "endpoint": "/api/v1/calculators/pressure-advance",
                 "method": "POST",
             },
+            {
+                "id": "input-shaping",
+                "name": "Input Shaping",
+                "category": "Mechanical",
+                "csv_source": "klipper_calibrations/input_shaping.csv",
+                "description": "Recommend input shaper types based on resonance frequencies",
+                "endpoint": "/api/v1/calculators/input-shaping",
+                "method": "POST",
+            },
         ]
+    )
+
+
+class InputShapingRequest(BaseModel):
+    """Request for input shaping recommendations.
+
+    CSV: input_shaping.csv rows for X/Y Frequency and Shaper options.
+    Frequencies measured via accelerometer (ADXL345) or manual test.
+    """
+
+    test_type: str = Field(
+        "ADXL345",
+        description="Test method used (manual or ADXL345)",
+        examples=["ADXL345"],
+    )
+    x_frequency: float = Field(
+        ..., gt=10, le=200, description="Measured resonance frequency for X axis (Hz)", examples=[45.2]
+    )
+    y_frequency: float = Field(
+        ..., gt=10, le=200, description="Measured resonance frequency for Y axis (Hz)", examples=[37.8]
+    )
+
+
+class InputShapingResponse(BaseModel):
+    """Response with recommended shaper types and config."""
+
+    shaper_x: str = Field(..., description="Recommended shaper for X axis")
+    shaper_y: str = Field(..., description="Recommended shaper for Y axis")
+    max_accel: int = Field(..., description="Suggested max acceleration (mm/s²)")
+    square_corner_velocity: float = Field(..., description="Suggested square corner velocity (mm/s)")
+    klipper_config: str = Field(..., description="Klipper config snippet to copy")
+    notes: str = Field(..., description="Additional tuning notes")
+
+
+@router.post("/input-shaping", response_model=InputShapingResponse)
+async def calculate_input_shaping(request: InputShapingRequest):
+    """Recommend input shaper types based on resonance frequencies.
+
+    Placeholder heuristic until CSV formulas finalized (input_shaping.csv).
+    Mapping (temporary, reference Klipper docs):
+    - freq < 40 Hz -> EI (strong damping)
+    - 40-50 Hz -> MZV (balanced)
+    - 50-60 Hz -> 2HUMP_EI (higher frequency compensation)
+    - > 60 Hz -> 3HUMP_EI (broad suppression)
+
+    Acceleration suggestion (rough heuristic):
+    max_accel = min(int(min(request.x_frequency, request.y_frequency) * 100), 10000)
+    square_corner_velocity fixed at 5.0 (from CSV).
+    """
+    logger.info(
+        f"Input shaping calculation: test_type={request.test_type}, x_freq={request.x_frequency}, y_freq={request.y_frequency}"
+    )
+
+    loader = get_csv_loader()
+    df = loader.get_input_shaping_data()
+
+    # Expected DataFrame rows (after comments stripped):
+    # index 0: Test Type (CSV line 5)
+    # index 1: X Frequency (CSV line 6)
+    # index 2: Y Frequency (CSV line 7)
+    # index 3: X Shaper (CSV line 8)
+    # index 4: Y Shaper (CSV line 9)
+    # index 5: Max Accel (CSV line 10)
+    # index 6: Square Corner Velocity (CSV line 11)
+    if df is None:
+        # Fallback to heuristic if CSV missing
+        logger.warning("input_shaping.csv not loaded; using heuristic fallback")
+        def pick_shaper(freq: float) -> str:
+            if freq < 40:
+                return "EI"
+            if freq < 50:
+                return "MZV"
+            if freq < 60:
+                return "2HUMP_EI"
+            return "3HUMP_EI"
+        shaper_x = pick_shaper(request.x_frequency)
+        shaper_y = pick_shaper(request.y_frequency)
+        base_freq = min(request.x_frequency, request.y_frequency)
+        max_accel = min(int(base_freq * 100), 8000)
+        square_corner_velocity = 5.0
+    else:
+        # Extract shaper option lists from Notes column (rows 3 & 4)
+        try:
+            x_shaper_row = df.iloc[3]  # row index 3
+            y_shaper_row = df.iloc[4]  # row index 4
+            max_accel_row = df.iloc[5]  # row index 5
+            scv_row = df.iloc[6]        # row index 6
+        except Exception as e:
+            logger.error(f"Malformed input_shaping.csv: {e}")
+            raise HTTPException(status_code=500, detail="Malformed input_shaping.csv") from e
+
+        def parse_options(notes: str) -> list[str]:
+            # Notes format: "Options: MZV, ZV, EI, 2HUMP_EI, 3HUMP_EI"
+            if not isinstance(notes, str) or 'Options:' not in notes:
+                return []
+            return [opt.strip() for opt in notes.split('Options:')[-1].split(',') if opt.strip()]
+
+        shaper_options = parse_options(x_shaper_row.get('Notes', '')) or ["MZV", "ZV", "EI", "2HUMP_EI", "3HUMP_EI"]
+
+        # Frequency segmentation derived from expected range (rows 1 & 2: 30-80 Hz)
+        # Strategy: lower frequencies need more damping (EI), mid range MZV/ZV, higher multihump EI variants.
+        def pick_from_options(freq: float) -> str:
+            if freq < 40 and "EI" in shaper_options:
+                return "EI"
+            if 40 <= freq < 50 and "MZV" in shaper_options:
+                return "MZV"
+            if 50 <= freq < 60 and "2HUMP_EI" in shaper_options:
+                return "2HUMP_EI"
+            if 60 <= freq and "3HUMP_EI" in shaper_options:
+                return "3HUMP_EI"
+            # Fallback first option
+            return shaper_options[0]
+
+        shaper_x = pick_from_options(request.x_frequency)
+        shaper_y = pick_from_options(request.y_frequency)
+
+        # Max accel heuristic clamped by CSV expected range (row 5 Expected_Range: 1000-10000)
+        base_freq = min(request.x_frequency, request.y_frequency)
+        suggested_accel = int(base_freq * 120)  # Slightly more aggressive than *100
+        max_accel = max(1000, min(suggested_accel, 10000))
+
+        # Square corner velocity from Formula column of row 6 (value 5.0)
+        square_corner_velocity = float(scv_row.get('Formula', 5.0))
+
+    klipper_config = (
+        f"[input_shaper]\n"  # Section header
+        f"shaper_type_x: {shaper_x}\n"
+        f"shaper_freq_x: {request.x_frequency:.1f}\n"
+        f"shaper_type_y: {shaper_y}\n"
+        f"shaper_freq_y: {request.y_frequency:.1f}\n"
+        f"max_accel: {max_accel}\n"
+        f"square_corner_velocity: {square_corner_velocity:.1f}"
+    )
+
+    notes = (
+        "Frequencies sourced from input_shaping.csv (lines 6-7). Shaper options from lines 8-9. "
+        "Acceleration bounded by line 10 expected range. Square corner velocity from line 11."\
+        " Run SHAPER_CALIBRATE for precise measurements before applying final config."
+    )
+
+    return InputShapingResponse(
+        shaper_x=shaper_x,
+        shaper_y=shaper_y,
+        max_accel=max_accel,
+        square_corner_velocity=square_corner_velocity,
+        klipper_config=klipper_config,
+        notes=notes,
     )
 
 
@@ -213,6 +458,159 @@ async def calculate_rotation_distance(request: RotationDistanceRequest):
         raise HTTPException(status_code=400, detail="Requested extrusion cannot be zero") from e
     except Exception as e:
         logger.error(f"Error calculating rotation distance: {e}")
+        raise HTTPException(status_code=500, detail="Calculation error") from e
+
+
+@router.post("/orcaslicer-flow", response_model=OrcaSlicerFlowResponse)
+async def calculate_orcaslicer_flow(request: OrcaSlicerFlowRequest):
+    """
+    Calculate OrcaSlicer Flow Rate using two-pass method (RECOMMENDED).
+
+    **Formulas from CSV** (flow_calibration.csv, rows 5-6):
+    ```
+    pass_1_flow = old_flow_rate * (100 + pass_1_slide_value) / 100
+    pass_2_flow = pass_1_flow * (100 + pass_2_slide_value) / 100
+    ```
+
+    **Calibration Process**:
+    1. Open OrcaSlicer -> Calibration -> Flow Rate -> Pass 1
+    2. Print the calibration model
+    3. Feel each slide and determine the smoothest surface
+    4. Note the slide number (e.g., -10 for 90% slide)
+    5. Calculate Pass 1 flow rate
+    6. Run Pass 2 with Pass 1 flow rate
+    7. Enter Pass 2 slide value for final flow rate
+
+    **Why Two-Pass?**: More accurate than single-pass methods.
+    First pass gets you close, second pass fine-tunes.
+
+    Args:
+        request: Current flow rate and Pass 1/2 slide values
+
+    Returns:
+        Pass 1 and Pass 2 (if provided) flow rates with slicer config
+
+    Raises:
+        HTTPException: If calculation produces invalid result
+    """
+    logger.info(
+        f"OrcaSlicer Flow: old_flow={request.old_flow_rate}, "
+        f"pass_1_slide={request.pass_1_slide_value}, pass_2_slide={request.pass_2_slide_value}"
+    )
+
+    try:
+        # Formula: pass_1_flow = old_flow_rate * (100 + pass_1_slide_value) / 100
+        # From CSV row 5 (B20)
+        pass_1_flow = request.old_flow_rate * (100 + request.pass_1_slide_value) / 100
+
+        # If Pass 2 slide value provided, calculate final flow
+        pass_2_flow = None
+        if request.pass_2_slide_value is not None:
+            # Formula: pass_2_flow = pass_1_flow * (100 + pass_2_slide_value) / 100
+            # From CSV row 6 (B27)
+            pass_2_flow = pass_1_flow * (100 + request.pass_2_slide_value) / 100
+
+        # Determine which flow to use for config
+        final_flow = pass_2_flow if pass_2_flow is not None else pass_1_flow
+
+        # Calculate change from original
+        change_from_original = ((final_flow - request.old_flow_rate) / request.old_flow_rate) * 100
+
+        # Generate slicer config
+        slicer_config = f"Flow Rate: {final_flow:.3f}"
+
+        # Generate recommendation
+        if request.pass_2_slide_value is None:
+            recommendation = (
+                f"✅ Pass 1 complete. Flow rate: {pass_1_flow:.3f} "
+                f"({change_from_original:+.1f}% from original). "
+                f"Run Pass 2 with this flow rate for final calibration."
+            )
+        else:
+            recommendation = (
+                f"✅ Calibration complete! Final flow rate: {pass_2_flow:.3f} "
+                f"({change_from_original:+.1f}% from original). "
+                f"Update your OrcaSlicer filament profile with this value."
+            )
+
+        return OrcaSlicerFlowResponse(
+            pass_1_flow=round(pass_1_flow, 3),
+            pass_2_flow=round(pass_2_flow, 3) if pass_2_flow is not None else None,
+            change_from_original=round(change_from_original, 2),
+            slicer_config=slicer_config,
+            recommendation=recommendation,
+        )
+
+    except Exception as e:
+        logger.error(f"Error calculating OrcaSlicer flow: {e}")
+        raise HTTPException(status_code=500, detail="Calculation error") from e
+
+
+@router.post("/orcaslicer-flow-yolo", response_model=OrcaSlicerFlowYoloResponse)
+async def calculate_orcaslicer_flow_yolo(request: OrcaSlicerFlowYoloRequest):
+    """
+    Calculate OrcaSlicer Flow Rate using YOLO method (single-pass, quick).
+
+    **Formula from CSV** (orcaslicer_flow_yolo.csv, row 4):
+    ```
+    new_flow = old_flow_rate + yolo_slide_value
+    ```
+
+    **Calibration Process**:
+    1. Open OrcaSlicer -> Calibration -> Flow Rate -> YOLO
+    2. Print the calibration model
+    3. Feel each slide and determine the smoothest surface
+    4. Note the slide value (e.g., -0.035)
+    5. Calculate new flow rate (direct addition)
+
+    **Why YOLO?**: Faster than two-pass method.
+    Use when time is limited or for quick adjustments.
+
+    **Note**: YOLO is less accurate than two-pass method.
+    Use two-pass for best results.
+
+    Args:
+        request: Current flow rate and YOLO slide value
+
+    Returns:
+        New flow rate with slicer config
+
+    Raises:
+        HTTPException: If calculation produces invalid result
+    """
+    logger.info(
+        f"OrcaSlicer Flow YOLO: old_flow={request.old_flow_rate}, "
+        f"yolo_slide={request.yolo_slide_value}"
+    )
+
+    try:
+        # Formula: new_flow = old_flow_rate + yolo_slide_value
+        # From CSV row 4 (B20)
+        new_flow = request.old_flow_rate + request.yolo_slide_value
+
+        # Calculate change from original
+        change_from_original = ((new_flow - request.old_flow_rate) / request.old_flow_rate) * 100
+
+        # Generate slicer config
+        slicer_config = f"Flow Rate: {new_flow:.3f}"
+
+        # Generate recommendation
+        recommendation = (
+            f"✅ YOLO calibration complete! New flow rate: {new_flow:.3f} "
+            f"({change_from_original:+.1f}% from original). "
+            f"Update your OrcaSlicer filament profile. "
+            f"For best accuracy, consider running the two-pass calibration."
+        )
+
+        return OrcaSlicerFlowYoloResponse(
+            new_flow=round(new_flow, 3),
+            change_from_original=round(change_from_original, 2),
+            slicer_config=slicer_config,
+            recommendation=recommendation,
+        )
+
+    except Exception as e:
+        logger.error(f"Error calculating OrcaSlicer flow YOLO: {e}")
         raise HTTPException(status_code=500, detail="Calculation error") from e
 
 

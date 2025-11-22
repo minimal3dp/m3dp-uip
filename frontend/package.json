@@ -1,0 +1,50 @@
+{
+  "name": "m3dp-uip-frontend",
+  "version": "0.1.0",
+  "description": "M3DP-UIP Frontend - Vue 3 + Nuxt application for 3D printing diagnostics",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "nuxt build",
+    "dev": "nuxt dev",
+    "generate": "nuxt generate",
+    "preview": "nuxt preview",
+    "postinstall": "nuxt prepare",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "test:e2e:headed": "playwright test --headed",
+    "test:e2e:debug": "playwright test --debug"
+  },
+  "keywords": [
+    "3d-printing",
+    "klipper",
+    "orcaslicer",
+    "diagnostics"
+  ],
+  "author": "Minimal 3DP",
+  "license": "MIT",
+  "engines": {
+    "node": ">=20.19.0 <21",
+    "npm": ">=10"
+  },
+  "packageManager": "npm@10",
+  "dependencies": {
+    "@nuxtjs/tailwindcss": "^6.14.0",
+    "@pinia/nuxt": "^0.11.3",
+    "nuxt": "^3.17.7",
+    "pinia": "^3.0.4",
+    "vue": "^3.5.24"
+  },
+  "devDependencies": {
+    "@nuxt/test-utils": "^3.20.1",
+    "@playwright/test": "^1.56.1",
+    "@types/node": "^22.19.1",
+    "autoprefixer": "^10.4.20",
+    "postcss": "^8.4.39",
+    "tailwindcss": "^3.4.13",
+    "typescript": "^5.9.3",
+    "vue-tsc": "^3.1.4"
+  }
+}

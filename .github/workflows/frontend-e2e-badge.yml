@@ -1,0 +1,84 @@
+name: Frontend E2E Badge
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  e2e-badge:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install backend deps (UV)
+        run: pip install uv && cd backend && uv pip install -e '.[dev]'
+
+      - name: Install frontend deps
+        working-directory: frontend
+        run: npm ci
+
+      - name: Install Playwright Browsers
+        working-directory: frontend
+        run: npx playwright install --with-deps
+
+      - name: Start backend
+        working-directory: backend
+        run: |
+          uv run uvicorn app.main:app --host 0.0.0.0 --port 8000 &
+          echo "Waiting for backend..."
+          for i in {1..30}; do
+            if curl -s http://localhost:8000/docs > /dev/null; then echo "Backend up"; break; fi; sleep 1; done
+          curl -s http://localhost:8000/docs || (echo "Backend failed" && exit 1)
+
+      - name: Start frontend
+        working-directory: frontend
+        run: |
+          npm run dev &
+          echo "Waiting for frontend..."
+          for i in {1..40}; do
+            if curl -s http://localhost:3000 > /dev/null; then echo "Frontend up"; break; fi; sleep 1; done
+          curl -s http://localhost:3000 || (echo "Frontend failed" && exit 1)
+
+      - name: Run Playwright tests (JSON)
+        working-directory: frontend
+        env:
+          NUXT_PUBLIC_API_BASE: http://localhost:8000
+        run: |
+          npx playwright test --reporter=json > ../playwright-report.json || true
+          # Do not commit report; used only for badge generation
+          ls -l ../playwright-report.json
+
+      - name: Generate badge
+        run: python scripts/generate_playwright_badge.py
+
+      - name: Commit badge
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git add frontend-e2e-badge.svg || true
+          if git diff --cached --quiet; then echo "No badge changes"; else git commit -m "chore: update frontend e2e badge"; git push; fi
+
+      - name: Upload badge artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-e2e-badge
+          path: frontend-e2e-badge.svg
+          retention-days: 7

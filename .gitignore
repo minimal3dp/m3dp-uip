@@ -227,11 +227,14 @@ research/*.pdf
 tmp/
 temp/
 *.tmp
+playwright-report.json
 
 # Frontend (when added)
 node_modules/
 .next/
 out/
+frontend/.nuxt/
+frontend/playwright-report/
 
 # OS
 .DS_Store
