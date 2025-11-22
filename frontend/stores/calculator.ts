@@ -16,9 +16,21 @@ interface CalculatorState {
     nozzleDiameter: number
     result: any | null
   }
+  orcaSlicerFlow: {
+    oldFlowRate: number
+    pass1SlideValue: number | null
+    pass2SlideValue: number | null
+    result: any | null
+  }
   orcaSlicerFlowYolo: {
     oldFlowRate: number
     yoloSlideValue: number | null
+    result: any | null
+  }
+  inputShaping: {
+    testType: string
+    xFrequency: number | null
+    yFrequency: number | null
     result: any | null
   }
   loading: boolean
@@ -40,9 +52,21 @@ export const useCalculatorStore = defineStore('calculator', {
       nozzleDiameter: 0.4,
       result: null,
     },
+    orcaSlicerFlow: {
+      oldFlowRate: 1.0,
+      pass1SlideValue: null,
+      pass2SlideValue: null,
+      result: null,
+    },
     orcaSlicerFlowYolo: {
       oldFlowRate: 1.0,
       yoloSlideValue: null,
+      result: null,
+    },
+    inputShaping: {
+      testType: 'ADXL345',
+      xFrequency: null,
+      yFrequency: null,
       result: null,
     },
     loading: false,
@@ -133,6 +157,67 @@ export const useCalculatorStore = defineStore('calculator', {
     resetOrcaSlicerFlowYolo() {
       this.orcaSlicerFlowYolo.yoloSlideValue = null
       this.orcaSlicerFlowYolo.result = null
+      this.error = null
+    },
+
+    async calculateOrcaSlicerFlow() {
+      if (!this.orcaSlicerFlow.pass1SlideValue) {
+        this.error = 'Please enter Pass 1 slide value'
+        return
+      }
+
+      this.loading = true
+      this.error = null
+
+      try {
+        const api = useCalculatorApi()
+        const result = await api.calculateOrcaSlicerFlow({
+          old_flow_rate: this.orcaSlicerFlow.oldFlowRate,
+          pass_1_slide_value: this.orcaSlicerFlow.pass1SlideValue,
+          pass_2_slide_value: this.orcaSlicerFlow.pass2SlideValue || undefined,
+        })
+        this.orcaSlicerFlow.result = result
+      } catch (err: any) {
+        this.error = err.data?.detail || 'Calculation failed'
+      } finally {
+        this.loading = false
+      }
+    },
+
+    resetOrcaSlicerFlow() {
+      this.orcaSlicerFlow.pass1SlideValue = null
+      this.orcaSlicerFlow.pass2SlideValue = null
+      this.orcaSlicerFlow.result = null
+      this.error = null
+    },
+
+    async calculateInputShaping() {
+      if (!this.inputShaping.xFrequency || !this.inputShaping.yFrequency) {
+        this.error = 'Please enter both X and Y frequencies'
+        return
+      }
+
+      this.loading = true
+      this.error = null
+
+      try {
+        const api = useCalculatorApi()
+        const result = await api.calculateInputShaping({
+          x_frequency: this.inputShaping.xFrequency,
+          y_frequency: this.inputShaping.yFrequency,
+        })
+        this.inputShaping.result = result
+      } catch (err: any) {
+        this.error = err.data?.detail || 'Calculation failed'
+      } finally {
+        this.loading = false
+      }
+    },
+
+    resetInputShaping() {
+      this.inputShaping.xFrequency = null
+      this.inputShaping.yFrequency = null
+      this.inputShaping.result = null
       this.error = null
     },
   },

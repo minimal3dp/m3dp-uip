@@ -49,3 +49,31 @@ export interface OrcaSlicerFlowYoloResponse {
   slicer_config: string
   recommendation: string
 }
+
+export interface OrcaSlicerFlowRequest {
+  old_flow_rate: number
+  pass_1_slide_value: number
+  pass_2_slide_value?: number
+}
+
+export interface OrcaSlicerFlowResponse {
+  pass_1_flow: number
+  pass_2_flow: number | null
+  change_from_original: number
+  slicer_config: string
+  recommendation: string
+}
+
+export interface InputShapingRequest {
+  x_frequency: number
+  y_frequency: number
+}
+
+export interface InputShapingResponse {
+  shaper_x: string
+  shaper_y: string
+  max_accel: number
+  square_corner_velocity: number
+  klipper_config: string
+  notes: string
+}
