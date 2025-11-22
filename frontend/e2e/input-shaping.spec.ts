@@ -1,18 +1,19 @@
 import { test, expect } from '@playwright/test'
+import type { Page } from '@playwright/test'
 
 test.describe('Input Shaping Calculator', () => {
-  test.beforeEach(async ({ page }) => {
+  test.beforeEach(async ({ page }: { page: Page }) => {
     await page.goto('/calculators')
     await page.waitForLoadState('networkidle')
   })
 
-  test('should display input shaping calculator', async ({ page }) => {
+  test('should display input shaping calculator', async ({ page }: { page: Page }) => {
     await expect(page.getByRole('heading', { name: /input shaping calculator/i })).toBeVisible()
     await expect(page.locator('[data-testid="x-frequency"]')).toBeVisible()
     await expect(page.locator('[data-testid="y-frequency"]')).toBeVisible()
   })
 
-  test('should calculate shaper recommendations', async ({ page }) => {
+  test('should calculate shaper recommendations', async ({ page }: { page: Page }) => {
     await page.locator('[data-testid="x-frequency"]').fill('45.2')
     await page.locator('[data-testid="y-frequency"]').fill('37.8')
     await page.locator('[data-testid="calculate-input-shaping-button"]').click()
@@ -24,7 +25,7 @@ test.describe('Input Shaping Calculator', () => {
     expect(resultText).toMatch(/Klipper Configuration/i)
   })
 
-  test('should reset fields', async ({ page }) => {
+  test('should reset fields', async ({ page }: { page: Page }) => {
     await page.locator('[data-testid="x-frequency"]').fill('50')
     await page.locator('[data-testid="y-frequency"]').fill('55')
     await page.locator('[data-testid="calculate-input-shaping-button"]').click()

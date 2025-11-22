@@ -12,6 +12,14 @@ export default defineNuxtConfig({
     viewer: true,
   },
 
+  // Inline PostCSS plugins (Tailwind + Autoprefixer) replacing external postcss.config.cjs
+  postcss: {
+    plugins: {
+      tailwindcss: {},
+      autoprefixer: {},
+    }
+  },
+
   app: {
     head: {
       title: 'M3DP-UIP - AI-Powered 3D Printing Diagnostics',

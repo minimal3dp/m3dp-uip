@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import type { Page } from '@playwright/test';
 
 /**
  * E2E Tests for Rotation Distance Calculator
@@ -11,7 +12,7 @@ import { test, expect } from '@playwright/test';
  */
 
 test.describe('Rotation Distance Calculator', () => {
-  test.beforeEach(async ({ page }) => {
+  test.beforeEach(async ({ page }: { page: Page }) => {
     // Navigate to calculators page
     await page.goto('/calculators');
 
@@ -19,7 +20,7 @@ test.describe('Rotation Distance Calculator', () => {
     await page.waitForLoadState('networkidle');
   });
 
-  test('should display rotation distance calculator', async ({ page }) => {
+  test('should display rotation distance calculator', async ({ page }: { page: Page }) => {
     // Verify calculator heading exists
     await expect(page.getByRole('heading', { name: /rotation distance/i })).toBeVisible();
 
@@ -29,7 +30,7 @@ test.describe('Rotation Distance Calculator', () => {
     await expect(page.locator('[data-testid="actual-extrusion"]')).toBeVisible();
   });
 
-  test('should calculate new rotation distance correctly', async ({ page }) => {
+  test('should calculate new rotation distance correctly', async ({ page }: { page: Page }) => {
     // Fill in form with test values
     // Formula: new = (current × actual) / requested
     // Test: (22.67 × 95) / 100 = 21.5365
@@ -51,7 +52,7 @@ test.describe('Rotation Distance Calculator', () => {
     expect(result).toMatch(/21\.53[0-9]/); // Match 21.53X (handles rounding variations)
   });
 
-  test('should show validation error for empty fields', async ({ page }) => {
+  test('should show validation error for empty fields', async ({ page }: { page: Page }) => {
     // Try to submit without filling fields
     await page.locator('[data-testid="calculate-button"]').click();
 
@@ -61,7 +62,7 @@ test.describe('Rotation Distance Calculator', () => {
     await expect(currentInput).toHaveAttribute('required');
   });
 
-  test('should handle decimal inputs correctly', async ({ page }) => {
+  test('should handle decimal inputs correctly', async ({ page }: { page: Page }) => {
     // Test with realistic decimal precision (3 decimals - typical for Klipper)
     // Use a meaningful calibration scenario: 3% under-extrusion
     await page.locator('[data-testid="current-rotation-distance"]').fill('22.679');
@@ -78,7 +79,7 @@ test.describe('Rotation Distance Calculator', () => {
     expect(result).toMatch(/21\.99[0-9]/); // Should show ~21.99X (22.679 * 0.97)
   });
 
-  test('should reset form after calculation', async ({ page }) => {
+  test('should reset form after calculation', async ({ page }: { page: Page }) => {
     // Fill and calculate
     await page.locator('[data-testid="current-rotation-distance"]').fill('22.67');
     await page.locator('[data-testid="requested-extrusion"]').fill('100');
@@ -97,7 +98,7 @@ test.describe('Rotation Distance Calculator', () => {
     await expect(page.locator('[data-testid="current-rotation-distance"]')).toHaveValue('');
   });
 
-  test('should display Klipper config format', async ({ page }) => {
+  test('should display Klipper config format', async ({ page }: { page: Page }) => {
     // Calculate
     await page.locator('[data-testid="current-rotation-distance"]').fill('22.67');
     await page.locator('[data-testid="requested-extrusion"]').fill('100');

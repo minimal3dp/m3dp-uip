@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import type { Page } from '@playwright/test';
 
 /**
  * E2E Tests for OrcaSlicer Flow Calculators
@@ -7,12 +8,12 @@ import { test, expect } from '@playwright/test';
  */
 
 test.describe('OrcaSlicer Flow Calibration - Two Pass', () => {
-  test.beforeEach(async ({ page }) => {
+  test.beforeEach(async ({ page }: { page: Page }) => {
     await page.goto('/calculators');
     await page.waitForLoadState('networkidle');
   });
 
-  test('should calculate pass 1 flow ratio', async ({ page }) => {
+  test('should calculate pass 1 flow ratio', async ({ page }: { page: Page }) => {
     // Find OrcaSlicer Flow calculator section
     await expect(page.getByRole('heading', { name: /orcaslicer.*flow.*two.*pass/i })).toBeVisible();
 
@@ -27,7 +28,7 @@ test.describe('OrcaSlicer Flow Calibration - Two Pass', () => {
     await expect(page.getByTestId('pass1-flow-result')).toBeVisible({ timeout: 5000 });
   });
 
-  test('should calculate final flow with two passes', async ({ page }) => {
+  test('should calculate final flow with two passes', async ({ page }: { page: Page }) => {
     // Pass 1
     await page.locator('[data-testid="current-flow-pass1"]').fill('1.0');
     await page.locator('[data-testid="pass1-slide-value"]').fill('-10');
@@ -46,12 +47,12 @@ test.describe('OrcaSlicer Flow Calibration - Two Pass', () => {
 });
 
 test.describe('OrcaSlicer Flow Calibration - YOLO', () => {
-  test.beforeEach(async ({ page }) => {
+  test.beforeEach(async ({ page }: { page: Page }) => {
     await page.goto('/calculators');
     await page.waitForLoadState('networkidle');
   });
 
-  test('should calculate direct flow adjustment', async ({ page }) => {
+  test('should calculate direct flow adjustment', async ({ page }: { page: Page }) => {
     // Find YOLO calculator section
     await expect(page.getByRole('heading', { name: /orcaslicer.*yolo/i })).toBeVisible();
 
@@ -65,7 +66,7 @@ test.describe('OrcaSlicer Flow Calibration - YOLO', () => {
     await expect(page.getByTestId('yolo-flow-result')).toBeVisible({ timeout: 5000 });
   });
 
-  test('should handle negative slide value', async ({ page }) => {
+  test('should handle negative slide value', async ({ page }: { page: Page }) => {
     // Negative slide value means reduce flow
     await page.locator('[data-testid="current-flow-yolo"]').fill('1.0');
     await page.locator('[data-testid="yolo-slide-value"]').fill('-0.05');

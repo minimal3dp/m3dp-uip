@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import type { Page } from '@playwright/test';
 
 /**
  * E2E Tests for Pressure Advance Calculator
@@ -12,7 +13,7 @@ import { test, expect } from '@playwright/test';
  */
 
 test.describe('Pressure Advance Calculator', () => {
-  test.beforeEach(async ({ page }) => {
+  test.beforeEach(async ({ page }: { page: Page }) => {
     // Navigate to calculators page
     await page.goto('/calculators');
 
@@ -20,7 +21,7 @@ test.describe('Pressure Advance Calculator', () => {
     await page.waitForLoadState('networkidle');
   });
 
-  test('should display pressure advance calculator', async ({ page }) => {
+  test('should display pressure advance calculator', async ({ page }: { page: Page }) => {
     // Verify calculator heading exists
     await expect(page.getByRole('heading', { name: /pressure advance/i })).toBeVisible();
 
@@ -31,7 +32,7 @@ test.describe('Pressure Advance Calculator', () => {
     await expect(page.locator('[data-testid="nozzle-diameter"]')).toBeVisible();
   });
 
-  test('should calculate PLA recommendations correctly', async ({ page }) => {
+  test('should calculate PLA recommendations correctly', async ({ page }: { page: Page }) => {
     // Select PLA material (should be default, but explicitly select)
     await page.locator('[data-testid="material-type"]').selectOption('PLA');
 
@@ -54,7 +55,7 @@ test.describe('Pressure Advance Calculator', () => {
     expect(result).toContain('PLA'); // Material name should be shown
   });
 
-  test('should calculate PETG recommendations correctly', async ({ page }) => {
+  test('should calculate PETG recommendations correctly', async ({ page }: { page: Page }) => {
     // Select PETG material
     await page.locator('[data-testid="material-type"]').selectOption('PETG');
 
@@ -74,7 +75,7 @@ test.describe('Pressure Advance Calculator', () => {
     expect(result).toContain('PETG');
   });
 
-  test('should calculate TPU recommendations correctly', async ({ page }) => {
+  test('should calculate TPU recommendations correctly', async ({ page }: { page: Page }) => {
     // Select TPU (flexible material with very low PA)
     await page.locator('[data-testid="material-type"]').selectOption('TPU');
 
@@ -94,7 +95,7 @@ test.describe('Pressure Advance Calculator', () => {
     expect(result).toContain('TPU');
   });
 
-  test('should handle current PA value correctly', async ({ page }) => {
+  test('should handle current PA value correctly', async ({ page }: { page: Page }) => {
     // Select material
     await page.locator('[data-testid="material-type"]').selectOption('PLA');
 
@@ -114,7 +115,7 @@ test.describe('Pressure Advance Calculator', () => {
     expect(result).toContain('0.045'); // Should show current PA as start value
   });
 
-  test('should display test parameters', async ({ page }) => {
+  test('should display test parameters', async ({ page }: { page: Page }) => {
     // Fill and calculate
     await page.locator('[data-testid="material-type"]').selectOption('ABS');
     await page.locator('[data-testid="print-speed"]').fill('90');
@@ -131,7 +132,7 @@ test.describe('Pressure Advance Calculator', () => {
     expect(result).toContain('0.2'); // Layer height (standard from CSV)
   });
 
-  test('should display Klipper config format', async ({ page }) => {
+  test('should display Klipper config format', async ({ page }: { page: Page }) => {
     // Calculate
     await page.locator('[data-testid="material-type"]').selectOption('PLA');
     await page.locator('[data-testid="print-speed"]').fill('100');
@@ -146,7 +147,7 @@ test.describe('Pressure Advance Calculator', () => {
     await expect(configSnippet).toBeVisible();
   });
 
-  test('should reset form after calculation', async ({ page }) => {
+  test('should reset form after calculation', async ({ page }: { page: Page }) => {
     // Fill and calculate
     await page.locator('[data-testid="material-type"]').selectOption('PETG');
     await page.locator('[data-testid="current-pa"]').fill('0.065');
@@ -168,7 +169,7 @@ test.describe('Pressure Advance Calculator', () => {
     await expect(page.getByTestId('pressure-advance-result')).not.toBeVisible();
   });
 
-  test('should require inputs again after reset', async ({ page }) => {
+  test('should require inputs again after reset', async ({ page }: { page: Page }) => {
     // Perform initial calculation
     await page.locator('[data-testid="material-type"]').selectOption('PLA');
     await page.locator('[data-testid="print-speed"]').fill('100');
@@ -191,19 +192,19 @@ test.describe('Pressure Advance Calculator', () => {
     await expect(page.getByTestId('pressure-advance-result')).not.toBeVisible();
   });
 
-  test('should show validation error for empty required fields', async ({ page }) => {
+  test('should show validation error for empty required fields', async ({ page }: { page: Page }) => {
     // Try to submit without filling required fields (print speed and nozzle diameter)
     await page.locator('[data-testid="calculate-pa-button"]').click();
 
     // Expect validation on required fields
     const printSpeedInput = page.locator('[data-testid="print-speed"]');
     const nozzleDiameterInput = page.locator('[data-testid="nozzle-diameter"]');
-    
+
     await expect(printSpeedInput).toHaveAttribute('required');
     await expect(nozzleDiameterInput).toHaveAttribute('required');
   });
 
-  test('should handle different nozzle sizes', async ({ page }) => {
+  test('should handle different nozzle sizes', async ({ page }: { page: Page }) => {
     // Test with 0.6mm nozzle (affects line width in test parameters)
     await page.locator('[data-testid="material-type"]').selectOption('NYLON');
     await page.locator('[data-testid="print-speed"]').fill('60');
