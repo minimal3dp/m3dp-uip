@@ -23,8 +23,8 @@ interface CalculatorState {
   pressureAdvance: {
     materialType: string
     currentPa: number | null
-    printSpeed: number
-    nozzleDiameter: number
+    printSpeed: number | null
+    nozzleDiameter: number | null
     result: any | null
   }
   loading: boolean
@@ -53,8 +53,8 @@ export const useCalculatorStore = defineStore('calculator', {
     pressureAdvance: {
       materialType: 'PLA',
       currentPa: null,
-      printSpeed: 100,
-      nozzleDiameter: 0.4,
+      printSpeed: null,
+      nozzleDiameter: null,
       result: null,
     },
     loading: false,
@@ -87,6 +87,11 @@ export const useCalculatorStore = defineStore('calculator', {
     },
 
     async calculatePressureAdvance() {
+      // Basic required validation (HTML required handles UI, but guard API call)
+      if (this.pressureAdvance.printSpeed === null || this.pressureAdvance.nozzleDiameter === null) {
+        this.error = 'Please fill in required fields'
+        return
+      }
       this.loading = true
       this.error = null
 
@@ -175,6 +180,8 @@ export const useCalculatorStore = defineStore('calculator', {
 
     resetPressureAdvance() {
       this.pressureAdvance.currentPa = null
+      this.pressureAdvance.printSpeed = null
+      this.pressureAdvance.nozzleDiameter = null
       this.pressureAdvance.result = null
       this.error = null
     },

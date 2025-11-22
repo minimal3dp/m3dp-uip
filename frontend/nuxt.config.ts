@@ -5,12 +5,11 @@ export default defineNuxtConfig({
 
   modules: ['@nuxtjs/tailwindcss', '@pinia/nuxt'],
 
-  // Explicit global CSS registration to ensure Tailwind directives are processed
+  // Tailwind CSS file imported via css array (standard Nuxt 3 pattern)
   css: ['~/assets/css/main.css'],
 
   tailwindcss: {
-    cssPath: '~/assets/css/main.css',
-    configPath: 'tailwind.config',
+    configPath: 'tailwind.config.js',
     exposeConfig: false,
     viewer: true,
   },
