@@ -1,13 +1,12 @@
 """Additional coverage tests for RouterService and SemanticRouter edge paths."""
 
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
 
 import pytest
-from fastapi.testclient import TestClient
-
 from app.main import app
 from app.services.router_service import RouterService
 from app.services.semantic_router import SemanticRouter
+from fastapi.testclient import TestClient
 
 client = TestClient(app)
 
@@ -16,6 +15,7 @@ def test_semantic_router_fallback_no_api_key(monkeypatch):
     """SemanticRouter should fallback to general when not initialized (no API key)."""
     # Force settings key empty and new instance
     from app.core import config as cfg
+
     monkeypatch.setattr(cfg.settings, "GOOGLE_GENAI_API_KEY", "")
     router = SemanticRouter()
     result = router.classify_query("extruder skipping steps")
@@ -30,7 +30,11 @@ async def test_router_service_csv_lookup_calibration_keywords():
     service = RouterService()
     with patch("app.services.router_service.get_semantic_router") as mock_get_router:
         mock_router = MagicMock()
-        mock_router.classify_query.return_value = {"route_name": "calibration", "confidence": 0.9, "handler": "csv_lookup"}
+        mock_router.classify_query.return_value = {
+            "route_name": "calibration",
+            "confidence": 0.9,
+            "handler": "csv_lookup",
+        }
         mock_router.get_csv_category.return_value = "klipper_calibrations"
         mock_router.get_csv_file.return_value = None
         mock_get_router.return_value = mock_router
@@ -45,7 +49,11 @@ async def test_router_service_troubleshooting_mapping():
     service = RouterService()
     with patch("app.services.router_service.get_semantic_router") as mock_get_router:
         mock_router = MagicMock()
-        mock_router.classify_query.return_value = {"route_name": "troubleshooting", "confidence": 0.9, "handler": "csv_lookup"}
+        mock_router.classify_query.return_value = {
+            "route_name": "troubleshooting",
+            "confidence": 0.9,
+            "handler": "csv_lookup",
+        }
         mock_router.get_csv_category.return_value = "orca_recommendations"
         mock_router.get_csv_file.return_value = "troubleshooting.csv"
         mock_get_router.return_value = mock_router
@@ -59,7 +67,11 @@ async def test_router_service_material_extraction_from_query():
     service = RouterService()
     with patch("app.services.router_service.get_semantic_router") as mock_get_router:
         mock_router = MagicMock()
-        mock_router.classify_query.return_value = {"route_name": "material", "confidence": 0.9, "handler": "csv_lookup"}
+        mock_router.classify_query.return_value = {
+            "route_name": "material",
+            "confidence": 0.9,
+            "handler": "csv_lookup",
+        }
         mock_router.get_csv_category.return_value = "orca_recommendations"
         mock_router.get_csv_file.return_value = "material_profiles.csv"
         mock_get_router.return_value = mock_router
@@ -73,7 +85,11 @@ async def test_router_service_quality_extraction():
     service = RouterService()
     with patch("app.services.router_service.get_semantic_router") as mock_get_router:
         mock_router = MagicMock()
-        mock_router.classify_query.return_value = {"route_name": "quality", "confidence": 0.9, "handler": "csv_lookup"}
+        mock_router.classify_query.return_value = {
+            "route_name": "quality",
+            "confidence": 0.9,
+            "handler": "csv_lookup",
+        }
         mock_router.get_csv_category.return_value = "orca_recommendations"
         mock_router.get_csv_file.return_value = "quality_settings.csv"
         mock_get_router.return_value = mock_router
@@ -88,7 +104,11 @@ async def test_router_service_unknown_route_fallback():
     service = RouterService()
     with patch("app.services.router_service.get_semantic_router") as mock_get_router:
         mock_router = MagicMock()
-        mock_router.classify_query.return_value = {"route_name": "alien", "confidence": 0.2, "handler": "unknown"}
+        mock_router.classify_query.return_value = {
+            "route_name": "alien",
+            "confidence": 0.2,
+            "handler": "unknown",
+        }
         mock_get_router.return_value = mock_router
         result = await service.diagnose_from_text("mysterious issue")
         assert result["handler"] == "llm"
@@ -120,6 +140,7 @@ async def test_router_service_image_diagnosis_fallback_troubleshooting(monkeypat
     monkeypatch.setattr(vs_mod, "VisionService", lambda: DummyVision())
     # Also patch RouterService to use dummy when constructing
     from app.services import router_service as rs_mod
+
     monkeypatch.setattr(rs_mod, "VisionService", lambda: DummyVision())
     service = RouterService()
     result = await service.diagnose_from_image(b"fake", context=None)
@@ -168,11 +189,12 @@ async def test_router_service_mechanical_non_extrusion_fallback(monkeypatch):
                 "classification": "Ringing",
                 "confidence": 0.7,
                 "observations": ["visible ripples"],
-                "likely_causes": ["belt tension", "input shaping"]
+                "likely_causes": ["belt tension", "input shaping"],
             }
 
     monkeypatch.setattr(vs_mod, "VisionService", lambda: DummyVisionMech())
     from app.services import router_service as rs_mod
+
     monkeypatch.setattr(rs_mod, "VisionService", lambda: DummyVisionMech())
     service = RouterService()
     result = await service.diagnose_from_image(b"img", context=None)
@@ -220,3 +242,31 @@ async def test_router_service_quality_fallback_all():
         assert result["classification"] == "quality"
         assert result["handler"] == "csv_lookup"
         assert isinstance(result["recommendations"], list)
+
+
+@pytest.mark.asyncio
+async def test_router_service_llm_handler_placeholder():
+    """Non-csv_lookup handler invokes LLM service (or returns placeholder if not configured)."""
+    service = RouterService()
+    with (
+        patch("app.services.router_service.get_semantic_router") as mock_get_router,
+        patch("app.services.router_service.get_llm_service") as mock_get_llm,
+    ):
+        mock_router = MagicMock()
+        mock_router.classify_query.return_value = {
+            "route_name": "general",
+            "confidence": 0.3,
+            "handler": "llm",
+        }
+        mock_get_router.return_value = mock_router
+
+        # Mock LLM service as not configured
+        mock_llm = MagicMock()
+        mock_llm.is_configured.return_value = False
+        mock_get_llm.return_value = mock_llm
+
+        result = await service.diagnose_from_text("random unclassifiable query")
+        assert result["handler"] == "llm"
+        assert result["classification"] == "general"
+        assert "not configured" in result["message"]
+        assert result["recommendations"] == []

@@ -460,6 +460,42 @@ def test_pressure_advance_validation_negative_pa():
 
 
 def test_pressure_advance_validation_high_pa():
+    def test_pressure_advance_asa_and_nylon_ranges():
+        """Test ASA and NYLON material ranges and midpoint config generation."""
+        for material, expected in {"ASA": [0.04, 0.07], "NYLON": [0.05, 0.08]}.items():
+            resp = client.post(
+                "/api/v1/calculators/pressure-advance",
+                json={"material_type": material, "print_speed": 90, "nozzle_diameter": 0.4},
+            )
+            assert resp.status_code == status.HTTP_200_OK
+            data = resp.json()
+            assert data["recommended_range"] == expected
+            # Midpoint used in klipper_config
+            midpoint = sum(expected) / 2
+            assert f"pressure_advance: {midpoint:.3f}" in data["klipper_config"]
+
+    def test_pressure_advance_midpoint_config_with_current_pa():
+        """When current_pa provided, ensure start_value differs from midpoint and config uses midpoint."""
+        resp = client.post(
+            "/api/v1/calculators/pressure-advance",
+            json={"material_type": "PETG", "current_pa": 0.07, "print_speed": 80, "nozzle_diameter": 0.4},
+        )
+        assert resp.status_code == status.HTTP_200_OK
+        data = resp.json()
+        assert data["start_value"] == 0.07
+        midpoint = sum(data["recommended_range"]) / 2
+        assert f"pressure_advance: {midpoint:.3f}" in data["klipper_config"]
+
+    def test_pressure_advance_unrecognized_material_error_message():
+        """Validate error message content for unrecognized material."""
+        resp = client.post(
+            "/api/v1/calculators/pressure-advance",
+            json={"material_type": "WOOD", "print_speed": 100, "nozzle_diameter": 0.4},
+        )
+        assert resp.status_code == status.HTTP_400_BAD_REQUEST
+        detail = resp.json()["detail"]
+        assert "Supported:" in detail and "PLA" in detail
+
     """Test validation rejects unrealistic PA values."""
     request_data = {
         "material_type": "PLA",

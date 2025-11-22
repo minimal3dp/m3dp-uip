@@ -34,12 +34,16 @@ def mock_genai():
 
 
 @pytest.fixture
-def vision_service(mock_genai):
-    """Create VisionService instance with mocked dependencies."""
+def vision_service(mock_genai, mock_settings):
+    """Create VisionService instance with mocked dependencies.
+
+    Depends on mock_settings to ensure GOOGLE_GENAI_API_KEY is present so
+    VisionService initializes as configured instead of raising configuration errors.
+    """
     mock_model = MagicMock()
     mock_genai.GenerativeModel.return_value = mock_model
     service = VisionService()
-    service.model = mock_model  # Ensure model is set
+    service.model = mock_model  # Ensure model is set even if init skipped
     return service
 
 

@@ -8,6 +8,7 @@ All calculations are formula-based, not LLM-generated.
 """
 
 import logging
+from app.services.csv_loader import get_csv_loader
 
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
@@ -283,30 +284,91 @@ async def calculate_input_shaping(request: InputShapingRequest):
         f"Input shaping calculation: test_type={request.test_type}, x_freq={request.x_frequency}, y_freq={request.y_frequency}"
     )
 
-    def pick_shaper(freq: float) -> str:
-        if freq < 40:
-            return "EI"
-        if freq < 50:
-            return "MZV"
-        if freq < 60:
-            return "2HUMP_EI"
-        return "3HUMP_EI"
+    loader = get_csv_loader()
+    df = loader.get_input_shaping_data()
 
-    shaper_x = pick_shaper(request.x_frequency)
-    shaper_y = pick_shaper(request.y_frequency)
+    # Expected DataFrame rows (after comments stripped):
+    # index 0: Test Type (CSV line 5)
+    # index 1: X Frequency (CSV line 6)
+    # index 2: Y Frequency (CSV line 7)
+    # index 3: X Shaper (CSV line 8)
+    # index 4: Y Shaper (CSV line 9)
+    # index 5: Max Accel (CSV line 10)
+    # index 6: Square Corner Velocity (CSV line 11)
+    if df is None:
+        # Fallback to heuristic if CSV missing
+        logger.warning("input_shaping.csv not loaded; using heuristic fallback")
+        def pick_shaper(freq: float) -> str:
+            if freq < 40:
+                return "EI"
+            if freq < 50:
+                return "MZV"
+            if freq < 60:
+                return "2HUMP_EI"
+            return "3HUMP_EI"
+        shaper_x = pick_shaper(request.x_frequency)
+        shaper_y = pick_shaper(request.y_frequency)
+        base_freq = min(request.x_frequency, request.y_frequency)
+        max_accel = min(int(base_freq * 100), 8000)
+        square_corner_velocity = 5.0
+    else:
+        # Extract shaper option lists from Notes column (rows 3 & 4)
+        try:
+            x_shaper_row = df.iloc[3]  # row index 3
+            y_shaper_row = df.iloc[4]  # row index 4
+            max_accel_row = df.iloc[5]  # row index 5
+            scv_row = df.iloc[6]        # row index 6
+        except Exception as e:
+            logger.error(f"Malformed input_shaping.csv: {e}")
+            raise HTTPException(status_code=500, detail="Malformed input_shaping.csv") from e
 
-    base_freq = min(request.x_frequency, request.y_frequency)
-    max_accel = min(int(base_freq * 100), 8000)
-    square_corner_velocity = 5.0  # From CSV constant row
+        def parse_options(notes: str) -> list[str]:
+            # Notes format: "Options: MZV, ZV, EI, 2HUMP_EI, 3HUMP_EI"
+            if not isinstance(notes, str) or 'Options:' not in notes:
+                return []
+            return [opt.strip() for opt in notes.split('Options:')[-1].split(',') if opt.strip()]
+
+        shaper_options = parse_options(x_shaper_row.get('Notes', '')) or ["MZV", "ZV", "EI", "2HUMP_EI", "3HUMP_EI"]
+
+        # Frequency segmentation derived from expected range (rows 1 & 2: 30-80 Hz)
+        # Strategy: lower frequencies need more damping (EI), mid range MZV/ZV, higher multihump EI variants.
+        def pick_from_options(freq: float) -> str:
+            if freq < 40 and "EI" in shaper_options:
+                return "EI"
+            if 40 <= freq < 50 and "MZV" in shaper_options:
+                return "MZV"
+            if 50 <= freq < 60 and "2HUMP_EI" in shaper_options:
+                return "2HUMP_EI"
+            if 60 <= freq and "3HUMP_EI" in shaper_options:
+                return "3HUMP_EI"
+            # Fallback first option
+            return shaper_options[0]
+
+        shaper_x = pick_from_options(request.x_frequency)
+        shaper_y = pick_from_options(request.y_frequency)
+
+        # Max accel heuristic clamped by CSV expected range (row 5 Expected_Range: 1000-10000)
+        base_freq = min(request.x_frequency, request.y_frequency)
+        suggested_accel = int(base_freq * 120)  # Slightly more aggressive than *100
+        max_accel = max(1000, min(suggested_accel, 10000))
+
+        # Square corner velocity from Formula column of row 6 (value 5.0)
+        square_corner_velocity = float(scv_row.get('Formula', 5.0))
 
     klipper_config = (
-        f"[input_shaper]\nshaper_type_x: {shaper_x}\nshaper_freq_x: {request.x_frequency:.1f}\n"
-        f"shaper_type_y: {shaper_y}\nshaper_freq_y: {request.y_frequency:.1f}\n"
-        f"max_accel: {max_accel}\nsquare_corner_velocity: {square_corner_velocity:.1f}"
+        f"[input_shaper]\n"  # Section header
+        f"shaper_type_x: {shaper_x}\n"
+        f"shaper_freq_x: {request.x_frequency:.1f}\n"
+        f"shaper_type_y: {shaper_y}\n"
+        f"shaper_freq_y: {request.y_frequency:.1f}\n"
+        f"max_accel: {max_accel}\n"
+        f"square_corner_velocity: {square_corner_velocity:.1f}"
     )
 
     notes = (
-        "Run SHAPER_CALIBRATE in Klipper for precise frequencies. Adjust max_accel after verifying ringing is reduced."
+        "Frequencies sourced from input_shaping.csv (lines 6-7). Shaper options from lines 8-9. "
+        "Acceleration bounded by line 10 expected range. Square corner velocity from line 11."\
+        " Run SHAPER_CALIBRATE for precise measurements before applying final config."
     )
 
     return InputShapingResponse(

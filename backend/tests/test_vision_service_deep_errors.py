@@ -94,3 +94,21 @@ async def test_missing_fields_inside_markdown_block(sample_image):
         mock_model.generate_content.return_value = bad_response
         with pytest.raises(ValueError, match="missing fields"):
             await service.analyze_image(sample_image)
+
+
+@pytest.mark.asyncio
+async def test_api_runtime_exception_wraps_as_runtimeerror(sample_image):
+    """Generic exceptions during API call are wrapped as RuntimeError."""
+    with (
+        patch("app.services.vision_service.settings") as settings,
+        patch("app.services.vision_service.genai") as genai,
+    ):
+        settings.GOOGLE_GENAI_API_KEY = "key"
+        settings.GEMINI_MODEL = "gemini-1.5-pro"
+        mock_model = MagicMock()
+        genai.GenerativeModel.return_value = mock_model
+        service = VisionService()
+        service.model = mock_model
+        mock_model.generate_content.side_effect = RuntimeError("Network timeout")
+        with pytest.raises(RuntimeError, match="Vision API error"):
+            await service.analyze_image(sample_image)
