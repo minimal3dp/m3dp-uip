@@ -17,24 +17,30 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Check directories exist
-        id: check_dirs
+        id: detect
         run: |
-          if [ -d "backend" ] && [ -d "frontend" ]; then
-            echo "exists=true" >> $GITHUB_OUTPUT
+          if [ -d "frontend" ]; then
+            echo "frontend=true" >> $GITHUB_OUTPUT
           else
-            echo "exists=false" >> $GITHUB_OUTPUT
-            echo "⚠️ backend/ or frontend/ directory not found - skipping E2E badge"
+            echo "frontend=false" >> $GITHUB_OUTPUT
+            echo "⚠️ frontend/ directory not found - skipping E2E badge generation"
             exit 0
           fi
+          if [ -d "backend" ]; then
+            echo "backend=true" >> $GITHUB_OUTPUT
+          else
+            echo "backend=false" >> $GITHUB_OUTPUT
+            echo "ℹ️ backend/ directory missing - will skip backend-dependent steps and mark badge 'no tests'"
+          fi
 
-      - name: Set up Python
-        if: steps.check_dirs.outputs.exists == 'true'
+      - name: Set up Python (only if backend present)
+        if: steps.detect.outputs.frontend == 'true' && steps.detect.outputs.backend == 'true'
         uses: actions/setup-python@v5
         with:
           python-version: '3.12'
 
       - name: Set up Node.js
-        if: steps.check_dirs.outputs.exists == 'true'
+        if: steps.detect.outputs.frontend == 'true'
         uses: actions/setup-node@v4
         with:
           node-version: '20'
@@ -42,7 +48,7 @@ jobs:
           cache-dependency-path: frontend/package-lock.json
 
       - name: Install backend deps (UV)
-        if: steps.check_dirs.outputs.exists == 'true'
+        if: steps.detect.outputs.frontend == 'true' && steps.detect.outputs.backend == 'true'
         run: |
           pip install uv
           cd backend
@@ -52,17 +58,17 @@ jobs:
           uv pip install -e '.[dev]' || uv pip install --system -e '.[dev]'
 
       - name: Install frontend deps
-        if: steps.check_dirs.outputs.exists == 'true'
+        if: steps.detect.outputs.frontend == 'true'
         working-directory: frontend
         run: npm ci
 
       - name: Install Playwright Browsers
-        if: steps.check_dirs.outputs.exists == 'true'
+        if: steps.detect.outputs.frontend == 'true'
         working-directory: frontend
         run: npx playwright install --with-deps
 
       - name: Start backend
-        if: steps.check_dirs.outputs.exists == 'true'
+        if: steps.detect.outputs.frontend == 'true' && steps.detect.outputs.backend == 'true'
         working-directory: backend
         run: |
           uv run uvicorn app.main:app --host 0.0.0.0 --port 8000 &
@@ -72,7 +78,7 @@ jobs:
           curl -s http://localhost:8000/docs || (echo "Backend failed" && exit 1)
 
       - name: Start frontend
-        if: steps.check_dirs.outputs.exists == 'true'
+        if: steps.detect.outputs.frontend == 'true'
         working-directory: frontend
         run: |
           npm run dev &
@@ -81,8 +87,8 @@ jobs:
             if curl -s http://localhost:3000 > /dev/null; then echo "Frontend up"; break; fi; sleep 1; done
           curl -s http://localhost:3000 || (echo "Frontend failed" && exit 1)
 
-      - name: Run Playwright tests (JSON)
-        if: steps.check_dirs.outputs.exists == 'true'
+      - name: Run Playwright tests (JSON) (only if backend present)
+        if: steps.detect.outputs.frontend == 'true' && steps.detect.outputs.backend == 'true'
         working-directory: frontend
         env:
           NUXT_PUBLIC_API_BASE: http://localhost:8000
@@ -94,8 +100,14 @@ jobs:
           # Do not commit report; used only for badge generation
           ls -l playwright-report.json || true
 
+      - name: Create empty report when backend missing
+        if: steps.detect.outputs.frontend == 'true' && steps.detect.outputs.backend != 'true'
+        run: |
+          echo '{}' > playwright-report.json
+          ls -l playwright-report.json || true
+
       - name: Generate badge
-        if: steps.check_dirs.outputs.exists == 'true'
+        if: steps.detect.outputs.frontend == 'true'
         run: |
           python - <<'PY'
           import os
@@ -137,7 +149,7 @@ jobs:
           PY
 
       - name: Commit badge
-        if: steps.check_dirs.outputs.exists == 'true'
+        if: steps.detect.outputs.frontend == 'true'
         run: |
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
@@ -145,7 +157,7 @@ jobs:
           if git diff --cached --quiet; then echo "No badge changes"; else git commit -m "chore: update frontend e2e badge"; git push; fi
 
       - name: Upload badge artifact
-        if: steps.check_dirs.outputs.exists == 'true'
+        if: steps.detect.outputs.frontend == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: frontend-e2e-badge

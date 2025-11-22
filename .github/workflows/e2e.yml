@@ -14,45 +14,46 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Check backend directory exists
-        id: check_backend
+      - name: Detect backend presence
         run: |
           if [ -d "backend" ]; then
-            echo "exists=true" >> $GITHUB_OUTPUT
+            echo "Backend directory found"
+            echo "skip=false" >> $GITHUB_OUTPUT
           else
-            echo "exists=false" >> $GITHUB_OUTPUT
-            echo "⚠️ backend/ directory not found - skipping tests"
-            exit 0
+            echo "⚠️ backend/ directory not found - backend tests will be skipped"
+            echo "skip=true" >> $GITHUB_OUTPUT
           fi
+        id: backend_check
 
       - name: Set up Python
-        if: steps.check_backend.outputs.exists == 'true'
+        if: steps.backend_check.outputs.skip == 'false'
         uses: actions/setup-python@v5
         with:
           python-version: '3.12'
 
       - name: Install UV
-        if: steps.check_backend.outputs.exists == 'true'
+        if: steps.backend_check.outputs.skip == 'false'
         run: pip install uv
 
       - name: Prepare backend environment (uv)
-        if: steps.check_backend.outputs.exists == 'true'
-        working-directory: backend
+        if: steps.backend_check.outputs.skip == 'false'
         run: |
-          # Use system install if no venv yet to avoid failure
+          if [ ! -d backend ]; then echo "Unexpected missing backend dir"; exit 1; fi
+          cd backend
           if [ ! -d ".venv" ]; then
             uv venv .venv
           fi
           uv pip install -e '.[dev]' || uv pip install --system -e '.[dev]'
 
       - name: Run backend tests (pytest w/ coverage)
-        if: steps.check_backend.outputs.exists == 'true'
-        env:
-          PYTHONPATH: backend
-        run: pytest --cov=app --cov-report=html:backend/htmlcov -q
+        if: steps.backend_check.outputs.skip == 'false'
+        run: |
+          export PYTHONPATH=backend
+          cd backend
+          pytest --cov=app --cov-report=html:htmlcov -q
 
       - name: Upload backend coverage report
-        if: steps.check_backend.outputs.exists == 'true'
+        if: steps.backend_check.outputs.skip == 'false'
         uses: actions/upload-artifact@v4
         with:
           name: backend-coverage-html
@@ -67,40 +68,40 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Check directories exist
-        id: check_dirs
+      - name: Detect backend & frontend presence
         run: |
           if [ -d "backend" ] && [ -d "frontend" ]; then
-            echo "exists=true" >> $GITHUB_OUTPUT
+            echo "Both backend and frontend present"
+            echo "skip=false" >> $GITHUB_OUTPUT
           else
-            echo "exists=false" >> $GITHUB_OUTPUT
-            echo "⚠️ backend/ or frontend/ directory not found - skipping E2E tests"
-            exit 0
+            echo "⚠️ Missing backend or frontend - E2E tests will be skipped"
+            echo "skip=true" >> $GITHUB_OUTPUT
           fi
+        id: e2e_check
 
       - name: Set up Python
-        if: steps.check_dirs.outputs.exists == 'true'
+        if: steps.e2e_check.outputs.skip == 'false'
         uses: actions/setup-python@v5
         with:
           python-version: '3.12'
 
       - name: Install UV
-        if: steps.check_dirs.outputs.exists == 'true'
+        if: steps.e2e_check.outputs.skip == 'false'
         run: pip install uv
 
       - name: Prepare backend environment (uv)
-        if: steps.check_dirs.outputs.exists == 'true'
-        working-directory: backend
+        if: steps.e2e_check.outputs.skip == 'false'
         run: |
+          cd backend
           if [ ! -d ".venv" ]; then
             uv venv .venv
           fi
           uv pip install -e '.[dev]' || uv pip install --system -e '.[dev]'
 
       - name: Start backend
-        if: steps.check_dirs.outputs.exists == 'true'
-        working-directory: backend
+        if: steps.e2e_check.outputs.skip == 'false'
         run: |
+          cd backend
           uv run uvicorn app.main:app --host 0.0.0.0 --port 8000 &
           echo "Waiting for backend..."
           for i in {1..30}; do
@@ -108,7 +109,7 @@ jobs:
           curl -s http://localhost:8000/docs || (echo "Backend failed" && exit 1)
 
       - name: Set up Node.js
-        if: steps.check_dirs.outputs.exists == 'true'
+        if: steps.e2e_check.outputs.skip == 'false'
         uses: actions/setup-node@v4
         with:
           node-version: '20'
@@ -116,19 +117,17 @@ jobs:
           cache-dependency-path: frontend/package-lock.json
 
       - name: Install frontend dependencies
-        if: steps.check_dirs.outputs.exists == 'true'
-        working-directory: frontend
+        if: steps.e2e_check.outputs.skip == 'false'
         run: npm ci
 
       - name: Install Playwright Browsers
-        if: steps.check_dirs.outputs.exists == 'true'
-        working-directory: frontend
+        if: steps.e2e_check.outputs.skip == 'false'
         run: npx playwright install --with-deps
 
       - name: Start frontend
-        if: steps.check_dirs.outputs.exists == 'true'
-        working-directory: frontend
+        if: steps.e2e_check.outputs.skip == 'false'
         run: |
+          cd frontend
           npm run dev &
           echo "Waiting for frontend..."
           for i in {1..40}; do
@@ -136,15 +135,15 @@ jobs:
           curl -s http://localhost:3000 || (echo "Frontend failed" && exit 1)
 
       - name: Run Playwright tests
-        if: steps.check_dirs.outputs.exists == 'true'
-        working-directory: frontend
+        if: steps.e2e_check.outputs.skip == 'false'
         env:
           NUXT_PUBLIC_API_BASE: http://localhost:8000
         run: |
+          cd frontend
           npx playwright test --reporter=line || echo "Playwright tests failed or not present; continuing"
 
       - name: Upload Playwright Report (on failure)
-        if: failure() && steps.check_dirs.outputs.exists == 'true'
+        if: failure() && steps.e2e_check.outputs.skip == 'false'
         uses: actions/upload-artifact@v4
         with:
           name: playwright-report
