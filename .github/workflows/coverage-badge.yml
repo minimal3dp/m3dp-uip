@@ -16,30 +16,55 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Detect backend presence
+        id: backend_check
+        run: |
+          if [ -d "backend" ]; then
+            echo "Backend present"
+            echo "skip=false" >> $GITHUB_OUTPUT
+          else
+            echo "⚠️ backend/ directory not found - skipping coverage badge"
+            echo "skip=true" >> $GITHUB_OUTPUT
+          fi
+
       - name: Set up Python
+        if: steps.backend_check.outputs.skip == 'false'
         uses: actions/setup-python@v5
         with:
           python-version: '3.12'
 
       - name: Install UV
+        if: steps.backend_check.outputs.skip == 'false'
         run: pip install uv
 
-      - name: Install backend dependencies
+      - name: Prepare backend environment (uv)
+        if: steps.backend_check.outputs.skip == 'false'
         working-directory: backend
-        run: uv pip install -e '.[dev]'
+        run: |
+          if [ ! -d ".venv" ]; then
+            uv venv .venv
+          fi
+          uv pip install -e '.[dev]' || uv pip install --system -e '.[dev]'
 
       - name: Run tests with coverage (XML)
-        env:
-          PYTHONPATH: backend
-        run: pytest --cov=app --cov-report=xml:backend/coverage.xml -q
+        if: steps.backend_check.outputs.skip == 'false'
+        run: |
+          export PYTHONPATH=backend
+          cd backend
+          pytest --cov=app --cov-report=xml:coverage.xml -q
 
       - name: Install coverage-badge
+        if: steps.backend_check.outputs.skip == 'false'
         run: pip install coverage-badge
 
       - name: Generate badge SVG
-        run: coverage-badge -i backend/coverage.xml -o coverage-badge.svg -f
+        if: steps.backend_check.outputs.skip == 'false'
+        run: |
+          if [ -f backend/coverage.xml ]; then INPUT=backend/coverage.xml; else INPUT=coverage.xml; fi
+          coverage-badge -i "$INPUT" -o coverage-badge.svg -f
 
       - name: Commit badge
+        if: steps.backend_check.outputs.skip == 'false'
         run: |
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
@@ -47,6 +72,7 @@ jobs:
           if git diff --cached --quiet; then echo "No badge changes"; else git commit -m "chore: update coverage badge"; git push; fi
 
       - name: Upload badge artifact
+        if: steps.backend_check.outputs.skip == 'false'
         uses: actions/upload-artifact@v4
         with:
           name: coverage-badge
