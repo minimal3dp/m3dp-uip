@@ -227,6 +227,21 @@ async def analyze_text(request: DiagnosisRequest):
     )
 
 
+@router.get("/csv-validation", summary="List CSV validation errors")
+async def csv_validation_status():
+    """Expose CSV loader validation status for diagnostics.
+
+    Returns loaded state, file list, and structured validation errors.
+    """
+    loader = get_csv_loader()
+    return {
+        "csv_loaded": loader.is_loaded(),
+        "loaded_files": loader.get_available_csvs(),
+        "validation_errors": loader.get_validation_errors(),
+        "has_errors": loader.has_validation_errors(),
+    }
+
+
 @router.post("/classify", summary="Low-cost keyword classification", response_model=dict)
 async def quick_classify(request: DiagnosisRequest):
     """Lightweight classification endpoint avoiding full router pipeline.
