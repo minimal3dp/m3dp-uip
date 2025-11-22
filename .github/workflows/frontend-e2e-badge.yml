@@ -63,8 +63,11 @@ jobs:
           NUXT_PUBLIC_API_BASE: http://localhost:8000
         run: |
           npx playwright test --reporter=json > ../playwright-report.json || true
+          # Ensure report file exists to prevent workflow failure
+          cd ..
+          test -f playwright-report.json || echo '{}' > playwright-report.json
           # Do not commit report; used only for badge generation
-          ls -l ../playwright-report.json
+          ls -l playwright-report.json || true
 
       - name: Generate badge
         run: python scripts/generate_playwright_badge.py
