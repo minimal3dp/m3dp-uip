@@ -11,6 +11,7 @@
       <div class="space-y-8">
         <RotationDistanceCalculator />
         <PressureAdvanceCalculator />
+        <OrcaSlicerFlowYoloCalculator />
       </div>
 
       <div class="mt-12 text-center text-zinc-500 text-sm">

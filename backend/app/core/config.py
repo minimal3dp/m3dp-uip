@@ -47,6 +47,7 @@ class Settings(BaseSettings):
 
     # Google Analytics
     GA4_MEASUREMENT_ID: str = "G-VQ8RPWC2MK"
+    GA4_API_SECRET: str = ""  # Required for Measurement Protocol API
 
     # Database (Future - Firestore or PostgreSQL)
     DATABASE_URL: str = ""

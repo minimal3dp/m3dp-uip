@@ -13,6 +13,7 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
 from app.services.csv_loader import get_csv_loader
+from app.services.ga4_tracker import track_calculator_use
 
 logger = logging.getLogger(__name__)
 
@@ -388,6 +389,16 @@ async def calculate_input_shaping(request: InputShapingRequest):
         " Run SHAPER_CALIBRATE for precise measurements before applying final config."
     )
 
+    # Track calculator usage
+    await track_calculator_use(
+        "input_shaping",
+        params={
+            "shaper_x": shaper_x,
+            "shaper_y": shaper_y,
+            "max_accel": max_accel,
+        },
+    )
+
     return InputShapingResponse(
         shaper_x=shaper_x,
         shaper_y=shaper_y,
@@ -461,6 +472,15 @@ async def calculate_rotation_distance(request: RotationDistanceRequest):
                 f"⚠️ Extrusion deviation is {deviation:.1f}mm (outside ±2mm tolerance). "
                 f"Update rotation_distance to {new_rotation_distance:.3f} and re-calibrate."
             )
+
+        # Track calculator usage
+        await track_calculator_use(
+            "rotation_distance",
+            params={
+                "within_tolerance": within_tolerance,
+                "change_percent": round(change_percent, 2),
+            },
+        )
 
         return RotationDistanceResponse(
             new_rotation_distance=round(new_rotation_distance, 3),
@@ -550,6 +570,15 @@ async def calculate_orcaslicer_flow(request: OrcaSlicerFlowRequest):
                 f"Update your OrcaSlicer filament profile with this value."
             )
 
+        # Track calculator usage
+        await track_calculator_use(
+            "orcaslicer_flow",
+            params={
+                "pass_2_completed": pass_2_flow is not None,
+                "change_from_original": round(change_from_original, 2),
+            },
+        )
+
         return OrcaSlicerFlowResponse(
             pass_1_flow=round(pass_1_flow, 3),
             pass_2_flow=round(pass_2_flow, 3) if pass_2_flow is not None else None,
@@ -617,6 +646,14 @@ async def calculate_orcaslicer_flow_yolo(request: OrcaSlicerFlowYoloRequest):
             f"({change_from_original:+.1f}% from original). "
             f"Update your OrcaSlicer filament profile. "
             f"For best accuracy, consider running the two-pass calibration."
+        )
+
+        # Track calculator usage
+        await track_calculator_use(
+            "orcaslicer_flow_yolo",
+            params={
+                "change_from_original": round(change_from_original, 2),
+            },
         )
 
         return OrcaSlicerFlowYoloResponse(
@@ -741,6 +778,15 @@ async def calculate_pressure_advance(request: PressureAdvanceRequest):
     calibration_method = (
         "Use Klipper's TUNING_TOWER command or OrcaSlicer's Pressure Advance "
         "calibration pattern. Look for sharpest corners with no bulging."
+    )
+
+    # Track calculator usage
+    await track_calculator_use(
+        "pressure_advance",
+        params={
+            "material_type": material_upper,
+            "recommended_range": f"{recommended_range[0]:.3f}-{recommended_range[1]:.3f}",
+        },
     )
 
     return PressureAdvanceResponse(

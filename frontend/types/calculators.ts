@@ -37,3 +37,15 @@ export interface PressureAdvanceResponse {
   klipper_config: string
   calibration_method: string
 }
+
+export interface OrcaSlicerFlowYoloRequest {
+  old_flow_rate: number
+  yolo_slide_value: number
+}
+
+export interface OrcaSlicerFlowYoloResponse {
+  new_flow: number
+  change_from_original: number
+  slicer_config: string
+  recommendation: string
+}
