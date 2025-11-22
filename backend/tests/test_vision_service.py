@@ -36,11 +36,15 @@ def mock_genai():
 @pytest.fixture
 def vision_service(mock_genai):
     """Create VisionService instance with mocked dependencies."""
-    mock_model = MagicMock()
-    mock_genai.GenerativeModel.return_value = mock_model
-    service = VisionService()
-    service.model = mock_model  # Ensure model is set
-    return service
+    with patch("app.services.vision_service.settings") as settings:
+        settings.GOOGLE_GENAI_API_KEY = "test-api-key"
+        settings.GEMINI_MODEL = "gemini-1.5-pro"
+        mock_model = MagicMock()
+        mock_genai.GenerativeModel.return_value = mock_model
+        service = VisionService()
+        service.model = mock_model  # Ensure model is set
+        service.api_key = "test-api-key"  # Explicitly set api_key for is_configured()
+        yield service
 
 
 @pytest.fixture
