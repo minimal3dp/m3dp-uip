@@ -35,10 +35,15 @@ jobs:
         if: steps.check_backend.outputs.exists == 'true'
         run: pip install uv
 
-      - name: Install backend dependencies
+      - name: Prepare backend environment (uv)
         if: steps.check_backend.outputs.exists == 'true'
         working-directory: backend
-        run: uv pip install -e '.[dev]'
+        run: |
+          # Use system install if no venv yet to avoid failure
+          if [ ! -d ".venv" ]; then
+            uv venv .venv
+          fi
+          uv pip install -e '.[dev]' || uv pip install --system -e '.[dev]'
 
       - name: Run backend tests (pytest w/ coverage)
         if: steps.check_backend.outputs.exists == 'true'
@@ -83,10 +88,14 @@ jobs:
         if: steps.check_dirs.outputs.exists == 'true'
         run: pip install uv
 
-      - name: Install backend dependencies
+      - name: Prepare backend environment (uv)
         if: steps.check_dirs.outputs.exists == 'true'
         working-directory: backend
-        run: uv pip install -e '.[dev]'
+        run: |
+          if [ ! -d ".venv" ]; then
+            uv venv .venv
+          fi
+          uv pip install -e '.[dev]' || uv pip install --system -e '.[dev]'
 
       - name: Start backend
         if: steps.check_dirs.outputs.exists == 'true'

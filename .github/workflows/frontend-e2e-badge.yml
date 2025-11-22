@@ -43,7 +43,13 @@ jobs:
 
       - name: Install backend deps (UV)
         if: steps.check_dirs.outputs.exists == 'true'
-        run: pip install uv && cd backend && uv pip install -e '.[dev]'
+        run: |
+          pip install uv
+          cd backend
+          if [ ! -d ".venv" ]; then
+            uv venv .venv
+          fi
+          uv pip install -e '.[dev]' || uv pip install --system -e '.[dev]'
 
       - name: Install frontend deps
         if: steps.check_dirs.outputs.exists == 'true'
