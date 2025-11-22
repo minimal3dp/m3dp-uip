@@ -233,6 +233,8 @@ playwright-report.json
 node_modules/
 .next/
 out/
+frontend/.nuxt/
+frontend/playwright-report/
 
 # OS
 .DS_Store
