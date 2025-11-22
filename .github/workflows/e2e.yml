@@ -47,7 +47,7 @@ jobs:
         run: pytest --cov=app --cov-report=html:backend/htmlcov -q
 
       - name: Upload backend coverage report
-        if: steps.check_backend.outputs.exists == 'true' && always()
+        if: steps.check_backend.outputs.exists == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: backend-coverage-html
@@ -135,7 +135,7 @@ jobs:
           npx playwright test --reporter=line || echo "Playwright tests failed or not present; continuing"
 
       - name: Upload Playwright Report (on failure)
-        if: steps.check_dirs.outputs.exists == 'true' && failure()
+        if: failure() && steps.check_dirs.outputs.exists == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: playwright-report
