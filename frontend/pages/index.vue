@@ -46,7 +46,7 @@
             <div class="text-sm text-zinc-400">CSV Knowledge Bases</div>
           </div>
           <div class="text-center">
-            <div class="text-3xl font-bold text-brand-orange mb-2">2</div>
+            <div class="text-3xl font-bold text-brand-orange mb-2">5</div>
             <div class="text-sm text-zinc-400">Active Calculators</div>
           </div>
         </div>

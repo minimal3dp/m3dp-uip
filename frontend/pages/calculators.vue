@@ -9,14 +9,25 @@
       </div>
 
       <div class="space-y-8">
+        <!-- Extrusion Calibration -->
         <RotationDistanceCalculator />
-        <PressureAdvanceCalculator />
+
+        <!-- Flow Rate (Two-Pass Recommended) -->
+        <OrcaSlicerFlowCalculator />
+
+        <!-- Flow Rate (YOLO Quick Method) -->
         <OrcaSlicerFlowYoloCalculator />
+
+        <!-- Pressure Advance -->
+        <PressureAdvanceCalculator />
+
+        <!-- Input Shaping -->
+        <InputShapingCalculator />
       </div>
 
       <div class="mt-12 text-center text-zinc-500 text-sm">
-        <p>Formulas validated against <a href="https://www.klipper3d.org" target="_blank" class="text-brand-orange hover:underline">Klipper documentation</a></p>
-        <p class="mt-2">All calculations are deterministic - no LLM hallucinations</p>
+        <p>Formulas validated against <a href="https://www.klipper3d.org" target="_blank" class="text-brand-orange hover:underline">Klipper documentation</a> & OrcaSlicer calibration workflow.</p>
+        <p class="mt-2">All calculations are deterministic spreadsheet translations — zero LLM hallucinations.</p>
       </div>
     </div>
   </NuxtLayout>
