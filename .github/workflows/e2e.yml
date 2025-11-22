@@ -8,6 +8,7 @@ on:
 
 jobs:
   backend-tests:
+    if: ${{ hashFiles('backend/**') != '' }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -40,6 +41,7 @@ jobs:
           retention-days: 7
 
   e2e:
+    if: ${{ hashFiles('frontend/**') != '' && hashFiles('backend/**') != '' }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
     needs: backend-tests
