@@ -1,9 +1,12 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
-  compatibilityDate: '2024-11-01',
+  // Removed non-standard compatibilityDate property (Cloudflare-specific) to avoid unexpected plugin behavior
   devtools: { enabled: true },
 
   modules: ['@nuxtjs/tailwindcss', '@pinia/nuxt'],
+
+  // Explicit global CSS registration to ensure Tailwind directives are processed
+  css: ['~/assets/css/main.css'],
 
   tailwindcss: {
     cssPath: '~/assets/css/main.css',
@@ -41,13 +44,10 @@ export default defineNuxtConfig({
     typeCheck: true,
   },
 
+  // Remove SCSS preprocessor injection (unused) to reduce CSS pipeline complexity during debugging
   vite: {
     css: {
-      preprocessorOptions: {
-        scss: {
-          additionalData: '@use "@/assets/scss/vars.scss" as *;'
-        }
-      }
+      preprocessorOptions: {}
     }
   }
 })

@@ -54,6 +54,76 @@ class RotationDistanceResponse(BaseModel):
     recommendation: str = Field(..., description="Action recommendation")
 
 
+class OrcaSlicerFlowRequest(BaseModel):
+    """Request for OrcaSlicer Flow Rate calibration (two-pass method)."""
+
+    old_flow_rate: float = Field(
+        1.0,
+        gt=0,
+        le=2,
+        description="Current flow rate from slicer (1.0 = 100%)",
+        examples=[0.99],
+    )
+    pass_1_slide_value: float = Field(
+        ...,
+        ge=-50,
+        le=50,
+        description="Slide number with smoothest surface from Pass 1 (e.g., -10 for 90% slide)",
+        examples=[-10],
+    )
+    pass_2_slide_value: float | None = Field(
+        None,
+        ge=-50,
+        le=50,
+        description="Slide number with smoothest surface from Pass 2 (optional for Pass 1 calculation)",
+        examples=[-1],
+    )
+
+
+class OrcaSlicerFlowYoloRequest(BaseModel):
+    """Request for OrcaSlicer Flow Rate YOLO calibration (single-pass method)."""
+
+    old_flow_rate: float = Field(
+        1.0,
+        gt=0,
+        le=2,
+        description="Current flow rate from slicer (1.0 = 100%)",
+        examples=[1.0],
+    )
+    yolo_slide_value: float = Field(
+        ...,
+        ge=-1,
+        le=1,
+        description="Slide value with smoothest surface from YOLO test (e.g., -0.035)",
+        examples=[-0.035],
+    )
+
+
+class OrcaSlicerFlowResponse(BaseModel):
+    """Response with calculated OrcaSlicer flow rate."""
+
+    pass_1_flow: float = Field(..., description="Flow rate after Pass 1")
+    pass_2_flow: float | None = Field(
+        None, description="Final flow rate after Pass 2 (if provided)"
+    )
+    change_from_original: float = Field(
+        ..., description="Percentage change from original flow rate"
+    )
+    slicer_config: str = Field(..., description="Slicer config value to copy")
+    recommendation: str = Field(..., description="Action recommendation")
+
+
+class OrcaSlicerFlowYoloResponse(BaseModel):
+    """Response with calculated OrcaSlicer YOLO flow rate."""
+
+    new_flow: float = Field(..., description="New flow rate after YOLO calibration")
+    change_from_original: float = Field(
+        ..., description="Percentage change from original flow rate"
+    )
+    slicer_config: str = Field(..., description="Slicer config value to copy")
+    recommendation: str = Field(..., description="Action recommendation")
+
+
 class PressureAdvanceRequest(BaseModel):
     """Request for pressure advance calibration guidance."""
 
@@ -121,6 +191,24 @@ async def list_calculators():
                 "csv_source": "klipper_calibrations/extruder_rotation_distance.csv",
                 "description": "Calculate correct rotation distance for extruder stepper motor",
                 "endpoint": "/api/v1/calculators/rotation-distance",
+                "method": "POST",
+            },
+            {
+                "id": "orcaslicer-flow",
+                "name": "OrcaSlicer Flow Rate (Recommended)",
+                "category": "Extrusion",
+                "csv_source": "klipper_calibrations/flow_calibration.csv",
+                "description": "Two-pass flow calibration using OrcaSlicer's built-in tool",
+                "endpoint": "/api/v1/calculators/orcaslicer-flow",
+                "method": "POST",
+            },
+            {
+                "id": "orcaslicer-flow-yolo",
+                "name": "OrcaSlicer Flow YOLO (Quick)",
+                "category": "Extrusion",
+                "csv_source": "klipper_calibrations/orcaslicer_flow_yolo.csv",
+                "description": "Single-pass quick flow calibration for fast adjustments",
+                "endpoint": "/api/v1/calculators/orcaslicer-flow-yolo",
                 "method": "POST",
             },
             {
@@ -213,6 +301,159 @@ async def calculate_rotation_distance(request: RotationDistanceRequest):
         raise HTTPException(status_code=400, detail="Requested extrusion cannot be zero") from e
     except Exception as e:
         logger.error(f"Error calculating rotation distance: {e}")
+        raise HTTPException(status_code=500, detail="Calculation error") from e
+
+
+@router.post("/orcaslicer-flow", response_model=OrcaSlicerFlowResponse)
+async def calculate_orcaslicer_flow(request: OrcaSlicerFlowRequest):
+    """
+    Calculate OrcaSlicer Flow Rate using two-pass method (RECOMMENDED).
+
+    **Formulas from CSV** (flow_calibration.csv, rows 5-6):
+    ```
+    pass_1_flow = old_flow_rate * (100 + pass_1_slide_value) / 100
+    pass_2_flow = pass_1_flow * (100 + pass_2_slide_value) / 100
+    ```
+
+    **Calibration Process**:
+    1. Open OrcaSlicer -> Calibration -> Flow Rate -> Pass 1
+    2. Print the calibration model
+    3. Feel each slide and determine the smoothest surface
+    4. Note the slide number (e.g., -10 for 90% slide)
+    5. Calculate Pass 1 flow rate
+    6. Run Pass 2 with Pass 1 flow rate
+    7. Enter Pass 2 slide value for final flow rate
+
+    **Why Two-Pass?**: More accurate than single-pass methods.
+    First pass gets you close, second pass fine-tunes.
+
+    Args:
+        request: Current flow rate and Pass 1/2 slide values
+
+    Returns:
+        Pass 1 and Pass 2 (if provided) flow rates with slicer config
+
+    Raises:
+        HTTPException: If calculation produces invalid result
+    """
+    logger.info(
+        f"OrcaSlicer Flow: old_flow={request.old_flow_rate}, "
+        f"pass_1_slide={request.pass_1_slide_value}, pass_2_slide={request.pass_2_slide_value}"
+    )
+
+    try:
+        # Formula: pass_1_flow = old_flow_rate * (100 + pass_1_slide_value) / 100
+        # From CSV row 5 (B20)
+        pass_1_flow = request.old_flow_rate * (100 + request.pass_1_slide_value) / 100
+
+        # If Pass 2 slide value provided, calculate final flow
+        pass_2_flow = None
+        if request.pass_2_slide_value is not None:
+            # Formula: pass_2_flow = pass_1_flow * (100 + pass_2_slide_value) / 100
+            # From CSV row 6 (B27)
+            pass_2_flow = pass_1_flow * (100 + request.pass_2_slide_value) / 100
+
+        # Determine which flow to use for config
+        final_flow = pass_2_flow if pass_2_flow is not None else pass_1_flow
+
+        # Calculate change from original
+        change_from_original = ((final_flow - request.old_flow_rate) / request.old_flow_rate) * 100
+
+        # Generate slicer config
+        slicer_config = f"Flow Rate: {final_flow:.3f}"
+
+        # Generate recommendation
+        if request.pass_2_slide_value is None:
+            recommendation = (
+                f"✅ Pass 1 complete. Flow rate: {pass_1_flow:.3f} "
+                f"({change_from_original:+.1f}% from original). "
+                f"Run Pass 2 with this flow rate for final calibration."
+            )
+        else:
+            recommendation = (
+                f"✅ Calibration complete! Final flow rate: {pass_2_flow:.3f} "
+                f"({change_from_original:+.1f}% from original). "
+                f"Update your OrcaSlicer filament profile with this value."
+            )
+
+        return OrcaSlicerFlowResponse(
+            pass_1_flow=round(pass_1_flow, 3),
+            pass_2_flow=round(pass_2_flow, 3) if pass_2_flow is not None else None,
+            change_from_original=round(change_from_original, 2),
+            slicer_config=slicer_config,
+            recommendation=recommendation,
+        )
+
+    except Exception as e:
+        logger.error(f"Error calculating OrcaSlicer flow: {e}")
+        raise HTTPException(status_code=500, detail="Calculation error") from e
+
+
+@router.post("/orcaslicer-flow-yolo", response_model=OrcaSlicerFlowYoloResponse)
+async def calculate_orcaslicer_flow_yolo(request: OrcaSlicerFlowYoloRequest):
+    """
+    Calculate OrcaSlicer Flow Rate using YOLO method (single-pass, quick).
+
+    **Formula from CSV** (orcaslicer_flow_yolo.csv, row 4):
+    ```
+    new_flow = old_flow_rate + yolo_slide_value
+    ```
+
+    **Calibration Process**:
+    1. Open OrcaSlicer -> Calibration -> Flow Rate -> YOLO
+    2. Print the calibration model
+    3. Feel each slide and determine the smoothest surface
+    4. Note the slide value (e.g., -0.035)
+    5. Calculate new flow rate (direct addition)
+
+    **Why YOLO?**: Faster than two-pass method.
+    Use when time is limited or for quick adjustments.
+
+    **Note**: YOLO is less accurate than two-pass method.
+    Use two-pass for best results.
+
+    Args:
+        request: Current flow rate and YOLO slide value
+
+    Returns:
+        New flow rate with slicer config
+
+    Raises:
+        HTTPException: If calculation produces invalid result
+    """
+    logger.info(
+        f"OrcaSlicer Flow YOLO: old_flow={request.old_flow_rate}, "
+        f"yolo_slide={request.yolo_slide_value}"
+    )
+
+    try:
+        # Formula: new_flow = old_flow_rate + yolo_slide_value
+        # From CSV row 4 (B20)
+        new_flow = request.old_flow_rate + request.yolo_slide_value
+
+        # Calculate change from original
+        change_from_original = ((new_flow - request.old_flow_rate) / request.old_flow_rate) * 100
+
+        # Generate slicer config
+        slicer_config = f"Flow Rate: {new_flow:.3f}"
+
+        # Generate recommendation
+        recommendation = (
+            f"✅ YOLO calibration complete! New flow rate: {new_flow:.3f} "
+            f"({change_from_original:+.1f}% from original). "
+            f"Update your OrcaSlicer filament profile. "
+            f"For best accuracy, consider running the two-pass calibration."
+        )
+
+        return OrcaSlicerFlowYoloResponse(
+            new_flow=round(new_flow, 3),
+            change_from_original=round(change_from_original, 2),
+            slicer_config=slicer_config,
+            recommendation=recommendation,
+        )
+
+    except Exception as e:
+        logger.error(f"Error calculating OrcaSlicer flow YOLO: {e}")
         raise HTTPException(status_code=500, detail="Calculation error") from e
 
 

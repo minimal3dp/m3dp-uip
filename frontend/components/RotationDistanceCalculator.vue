@@ -13,10 +13,12 @@
     <form @submit.prevent="handleSubmit" class="space-y-6">
       <!-- Current Rotation Distance -->
       <div>
-        <label class="block text-sm font-medium mb-2">
+        <label for="current-rotation-distance" class="block text-sm font-medium mb-2">
           Current Rotation Distance (from printer.cfg)
         </label>
         <input
+          id="current-rotation-distance"
+          data-testid="current-rotation-distance"
           v-model.number="store.rotationDistance.currentRotationDistance"
           type="number"
           step="0.001"
@@ -33,10 +35,12 @@
 
       <!-- Requested Extrusion -->
       <div>
-        <label class="block text-sm font-medium mb-2">
+        <label for="requested-extrusion" class="block text-sm font-medium mb-2">
           Requested Extrusion Distance (mm)
         </label>
         <input
+          id="requested-extrusion"
+          data-testid="requested-extrusion"
           v-model.number="store.rotationDistance.requestedExtrusion"
           type="number"
           step="1"
@@ -52,10 +56,12 @@
 
       <!-- Actual Extrusion -->
       <div>
-        <label class="block text-sm font-medium mb-2">
+        <label for="actual-extrusion" class="block text-sm font-medium mb-2">
           Actual Extruded Distance (measured with calipers)
         </label>
         <input
+          id="actual-extrusion"
+          data-testid="actual-extrusion"
           v-model.number="store.rotationDistance.actualExtrusion"
           type="number"
           step="0.1"
@@ -79,6 +85,7 @@
       <div class="flex gap-4">
         <button
           type="submit"
+          data-testid="calculate-button"
           :disabled="store.loading"
           class="flex-1 bg-brand-orange hover:bg-orange-600 disabled:bg-zinc-700 disabled:cursor-not-allowed text-white px-6 py-3 rounded-lg font-medium transition"
         >
@@ -97,6 +104,7 @@
     <!-- Result -->
     <div
       v-if="store.rotationDistance.result"
+      data-testid="rotation-distance-result"
       class="mt-8 glass-dark rounded-xl p-6 border-l-4 border-brand-orange animate-fade-in"
     >
       <h3 class="text-xl font-bold mb-4 flex items-center gap-2">

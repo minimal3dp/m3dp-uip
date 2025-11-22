@@ -14,6 +14,32 @@ export interface RotationDistanceResponse {
   recommendation: string
 }
 
+export interface OrcaSlicerFlowRequest {
+  old_flow_rate: number
+  pass_1_slide_value: number
+  pass_2_slide_value?: number
+}
+
+export interface OrcaSlicerFlowResponse {
+  pass_1_flow: number
+  pass_2_flow: number | null
+  change_from_original: number
+  slicer_config: string
+  recommendation: string
+}
+
+export interface OrcaSlicerFlowYoloRequest {
+  old_flow_rate: number
+  yolo_slide_value: number
+}
+
+export interface OrcaSlicerFlowYoloResponse {
+  new_flow: number
+  change_from_original: number
+  slicer_config: string
+  recommendation: string
+}
+
 export interface PressureAdvanceRequest {
   material_type: string
   current_pa?: number

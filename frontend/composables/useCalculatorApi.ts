@@ -2,6 +2,10 @@
 import type {
   RotationDistanceRequest,
   RotationDistanceResponse,
+  OrcaSlicerFlowRequest,
+  OrcaSlicerFlowResponse,
+  OrcaSlicerFlowYoloRequest,
+  OrcaSlicerFlowYoloResponse,
   PressureAdvanceRequest,
   PressureAdvanceResponse
 } from '~/types/calculators'
@@ -12,6 +16,20 @@ export const useCalculatorApi = () => {
 
   const calculateRotationDistance = async (data: RotationDistanceRequest): Promise<RotationDistanceResponse> => {
     return await $fetch<RotationDistanceResponse>(`${apiBase}/api/v1/calculators/rotation-distance`, {
+      method: 'POST',
+      body: data,
+    })
+  }
+
+  const calculateOrcaSlicerFlow = async (data: OrcaSlicerFlowRequest): Promise<OrcaSlicerFlowResponse> => {
+    return await $fetch<OrcaSlicerFlowResponse>(`${apiBase}/api/v1/calculators/orcaslicer-flow`, {
+      method: 'POST',
+      body: data,
+    })
+  }
+
+  const calculateOrcaSlicerFlowYolo = async (data: OrcaSlicerFlowYoloRequest): Promise<OrcaSlicerFlowYoloResponse> => {
+    return await $fetch<OrcaSlicerFlowYoloResponse>(`${apiBase}/api/v1/calculators/orcaslicer-flow-yolo`, {
       method: 'POST',
       body: data,
     })
@@ -30,6 +48,8 @@ export const useCalculatorApi = () => {
 
   return {
     calculateRotationDistance,
+    calculateOrcaSlicerFlow,
+    calculateOrcaSlicerFlowYolo,
     calculatePressureAdvance,
     listCalculators,
   }

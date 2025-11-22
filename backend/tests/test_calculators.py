@@ -24,7 +24,9 @@ def test_list_calculators():
     data = response.json()
 
     assert "calculators" in data
-    assert len(data["calculators"]) >= 2  # rotation-distance, pressure-advance
+    assert (
+        len(data["calculators"]) >= 4
+    )  # rotation-distance, orcaslicer-flow, orcaslicer-flow-yolo, pressure-advance
 
     # Check required fields
     for calc in data["calculators"]:
@@ -160,6 +162,168 @@ def test_rotation_distance_validation_out_of_range():
     response = client.post("/api/v1/calculators/rotation-distance", json=request_data)
 
     assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+
+
+# ============================================================================
+# OrcaSlicer Flow Calibration Calculator Tests
+# ============================================================================
+
+
+def test_orcaslicer_flow_pass_1_only():
+    """Test OrcaSlicer Flow Rate Pass 1 calculation only."""
+    request_data = {
+        "old_flow_rate": 0.99,
+        "pass_1_slide_value": -10,
+    }
+
+    response = client.post("/api/v1/calculators/orcaslicer-flow", json=request_data)
+
+    assert response.status_code == status.HTTP_200_OK
+    data = response.json()
+
+    # Formula: pass_1_flow = 0.99 * (100 + (-10)) / 100 = 0.891
+    expected_pass_1 = 0.99 * (100 + (-10)) / 100
+    assert abs(data["pass_1_flow"] - expected_pass_1) < 0.001
+    assert data["pass_2_flow"] is None
+    assert "pass_1_flow" in data
+    assert "change_from_original" in data
+    assert "slicer_config" in data
+    assert "recommendation" in data
+    assert "Pass 1 complete" in data["recommendation"]
+
+
+def test_orcaslicer_flow_two_pass():
+    """Test OrcaSlicer Flow Rate two-pass calculation."""
+    request_data = {
+        "old_flow_rate": 0.99,
+        "pass_1_slide_value": -10,
+        "pass_2_slide_value": -1,
+    }
+
+    response = client.post("/api/v1/calculators/orcaslicer-flow", json=request_data)
+
+    assert response.status_code == status.HTTP_200_OK
+    data = response.json()
+
+    # Formula: pass_1 = 0.99 * (100 + (-10)) / 100 = 0.891
+    # Formula: pass_2 = 0.891 * (100 + (-1)) / 100 = 0.882
+    expected_pass_1 = 0.99 * (100 + (-10)) / 100
+    expected_pass_2 = expected_pass_1 * (100 + (-1)) / 100
+
+    assert abs(data["pass_1_flow"] - expected_pass_1) < 0.001
+    assert abs(data["pass_2_flow"] - expected_pass_2) < 0.001
+    assert "Calibration complete" in data["recommendation"]
+
+
+def test_orcaslicer_flow_formula_accuracy():
+    """Test OrcaSlicer Flow formula accuracy against Excel."""
+    # From EXTRACTED_FORMULAS.md (OrcaSlicer Flow Calibration sheet)
+    request_data = {
+        "old_flow_rate": 0.99,
+        "pass_1_slide_value": -10,
+        "pass_2_slide_value": -1,
+    }
+
+    response = client.post("/api/v1/calculators/orcaslicer-flow", json=request_data)
+    data = response.json()
+
+    # Exact formula from Excel
+    pass_1_expected = 0.99 * (100 - 10) / 100
+    pass_2_expected = pass_1_expected * (100 - 1) / 100
+
+    assert abs(data["pass_1_flow"] - pass_1_expected) < 0.0001
+    assert abs(data["pass_2_flow"] - pass_2_expected) < 0.0001
+
+
+def test_orcaslicer_flow_validation():
+    """Test OrcaSlicer Flow validation."""
+    # Missing pass_1_slide_value
+    request_data = {
+        "old_flow_rate": 1.0,
+    }
+
+    response = client.post("/api/v1/calculators/orcaslicer-flow", json=request_data)
+    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+
+
+def test_orcaslicer_flow_yolo_basic():
+    """Test OrcaSlicer Flow YOLO calculation."""
+    request_data = {
+        "old_flow_rate": 1.0,
+        "yolo_slide_value": -0.035,
+    }
+
+    response = client.post("/api/v1/calculators/orcaslicer-flow-yolo", json=request_data)
+
+    assert response.status_code == status.HTTP_200_OK
+    data = response.json()
+
+    # Formula: new_flow = 1.0 + (-0.035) = 0.965
+    expected_flow = 1.0 + (-0.035)
+    assert abs(data["new_flow"] - expected_flow) < 0.001
+    assert "new_flow" in data
+    assert "change_from_original" in data
+    assert "slicer_config" in data
+    assert "YOLO calibration complete" in data["recommendation"]
+
+
+def test_orcaslicer_flow_yolo_formula_accuracy():
+    """Test OrcaSlicer Flow YOLO formula accuracy against Excel."""
+    # From EXTRACTED_FORMULAS.md (OrcaSlicer Flow YOLO sheet)
+    request_data = {
+        "old_flow_rate": 1.0,
+        "yolo_slide_value": -0.035,
+    }
+
+    response = client.post("/api/v1/calculators/orcaslicer-flow-yolo", json=request_data)
+    data = response.json()
+
+    # Exact formula from Excel
+    expected_flow = 1.0 + (-0.035)
+    assert abs(data["new_flow"] - expected_flow) < 0.0001
+
+
+def test_orcaslicer_flow_yolo_positive_adjustment():
+    """Test YOLO with positive slide value."""
+    request_data = {
+        "old_flow_rate": 1.0,
+        "yolo_slide_value": 0.02,
+    }
+
+    response = client.post("/api/v1/calculators/orcaslicer-flow-yolo", json=request_data)
+
+    assert response.status_code == status.HTTP_200_OK
+    data = response.json()
+
+    # Formula: new_flow = 1.0 + 0.02 = 1.02
+    assert abs(data["new_flow"] - 1.02) < 0.001
+
+
+def test_orcaslicer_flow_yolo_validation():
+    """Test OrcaSlicer Flow YOLO validation."""
+    # Missing yolo_slide_value
+    request_data = {
+        "old_flow_rate": 1.0,
+    }
+
+    response = client.post("/api/v1/calculators/orcaslicer-flow-yolo", json=request_data)
+    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+
+
+def test_orcaslicer_flow_yolo_calculation_result():
+    """Test OrcaSlicer Flow YOLO calculation result."""
+    # From EXTRACTED_FORMULAS.md (OrcaSlicer Flow YOLO sheet)
+    request_data = {
+        "old_flow_rate": 1.0,
+        "yolo_slide_value": -0.035,
+    }
+
+    response = client.post("/api/v1/calculators/orcaslicer-flow-yolo", json=request_data)
+    data = response.json()
+
+    # Exact formula from Excel
+    expected_flow = 1.0 + (-0.035)
+    assert abs(data["new_flow"] - expected_flow) < 0.0001
 
 
 # ============================================================================

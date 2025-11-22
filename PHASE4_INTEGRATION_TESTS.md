@@ -356,3 +356,33 @@ npm run dev
 Both frontend and backend are running successfully with proper CORS configuration. Calculator endpoints are fully functional and returning correct results. The system is ready for manual UI testing.
 
 **Next**: Complete manual testing checklist and document any issues found.
+
+---
+
+## Recovery Steps (CSS / Build Issues)
+
+If Tailwind or Vite enters a crash / infinite rebuild loop:
+
+1. Stop frontend: `pkill -f "nuxt dev" || true`.
+2. Clean artifacts: `rm -rf frontend/.nuxt frontend/node_modules`.
+3. Ensure only `postcss.config.cjs` exists (remove duplicates).
+4. Verify Node version (`node -v`) meets engine constraints (>= 20.19.0 recommended).
+5. Reinstall dependencies: `cd frontend && npm install --no-audit --no-fund`.
+6. Minimal CSS boot: temporarily reduce `assets/css/main.css` to only Tailwind directives.
+7. Reintroduce custom layers incrementally (base → components → utilities).
+8. Enable debug logging: `NUXT_DEBUG=1 npm run dev`.
+
+If persistent after environment clean:
+- Check for conflicting global CSS imports (only one `main.css`).
+- Ensure no duplicate Tailwind configs or unusual plugin overrides.
+- Regenerate lockfile: `npm install --package-lock-only`.
+- Inspect memory / CPU usage for runaway processes.
+
+Rollback Strategy:
+- Avoid branch rollback unless backend logic is implicated.
+- Prefer targeted config remediation to preserve new OrcaSlicer calculator work.
+
+Documentation Updates in this phase:
+- Added Tailwind safelist for `glass` / `glass-dark`.
+- Consolidated PostCSS config to single CJS file.
+- Removed non-standard `compatibilityDate` from `nuxt.config.ts`.

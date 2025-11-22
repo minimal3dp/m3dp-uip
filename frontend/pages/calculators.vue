@@ -10,6 +10,8 @@
 
       <div class="space-y-8">
         <RotationDistanceCalculator />
+        <OrcaSlicerFlowCalculator />
+        <OrcaSlicerFlowYoloCalculator />
         <PressureAdvanceCalculator />
       </div>
 
