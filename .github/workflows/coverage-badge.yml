@@ -16,30 +16,56 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Detect backend Python project
+        id: backend_detect
+        run: |
+          if [ -d backend ] && { [ -f backend/pyproject.toml ] || [ -f backend/setup.py ]; }; then
+            echo "backend=true" >> $GITHUB_OUTPUT
+            echo "Detected backend Python project"
+          else
+            echo "backend=false" >> $GITHUB_OUTPUT
+            echo "Backend Python project not found; skipping coverage"
+          fi
+
       - name: Set up Python
+        if: steps.backend_detect.outputs.backend == 'true'
         uses: actions/setup-python@v5
         with:
           python-version: '3.12'
 
       - name: Install UV
+        if: steps.backend_detect.outputs.backend == 'true'
         run: pip install uv
 
       - name: Install backend dependencies
+        if: steps.backend_detect.outputs.backend == 'true'
         working-directory: backend
-        run: uv pip install -e '.[dev]'
+        run: |
+          if [ ! -d .venv ]; then
+            echo "Creating uv virtual environment";
+            uv venv .venv || uv venv || true;
+          fi
+          if ! uv pip install -e '.[dev]'; then
+            echo "Editable install failed; retrying system install";
+            uv pip install --system -e '.[dev]' || uv pip install --system . || { echo "Backend dependency install failed"; exit 2; };
+          fi
 
       - name: Run tests with coverage (XML)
+        if: steps.backend_detect.outputs.backend == 'true'
         env:
           PYTHONPATH: backend
         run: pytest --cov=app --cov-report=xml:backend/coverage.xml -q
 
       - name: Install coverage-badge
+        if: steps.backend_detect.outputs.backend == 'true'
         run: pip install coverage-badge
 
       - name: Generate badge SVG
+        if: steps.backend_detect.outputs.backend == 'true'
         run: coverage-badge -i backend/coverage.xml -o coverage-badge.svg -f
 
       - name: Commit badge
+        if: steps.backend_detect.outputs.backend == 'true'
         run: |
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
@@ -47,8 +73,13 @@ jobs:
           if git diff --cached --quiet; then echo "No badge changes"; else git commit -m "chore: update coverage badge"; git push; fi
 
       - name: Upload badge artifact
+        if: steps.backend_detect.outputs.backend == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: coverage-badge
           path: coverage-badge.svg
           retention-days: 7
+
+      - name: Coverage skipped notice
+        if: steps.backend_detect.outputs.backend != 'true'
+        run: echo "Coverage badge skipped (no backend Python project)."
