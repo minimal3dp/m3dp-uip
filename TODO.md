@@ -369,6 +369,18 @@ Development roadmap organized by feature branches. The `main` branch contains on
 
 ---
 
+### Recent Post-Phase 2 Enhancements (Nov 2025) ✅
+
+These refinements were completed after the initial Phase 2 stabilization to improve configurability, determinism, and observability of backend services:
+
+- [x] Added `VISION_MOCK_ENABLED` flag to `backend/app/core/config.py` for explicit mock control
+- [x] Gated VisionService mock fallback behind `VISION_MOCK_ENABLED` (returns deterministic classification only when enabled)
+- [x] Restored legacy exception behavior when vision not configured or model not initialized (tests rely on explicit error paths)
+- [x] Updated vision service tests (`test_vision_service.py`, `test_vision_service_deep_errors.py`) to assert error paths when mock disabled
+- [x] Added `/api/v1/diagnosis/csv-validation` endpoint for surfacing loader validation state and errors
+- [x] Implemented test for CSV validation endpoint (structure + error presence checks)
+- [x] Increased reliability by isolating mock vs. real execution semantics (improves CI determinism)
+
 ## Phase 2.5: CSV Knowledge Base Enhancement ✅
 
 **Branch**: `feature/phase-2.5-csv-enhancements`
