@@ -227,6 +227,7 @@ research/*.pdf
 tmp/
 temp/
 *.tmp
+playwright-report.json
 
 # Frontend (when added)
 node_modules/
