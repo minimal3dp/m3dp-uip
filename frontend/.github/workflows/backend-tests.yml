@@ -1,0 +1,54 @@
+name: Backend Tests
+
+on:
+  push:
+    branches: [ feature/add-all-calculators, main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  pytest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install .[dev]
+
+      - name: Run tests
+        env:
+          GOOGLE_GENAI_API_KEY: placeholder
+        run: |
+          pytest --maxfail=1 --disable-warnings -q
+
+      - name: Coverage HTML artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-html
+          path: htmlcov
+
+      - name: Pytest JUnit report
+        if: always()
+        run: |
+          pytest --junitxml=pytest-report.xml -q || true
+        shell: bash
+
+      - name: Upload JUnit report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pytest-report
+          path: pytest-report.xml
