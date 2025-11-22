@@ -59,11 +59,13 @@ export default defineConfig({
     // },
   ],
 
-  // Run dev server before starting tests
-  webServer: {
-    command: 'npm run dev',
-    url: 'http://localhost:3000',
-    reuseExistingServer: !process.env.CI,
-    timeout: 120 * 1000,
-  },
+  // Manual server startup required:
+  // 1. Frontend: cd frontend && npm run dev (port 3000)
+  // 2. Backend: cd .. && source .venv/bin/activate && cd backend && uvicorn app.main:app --reload (port 8000)
+  // webServer: {
+  //   command: 'npm run dev',
+  //   url: 'http://localhost:3000',
+  //   reuseExistingServer: true,
+  //   timeout: 120 * 1000,
+  // },
 });
