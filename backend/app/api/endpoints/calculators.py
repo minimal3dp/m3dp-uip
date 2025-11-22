@@ -8,10 +8,11 @@ All calculations are formula-based, not LLM-generated.
 """
 
 import logging
-from app.services.csv_loader import get_csv_loader
 
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
+
+from app.services.csv_loader import get_csv_loader
 
 logger = logging.getLogger(__name__)
 
@@ -247,10 +248,18 @@ class InputShapingRequest(BaseModel):
         examples=["ADXL345"],
     )
     x_frequency: float = Field(
-        ..., gt=10, le=200, description="Measured resonance frequency for X axis (Hz)", examples=[45.2]
+        ...,
+        gt=10,
+        le=200,
+        description="Measured resonance frequency for X axis (Hz)",
+        examples=[45.2],
     )
     y_frequency: float = Field(
-        ..., gt=10, le=200, description="Measured resonance frequency for Y axis (Hz)", examples=[37.8]
+        ...,
+        gt=10,
+        le=200,
+        description="Measured resonance frequency for Y axis (Hz)",
+        examples=[37.8],
     )
 
 
@@ -260,7 +269,9 @@ class InputShapingResponse(BaseModel):
     shaper_x: str = Field(..., description="Recommended shaper for X axis")
     shaper_y: str = Field(..., description="Recommended shaper for Y axis")
     max_accel: int = Field(..., description="Suggested max acceleration (mm/s²)")
-    square_corner_velocity: float = Field(..., description="Suggested square corner velocity (mm/s)")
+    square_corner_velocity: float = Field(
+        ..., description="Suggested square corner velocity (mm/s)"
+    )
     klipper_config: str = Field(..., description="Klipper config snippet to copy")
     notes: str = Field(..., description="Additional tuning notes")
 
@@ -298,6 +309,7 @@ async def calculate_input_shaping(request: InputShapingRequest):
     if df is None:
         # Fallback to heuristic if CSV missing
         logger.warning("input_shaping.csv not loaded; using heuristic fallback")
+
         def pick_shaper(freq: float) -> str:
             if freq < 40:
                 return "EI"
@@ -306,6 +318,7 @@ async def calculate_input_shaping(request: InputShapingRequest):
             if freq < 60:
                 return "2HUMP_EI"
             return "3HUMP_EI"
+
         shaper_x = pick_shaper(request.x_frequency)
         shaper_y = pick_shaper(request.y_frequency)
         base_freq = min(request.x_frequency, request.y_frequency)
@@ -315,20 +328,24 @@ async def calculate_input_shaping(request: InputShapingRequest):
         # Extract shaper option lists from Notes column (rows 3 & 4)
         try:
             x_shaper_row = df.iloc[3]  # row index 3
-            y_shaper_row = df.iloc[4]  # row index 4
-            max_accel_row = df.iloc[5]  # row index 5
-            scv_row = df.iloc[6]        # row index 6
+            scv_row = df.iloc[6]  # row index 6 (Square Corner Velocity)
         except Exception as e:
             logger.error(f"Malformed input_shaping.csv: {e}")
             raise HTTPException(status_code=500, detail="Malformed input_shaping.csv") from e
 
         def parse_options(notes: str) -> list[str]:
             # Notes format: "Options: MZV, ZV, EI, 2HUMP_EI, 3HUMP_EI"
-            if not isinstance(notes, str) or 'Options:' not in notes:
+            if not isinstance(notes, str) or "Options:" not in notes:
                 return []
-            return [opt.strip() for opt in notes.split('Options:')[-1].split(',') if opt.strip()]
+            return [opt.strip() for opt in notes.split("Options:")[-1].split(",") if opt.strip()]
 
-        shaper_options = parse_options(x_shaper_row.get('Notes', '')) or ["MZV", "ZV", "EI", "2HUMP_EI", "3HUMP_EI"]
+        shaper_options = parse_options(x_shaper_row.get("Notes", "")) or [
+            "MZV",
+            "ZV",
+            "EI",
+            "2HUMP_EI",
+            "3HUMP_EI",
+        ]
 
         # Frequency segmentation derived from expected range (rows 1 & 2: 30-80 Hz)
         # Strategy: lower frequencies need more damping (EI), mid range MZV/ZV, higher multihump EI variants.
@@ -339,7 +356,7 @@ async def calculate_input_shaping(request: InputShapingRequest):
                 return "MZV"
             if 50 <= freq < 60 and "2HUMP_EI" in shaper_options:
                 return "2HUMP_EI"
-            if 60 <= freq and "3HUMP_EI" in shaper_options:
+            if freq >= 60 and "3HUMP_EI" in shaper_options:
                 return "3HUMP_EI"
             # Fallback first option
             return shaper_options[0]
@@ -353,7 +370,7 @@ async def calculate_input_shaping(request: InputShapingRequest):
         max_accel = max(1000, min(suggested_accel, 10000))
 
         # Square corner velocity from Formula column of row 6 (value 5.0)
-        square_corner_velocity = float(scv_row.get('Formula', 5.0))
+        square_corner_velocity = float(scv_row.get("Formula", 5.0))
 
     klipper_config = (
         f"[input_shaper]\n"  # Section header
@@ -367,7 +384,7 @@ async def calculate_input_shaping(request: InputShapingRequest):
 
     notes = (
         "Frequencies sourced from input_shaping.csv (lines 6-7). Shaper options from lines 8-9. "
-        "Acceleration bounded by line 10 expected range. Square corner velocity from line 11."\
+        "Acceleration bounded by line 10 expected range. Square corner velocity from line 11."
         " Run SHAPER_CALIBRATE for precise measurements before applying final config."
     )
 
@@ -652,15 +669,41 @@ async def calculate_pressure_advance(request: PressureAdvanceRequest):
         f"current_pa={request.current_pa}, speed={request.print_speed}"
     )
 
-    # Material-specific PA ranges (from CSV row 7)
-    material_ranges = {
-        "PLA": (0.03, 0.06),
-        "PETG": (0.06, 0.08),
-        "ABS": (0.04, 0.07),
-        "TPU": (0.0, 0.02),
-        "ASA": (0.04, 0.07),  # Similar to ABS
-        "NYLON": (0.05, 0.08),
-    }
+    # CSV-driven material ranges:
+    # pressure_advance.csv row 'Material Type' Notes column format:
+    # "PLA: 0.03-0.06, PETG: 0.06-0.08, ABS: 0.04-0.07" (additional materials appended below)
+    loader = get_csv_loader()
+    material_ranges: dict[str, tuple[float, float]] = {}
+    try:
+        pa_df = loader.get_pressure_advance_formula()
+        if pa_df is not None:
+            material_row = pa_df[pa_df["Name"] == "Material Type"].iloc[0]
+            notes = str(material_row.get("Notes", ""))
+            # Parse patterns Material: min-max
+            for part in [p.strip() for p in notes.split(",") if p.strip()]:
+                if ":" in part and "-" in part:
+                    mat, rng = [x.strip() for x in part.split(":", 1)]
+                    try:
+                        low_s, high_s = [x.strip() for x in rng.split("-")]
+                        low = float(low_s)
+                        high = float(high_s)
+                        material_ranges[mat.upper()] = (low, high)
+                    except ValueError:
+                        logger.debug(f"Failed to parse range segment '{part}'")
+        # Extend with additional materials not present (domain knowledge)
+        material_ranges.setdefault("TPU", (0.0, 0.02))
+        material_ranges.setdefault("ASA", material_ranges.get("ABS", (0.04, 0.07)))
+        material_ranges.setdefault("NYLON", (0.05, 0.08))
+    except Exception as e:
+        logger.warning(f"CSV-driven material range parsing failed: {e}; falling back to defaults")
+        material_ranges = {
+            "PLA": (0.03, 0.06),
+            "PETG": (0.06, 0.08),
+            "ABS": (0.04, 0.07),
+            "TPU": (0.0, 0.02),
+            "ASA": (0.04, 0.07),
+            "NYLON": (0.05, 0.08),
+        }
 
     material_upper = request.material_type.upper()
     if material_upper not in material_ranges:

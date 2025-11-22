@@ -1,8 +1,9 @@
 # Minimal 3DP Unified Intelligence Platform (M3DP-UIP)
 
 [![Python 3.12+](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
-[![Coverage](https://raw.githubusercontent.com/minimal3dp/m3dp-uip/main/coverage-badge.svg)](./htmlcov/index.html)
-[![Frontend E2E](https://raw.githubusercontent.com/minimal3dp/m3dp-uip/main/frontend-e2e-badge.svg)](./frontend-e2e-badge.svg)
+[![CI Matrix](https://github.com/minimal3dp/m3dp-uip/actions/workflows/ci-matrix.yml/badge.svg)](https://github.com/minimal3dp/m3dp-uip/actions/workflows/ci-matrix.yml)
+[![Coverage](https://raw.githubusercontent.com/minimal3dp/m3dp-uip/main/coverage-badge.svg)](#-testing)
+[![Frontend E2E](https://raw.githubusercontent.com/minimal3dp/m3dp-uip/main/frontend-e2e-badge.svg)](#-testing)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.115+-009688.svg)](https://fastapi.tiangolo.com/)
 [![Code style: ruff](https://img.shields.io/badge/code%20style-ruff-000000.svg)](https://github.com/astral-sh/ruff)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
@@ -85,12 +86,12 @@ m3dp-uip/
 │   └── copilot-instructions.md    # AI assistant guidelines
 ├── backend/
 │   ├── app/
-│   │   ├── api/endpoints/         # FastAPI routes
-│   │   ├── core/                  # Configuration
-│   │   ├── data/                  # CSV knowledge base
-│   │   ├── services/              # Business logic
-│   │   └── main.py                # App entry point
-│   └── tests/                     # Test suite
+│   │   ├── api/endpoints/         # FastAPI routes (diagnosis, calculators)
+│   │   ├── core/                  # Settings / environment config
+│   │   ├── data/                  # CSV knowledge base (placeholders)
+│   │   ├── services/              # Router/classification, future calculators
+│   │   └── main.py                # FastAPI app entry point
+│   └── tests/                     # Test suite (root & health)
 ├── docs/                          # Documentation
 ├── research/                      # Research papers
 ├── scripts/                       # Utility scripts
@@ -129,18 +130,62 @@ graph LR
 - **Deployment**: Vercel
 - **Tooling**: Ruff (linter/formatter), pytest, pre-commit
 
+## 🔌 API Endpoints
+
+Core backend endpoints (current Phase 1 / early Phase 2):
+
+| Endpoint | Method | Purpose | Notes |
+|----------|--------|---------|-------|
+| `/` | GET | Root health + CSV/calculator metadata | Returns loaded CSV list and calculators summary |
+| `/health` | GET | Lightweight health probe | Suitable for container orchestration |
+| `/api/v1/calculators/rotation-distance` | POST | Extruder rotation distance calculator | Formula: `(current * actual) / requested` |
+| `/api/v1/calculators/pressure-advance` | POST | Pressure advance heuristic (placeholder) | Will integrate precise CSV data Phase 2 |
+| `/api/v1/calculators/input-shaping` | POST | Resonance data extraction (placeholder) | Future: integrate real resonance capture |
+| `/api/v1/diagnosis/analyze/text` | POST | Full text diagnostic routing | Uses RouterService; falls back to keyword + CSV search |
+| `/api/v1/diagnosis/analyze/image` | POST | Vision-based defect analysis | Gemini 1.5 Pro integration (planned) |
+| `/api/v1/diagnosis/classify` | POST | Low-cost keyword classification | Fast prefetch path for UI |
+
+Deprecated/Removed:
+| Endpoint | Change |
+|----------|--------|
+| `/api/v1/diagnosis/calculators` | Removed (duplicate of calculators listing) |
+
+Example (Rotation Distance):
+```bash
+curl -X POST http://localhost:8000/api/v1/calculators/rotation-distance \
+    -H 'Content-Type: application/json' \
+    -d '{"current_rotation_distance":33.5, "requested_extrusion":100, "actual_extrusion":98.5}'
+```
+
+Example response (truncated):
+```json
+{
+    "new_rotation_distance": 33.0,
+    "klipper_config": "rotation_distance: 33.0",
+    "within_tolerance": true,
+    "recommendation": "✅ Within ±2mm tolerance. Update value and re-test."
+}
+```
+
+Failure resilience: `/api/v1/diagnosis/analyze/text` downgrades to `handler: "fallback_csv_router"` (keyword + CSV search) if RouterService fails—maintaining low cost and availability.
+
 ## 🧪 Testing
 
 ```bash
+# Activate environment
+source .venv/bin/activate
+
 # Run all tests
 ./scripts/run_tests.sh
 
-# Run with coverage (configured via pyproject addopts)
-pytest --cov=app --cov-report=html
+# Run with coverage (HTML + terminal summary)
+pytest --cov=app --cov-report=html:backend/htmlcov
 
 # Run specific test
-pytest backend/tests/test_api.py::test_root_endpoint
+pytest backend/tests/test_root.py::test_health
 ```
+
+Coverage badge updates only when a valid backend Python project exists.
 
 ## 🎨 Code Quality
 
@@ -164,15 +209,15 @@ Pre-commit hooks run automatically on commit.
 
 ## 🗺️ Development Roadmap
 
-See [TODO.md](TODO.md) for detailed tasks organized by development branch.
+See [CONTRIBUTING.md](CONTRIBUTING.md) for contribution guidelines. A future `TODO.md` will track granular tasks.
 
 **Current Phase:** Phase 1 - Foundation
-- ✅ Project scaffold
-- ✅ FastAPI backend structure
-- ✅ Testing infrastructure
-- ✅ Code quality tooling
-- 🔄 CSV knowledge base integration
-- 🔄 Vision API integration
+- ✅ Backend scaffold (FastAPI, health endpoints)
+- ✅ Basic tests & coverage wiring
+- ✅ Code quality tooling (Ruff, pre-commit)
+- 🔄 CSV knowledge base ingestion (pending)
+- 🔄 Vision API integration (pending)
+- 🔄 Calculator implementations (pending)
 
 ## 🤝 Contributing
 

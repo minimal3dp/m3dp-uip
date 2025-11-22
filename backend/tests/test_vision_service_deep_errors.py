@@ -29,6 +29,7 @@ async def test_init_model_failure_logs_and_sets_model_none():
     ):
         settings.GOOGLE_GENAI_API_KEY = "key"
         settings.GEMINI_MODEL = "gemini-1.5-pro"
+        settings.VISION_MOCK_ENABLED = False
         genai.GenerativeModel.side_effect = Exception("boom")
         service = VisionService()
         assert service.model is None
@@ -44,6 +45,7 @@ async def test_json_decode_error_in_markdown_json_block(sample_image):
     ):
         settings.GOOGLE_GENAI_API_KEY = "key"
         settings.GEMINI_MODEL = "gemini-1.5-pro"
+        settings.VISION_MOCK_ENABLED = False
         mock_model = MagicMock()
         genai.GenerativeModel.return_value = mock_model
         service = VisionService()
@@ -64,6 +66,7 @@ async def test_json_decode_error_in_generic_block(sample_image):
     ):
         settings.GOOGLE_GENAI_API_KEY = "key"
         settings.GEMINI_MODEL = "gemini-1.5-pro"
+        settings.VISION_MOCK_ENABLED = False
         mock_model = MagicMock()
         genai.GenerativeModel.return_value = mock_model
         service = VisionService()
@@ -84,6 +87,7 @@ async def test_missing_fields_inside_markdown_block(sample_image):
     ):
         settings.GOOGLE_GENAI_API_KEY = "key"
         settings.GEMINI_MODEL = "gemini-1.5-pro"
+        settings.VISION_MOCK_ENABLED = False
         mock_model = MagicMock()
         genai.GenerativeModel.return_value = mock_model
         service = VisionService()
@@ -105,6 +109,7 @@ async def test_api_runtime_exception_wraps_as_runtimeerror(sample_image):
     ):
         settings.GOOGLE_GENAI_API_KEY = "key"
         settings.GEMINI_MODEL = "gemini-1.5-pro"
+        settings.VISION_MOCK_ENABLED = False
         mock_model = MagicMock()
         genai.GenerativeModel.return_value = mock_model
         service = VisionService()
