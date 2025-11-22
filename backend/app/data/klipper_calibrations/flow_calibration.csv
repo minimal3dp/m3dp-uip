@@ -1,0 +1,18 @@
+parameter,value,unit,description
+method,orcaslicer_two_pass,,OrcaSlicer built-in Flow Rate calibration (recommended)
+old_flow_rate,0.99,,Current flow rate from slicer (default 1.0 = 100%)
+pass_1_slide_value,-10,,Slide number with smoothest surface from Pass 1
+pass_2_slide_value,-1,,Slide number with smoothest surface from Pass 2
+formula_pass_1,pass_1_flow = old_flow_rate * (100 + pass_1_slide_value) / 100,,Pass 1 flow calculation
+formula_pass_2,new_flow = pass_1_flow * (100 + pass_2_slide_value) / 100,,Pass 2 (final) flow calculation
+reference_url,https://3dprintbeginner.com/flow-rate-calibration/,,3D Print Beginner flow rate calibration guide
+reference_url_2,https://3dprinterly.com/how-to-calibrate-your-extruder-e-steps-flow-rate/,,3D Printerly flow rate calibration guide
+video_guide,,,Link to video guide (to be added)
+instructions_step_1,Open OrcaSlicer -> Calibration -> Flow Rate -> Pass 1,,
+instructions_step_2,Feel each slide and determine the smoothest surface,,
+instructions_step_3,Note the slide number (e.g. -10 for 90% slide),,
+instructions_step_4,Enter Pass 1 slide value and calculate Pass 1 Flow Rate,,
+instructions_step_5,Run Pass 2 with the Pass 1 Flow Rate,,
+instructions_step_6,Enter Pass 2 slide value to get final flow rate,,
+instructions_step_7,Use Pass 2 Flow Rate in your slicer,,
+note,This is the RECOMMENDED method for flow calibration,,Two-pass method provides most accurate results
