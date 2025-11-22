@@ -132,3 +132,13 @@ def test_get_available_csvs(csv_loader: CSVLoader):
     assert len(csvs) > 0
     assert any("klipper" in csv for csv in csvs)
     assert any("orca" in csv for csv in csvs)
+
+
+def test_extruder_rotation_distance_schema_validation(csv_loader: CSVLoader):
+    """Explicit schema validation for extruder rotation distance CSV."""
+    df = csv_loader.get_rotation_distance_formula()
+    assert df is not None
+    from app.models.csv_schemas import validate_csv_file
+
+    errors = validate_csv_file("extruder_rotation_distance", df.to_dict("records"))
+    assert errors == [], f"Schema validation errors found: {errors}"

@@ -12,6 +12,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.endpoints import calculators, diagnosis
 from app.core.config import settings
+from app.services.csv_loader import get_csv_loader
 
 
 @asynccontextmanager
@@ -54,26 +55,51 @@ app.add_middleware(
 )
 
 
-# Health check endpoint
 @app.get("/")
 async def root():
-    """Root endpoint - health check."""
+    """Root endpoint - consolidated health + capability summary."""
+    # Attempt to access CSV loader (lazy init)
+    loader = get_csv_loader()
+    calculators_meta = [
+        {
+            "id": "rotation_distance",
+            "endpoint": "/api/v1/calculators/rotation-distance",
+            "description": "Extruder rotation distance calibration",
+        },
+        {
+            "id": "pressure_advance",
+            "endpoint": "/api/v1/calculators/pressure-advance",
+            "description": "Optimize pressure advance for corners",
+        },
+        {
+            "id": "input_shaping",
+            "endpoint": "/api/v1/calculators/input-shaping",
+            "description": "Resonance compensation guidance",
+        },
+    ]
     return {
         "status": "healthy",
         "service": "M3DP-UIP API",
         "version": "0.1.0",
+        "environment": settings.ENVIRONMENT,
         "docs": "/docs",
+        "csv_loaded": loader.is_loaded(),
+        "loaded_csv_files": loader.get_available_csvs(),
+        "validation_error_files": list(loader.get_validation_errors().keys()),
+        "calculators": calculators_meta,
     }
 
 
 @app.get("/health")
 async def health_check():
     """Detailed health check endpoint."""
+    loader = get_csv_loader()
     return {
         "status": "healthy",
         "environment": settings.ENVIRONMENT,
-        "csv_loaded": False,  # TODO: Check if CSV data is loaded
-        "vision_api_ready": False,  # TODO: Check vision API connection
+        "csv_loaded": loader.is_loaded(),
+        "csv_count": len(loader.get_available_csvs()),
+        "vision_api_ready": False,  # Placeholder until vision service integrated
     }
 
 

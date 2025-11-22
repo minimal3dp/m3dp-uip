@@ -12,6 +12,8 @@ from fastapi import APIRouter, File, Form, HTTPException, UploadFile
 from pydantic import BaseModel, Field
 
 from app.core.config import settings
+from app.services.csv_loader import get_csv_loader
+from app.services.router import classify_issue
 from app.services.router_service import get_router_service
 
 router = APIRouter()
@@ -191,21 +193,55 @@ async def analyze_text(request: DiagnosisRequest):
         result = await router_service.diagnose_from_text(
             request.query, context=context if context else None
         )
-
-        return DiagnosisResponse(
-            issue_type=result.get("issue_type", result["classification"]),
-            classification=result["classification"],
-            confidence=result["confidence"],
-            handler=result["handler"],
-            observations=result.get("observations"),
-            likely_causes=result.get("likely_causes"),
-            recommendations=result.get("recommendations", []),
-            csv_category=result.get("csv_category"),
-            csv_file=result.get("csv_file"),
-        )
     except Exception as e:
-        logger.error(f"Error in text analysis: {e}")
-        raise HTTPException(status_code=500, detail=f"Text analysis error: {e}") from e
+        # Fallback: lightweight classify + CSV search (cost-aware path)
+        logger.warning(f"RouterService failed ({e}); using lightweight fallback")
+        issue_type = classify_issue(request.query).value
+        loader = get_csv_loader()
+        # Search troubleshooting CSV for matching description
+        matches = loader.search_by_description(request.query, category="orca")
+        recommendations = matches[:5] if matches else []
+        return DiagnosisResponse(
+            issue_type=issue_type,
+            classification=issue_type,
+            confidence=0.55,  # heuristic fallback confidence
+            handler="fallback_csv_router",
+            observations=None,
+            likely_causes=[m.get("Likely_Cause") for m in recommendations if m.get("Likely_Cause")]
+            or None,
+            recommendations=recommendations,
+            csv_category="orca_recommendations" if recommendations else None,
+            csv_file="troubleshooting" if recommendations else None,
+        )
+
+    return DiagnosisResponse(
+        issue_type=result.get("issue_type", result["classification"]),
+        classification=result["classification"],
+        confidence=result["confidence"],
+        handler=result["handler"],
+        observations=result.get("observations"),
+        likely_causes=result.get("likely_causes"),
+        recommendations=result.get("recommendations", []),
+        csv_category=result.get("csv_category"),
+        csv_file=result.get("csv_file"),
+    )
+
+
+@router.post("/classify", summary="Low-cost keyword classification", response_model=dict)
+async def quick_classify(request: DiagnosisRequest):
+    """Lightweight classification endpoint avoiding full router pipeline.
+
+    Returns keyword-based issue type and up to 5 troubleshooting matches.
+    Designed for very fast, low-cost queries and UI prefetch.
+    """
+    issue_type = classify_issue(request.query).value
+    loader = get_csv_loader()
+    matches = loader.search_by_description(request.query, category="orca")[:5]
+    return {
+        "issue_type": issue_type,
+        "matches": matches,
+        "match_count": len(matches),
+    }
 
 
 @router.get("/calculators")

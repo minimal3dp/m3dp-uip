@@ -131,7 +131,7 @@ def test_rotation_distance_validation_negative():
 
     response = client.post("/api/v1/calculators/rotation-distance", json=request_data)
 
-    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+    assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
 
 
 def test_rotation_distance_validation_zero():
@@ -146,7 +146,7 @@ def test_rotation_distance_validation_zero():
 
     # Should reject at validation level (Pydantic) or calculation level
     assert response.status_code in [
-        status.HTTP_422_UNPROCESSABLE_ENTITY,
+        status.HTTP_422_UNPROCESSABLE_CONTENT,
         status.HTTP_400_BAD_REQUEST,
     ]
 
@@ -161,7 +161,7 @@ def test_rotation_distance_validation_out_of_range():
 
     response = client.post("/api/v1/calculators/rotation-distance", json=request_data)
 
-    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+    assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
 
 
 # ============================================================================
@@ -243,7 +243,7 @@ def test_orcaslicer_flow_validation():
     }
 
     response = client.post("/api/v1/calculators/orcaslicer-flow", json=request_data)
-    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+    assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
 
 
 def test_orcaslicer_flow_yolo_basic():
@@ -307,7 +307,7 @@ def test_orcaslicer_flow_yolo_validation():
     }
 
     response = client.post("/api/v1/calculators/orcaslicer-flow-yolo", json=request_data)
-    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+    assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
 
 
 def test_orcaslicer_flow_yolo_calculation_result():
@@ -456,7 +456,7 @@ def test_pressure_advance_validation_negative_pa():
 
     response = client.post("/api/v1/calculators/pressure-advance", json=request_data)
 
-    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+    assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
 
 
 def test_pressure_advance_validation_high_pa():
@@ -478,7 +478,12 @@ def test_pressure_advance_validation_high_pa():
         """When current_pa provided, ensure start_value differs from midpoint and config uses midpoint."""
         resp = client.post(
             "/api/v1/calculators/pressure-advance",
-            json={"material_type": "PETG", "current_pa": 0.07, "print_speed": 80, "nozzle_diameter": 0.4},
+            json={
+                "material_type": "PETG",
+                "current_pa": 0.07,
+                "print_speed": 80,
+                "nozzle_diameter": 0.4,
+            },
         )
         assert resp.status_code == status.HTTP_200_OK
         data = resp.json()
@@ -506,7 +511,7 @@ def test_pressure_advance_validation_high_pa():
 
     response = client.post("/api/v1/calculators/pressure-advance", json=request_data)
 
-    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+    assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
 
 
 # ============================================================================
