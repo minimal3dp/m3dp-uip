@@ -126,10 +126,28 @@ Edge cases to consider:
             ValueError: If API not configured or image invalid
             RuntimeError: If API call fails
         """
-        if not self.is_configured():
-            raise ValueError("Vision API not configured - check GOOGLE_GENAI_API_KEY")
-
-        if not self.model:
+        # Conditional mock mode when explicitly enabled
+        if not self.is_configured() or not self.model:
+            if settings.VISION_MOCK_ENABLED:
+                logger.info(
+                    "VisionService mock mode active (no API key or model initialization failed)"
+                )
+                return {
+                    "issue_type": "Material",
+                    "classification": "Stringing",
+                    "confidence": 0.42,
+                    "observations": [
+                        "Fine wispy strands between vertical features",
+                    ],
+                    "likely_causes": [
+                        "High nozzle temperature",
+                        "Insufficient retraction distance",
+                        "Moist filament increasing ooze",
+                    ],
+                }
+            # Preserve legacy error behavior for tests
+            if not self.is_configured():
+                raise ValueError("Vision API not configured - check GOOGLE_GENAI_API_KEY")
             raise RuntimeError("Gemini model not initialized")
 
         try:

@@ -23,6 +23,7 @@ def mock_settings():
     with patch("app.services.vision_service.settings") as mock:
         mock.GOOGLE_GENAI_API_KEY = "test-api-key"
         mock.GEMINI_MODEL = "gemini-1.5-pro"
+        mock.VISION_MOCK_ENABLED = False  # Ensure legacy error behavior during tests
         yield mock
 
 
@@ -39,6 +40,7 @@ def vision_service(mock_genai):
     with patch("app.services.vision_service.settings") as settings:
         settings.GOOGLE_GENAI_API_KEY = "test-api-key"
         settings.GEMINI_MODEL = "gemini-1.5-pro"
+        settings.VISION_MOCK_ENABLED = False  # Disable mock fallback for exception path coverage
         mock_model = MagicMock()
         mock_genai.GenerativeModel.return_value = mock_model
         service = VisionService()
@@ -82,6 +84,7 @@ class TestVisionServiceInitialization:
         with patch("app.services.vision_service.settings") as settings:
             settings.GOOGLE_GENAI_API_KEY = "test-api-key"
             settings.GEMINI_MODEL = "gemini-1.5-pro"
+            settings.VISION_MOCK_ENABLED = False
             service = VisionService()
             assert service.api_key == "test-api-key"
             assert service.model_name == "gemini-1.5-pro"
@@ -95,6 +98,7 @@ class TestVisionServiceInitialization:
         ):
             mock_settings.GOOGLE_GENAI_API_KEY = None
             mock_settings.GEMINI_MODEL = "gemini-1.5-pro"
+            mock_settings.VISION_MOCK_ENABLED = False
             service = VisionService()
             assert not service.is_configured()
             assert service.model is None
@@ -108,6 +112,7 @@ class TestVisionServiceInitialization:
         with patch("app.services.vision_service.settings") as mock_settings:
             mock_settings.GOOGLE_GENAI_API_KEY = None
             mock_settings.GEMINI_MODEL = "gemini-1.5-pro"
+            mock_settings.VISION_MOCK_ENABLED = False
             with patch("app.services.vision_service.genai"):
                 service = VisionService()
                 assert not service.is_configured()
@@ -139,6 +144,7 @@ class TestAnalyzeImageBasic:
         with patch("app.services.vision_service.settings") as mock_settings:
             mock_settings.GOOGLE_GENAI_API_KEY = None
             mock_settings.GEMINI_MODEL = "gemini-1.5-pro"
+            mock_settings.VISION_MOCK_ENABLED = False
             with patch("app.services.vision_service.genai"):
                 service = VisionService()
 
@@ -149,6 +155,7 @@ class TestAnalyzeImageBasic:
     async def test_analyze_image_model_not_initialized(self, vision_service, sample_image_data):
         """Test analyze_image raises error when model is None."""
         vision_service.model = None
+        # vision_service fixture already sets VISION_MOCK_ENABLED False
 
         with pytest.raises(RuntimeError, match="Gemini model not initialized"):
             await vision_service.analyze_image(sample_image_data)
