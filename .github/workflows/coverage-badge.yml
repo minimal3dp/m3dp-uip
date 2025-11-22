@@ -24,6 +24,7 @@ jobs:
           else
             echo "exists=false" >> $GITHUB_OUTPUT
             echo "⚠️ backend/ directory not found - skipping coverage badge"
+            exit 0
           fi
 
       - name: Set up Python
