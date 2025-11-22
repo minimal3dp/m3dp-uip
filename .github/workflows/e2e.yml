@@ -26,16 +26,16 @@ jobs:
         working-directory: backend
         run: uv pip install -e '.[dev]'
 
-      - name: Run backend tests (pytest)
+      - name: Run backend tests (pytest w/ coverage)
         working-directory: backend
-        run: pytest -q
+        run: pytest --cov=app --cov-report=html -q
 
       - name: Upload backend coverage report
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: backend-coverage-html
-          path: htmlcov
+          path: backend/htmlcov
           retention-days: 7
 
   e2e:
