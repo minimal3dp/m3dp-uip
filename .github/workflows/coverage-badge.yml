@@ -10,37 +10,53 @@ permissions:
 
 jobs:
   coverage:
-    if: ${{ hashFiles('backend/**') != '' }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Check backend directory exists
+        id: check_backend
+        run: |
+          if [ -d "backend" ]; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+            echo "⚠️ backend/ directory not found - skipping coverage badge"
+          fi
+
       - name: Set up Python
+        if: steps.check_backend.outputs.exists == 'true'
         uses: actions/setup-python@v5
         with:
           python-version: '3.12'
 
       - name: Install UV
+        if: steps.check_backend.outputs.exists == 'true'
         run: pip install uv
 
       - name: Install backend dependencies
+        if: steps.check_backend.outputs.exists == 'true'
         working-directory: backend
         run: uv pip install -e '.[dev]'
 
       - name: Run tests with coverage (XML)
+        if: steps.check_backend.outputs.exists == 'true'
         env:
           PYTHONPATH: backend
         run: pytest --cov=app --cov-report=xml:backend/coverage.xml -q
 
       - name: Install coverage-badge
+        if: steps.check_backend.outputs.exists == 'true'
         run: pip install coverage-badge
 
       - name: Generate badge SVG
+        if: steps.check_backend.outputs.exists == 'true'
         run: coverage-badge -i backend/coverage.xml -o coverage-badge.svg -f
 
       - name: Commit badge
+        if: steps.check_backend.outputs.exists == 'true'
         run: |
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
@@ -48,6 +64,7 @@ jobs:
           if git diff --cached --quiet; then echo "No badge changes"; else git commit -m "chore: update coverage badge"; git push; fi
 
       - name: Upload badge artifact
+        if: steps.check_backend.outputs.exists == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: coverage-badge

@@ -8,32 +8,45 @@ on:
 
 jobs:
   backend-tests:
-    if: ${{ hashFiles('backend/**') != '' }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Check backend directory exists
+        id: check_backend
+        run: |
+          if [ -d "backend" ]; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+            echo "⚠️ backend/ directory not found - skipping tests"
+          fi
+
       - name: Set up Python
+        if: steps.check_backend.outputs.exists == 'true'
         uses: actions/setup-python@v5
         with:
           python-version: '3.12'
 
       - name: Install UV
+        if: steps.check_backend.outputs.exists == 'true'
         run: pip install uv
 
       - name: Install backend dependencies
+        if: steps.check_backend.outputs.exists == 'true'
         working-directory: backend
         run: uv pip install -e '.[dev]'
 
       - name: Run backend tests (pytest w/ coverage)
+        if: steps.check_backend.outputs.exists == 'true'
         env:
           PYTHONPATH: backend
         run: pytest --cov=app --cov-report=html:backend/htmlcov -q
 
       - name: Upload backend coverage report
-        if: always()
+        if: steps.check_backend.outputs.exists == 'true' && always()
         uses: actions/upload-artifact@v4
         with:
           name: backend-coverage-html
@@ -41,7 +54,6 @@ jobs:
           retention-days: 7
 
   e2e:
-    if: ${{ hashFiles('frontend/**') != '' && hashFiles('backend/**') != '' }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
     needs: backend-tests
@@ -49,19 +61,33 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Check directories exist
+        id: check_dirs
+        run: |
+          if [ -d "backend" ] && [ -d "frontend" ]; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+            echo "⚠️ backend/ or frontend/ directory not found - skipping E2E tests"
+          fi
+
       - name: Set up Python
+        if: steps.check_dirs.outputs.exists == 'true'
         uses: actions/setup-python@v5
         with:
           python-version: '3.12'
 
       - name: Install UV
+        if: steps.check_dirs.outputs.exists == 'true'
         run: pip install uv
 
       - name: Install backend dependencies
+        if: steps.check_dirs.outputs.exists == 'true'
         working-directory: backend
         run: uv pip install -e '.[dev]'
 
       - name: Start backend
+        if: steps.check_dirs.outputs.exists == 'true'
         working-directory: backend
         run: |
           uv run uvicorn app.main:app --host 0.0.0.0 --port 8000 &
@@ -71,6 +97,7 @@ jobs:
           curl -s http://localhost:8000/docs || (echo "Backend failed" && exit 1)
 
       - name: Set up Node.js
+        if: steps.check_dirs.outputs.exists == 'true'
         uses: actions/setup-node@v4
         with:
           node-version: '20'
@@ -78,14 +105,17 @@ jobs:
           cache-dependency-path: frontend/package-lock.json
 
       - name: Install frontend dependencies
+        if: steps.check_dirs.outputs.exists == 'true'
         working-directory: frontend
         run: npm ci
 
       - name: Install Playwright Browsers
+        if: steps.check_dirs.outputs.exists == 'true'
         working-directory: frontend
         run: npx playwright install --with-deps
 
       - name: Start frontend
+        if: steps.check_dirs.outputs.exists == 'true'
         working-directory: frontend
         run: |
           npm run dev &
@@ -95,6 +125,7 @@ jobs:
           curl -s http://localhost:3000 || (echo "Frontend failed" && exit 1)
 
       - name: Run Playwright tests
+        if: steps.check_dirs.outputs.exists == 'true'
         working-directory: frontend
         env:
           NUXT_PUBLIC_API_BASE: http://localhost:8000
@@ -102,7 +133,7 @@ jobs:
           npx playwright test --reporter=line || echo "Playwright tests failed or not present; continuing"
 
       - name: Upload Playwright Report (on failure)
-        if: failure()
+        if: steps.check_dirs.outputs.exists == 'true' && failure()
         uses: actions/upload-artifact@v4
         with:
           name: playwright-report
