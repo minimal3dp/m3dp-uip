@@ -110,6 +110,11 @@ class CSVLoader:
         key = "klipper:run_current"
         return self.cache.get(key)
 
+    def get_lead_screw_rotation_distance_formula(self) -> pd.DataFrame | None:
+        """Get lead screw rotation distance calculator data."""
+        key = "klipper:lead_screw_rotation_distance"
+        return self.cache.get(key)
+
     def get_material_recommendations(
         self,
         material_type: str,

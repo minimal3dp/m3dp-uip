@@ -1,0 +1,8 @@
+name,value,type,description,unit,min_value,max_value,examples,reference
+formula,rotation_distance,output,Calculated rotation distance for Z-axis lead screw,mm,,,,"Pitch * Number of Threads"
+pitch,N/A,input,Distance between threads on the lead screw,mm,0.5,10,"2, 8",Lead screw specification
+number_of_threads,N/A,input,Number of separate threads (starts) on the lead screw,,1,8,"1, 2, 4",Lead screw specification
+common_t8_screws,N/A,reference,"T8x8 (2mm pitch, 4 starts) = 8mm; T8x4 (2mm pitch, 2 starts) = 4mm; T8x2 (2mm pitch, 1 start) = 2mm",,,,,
+common_values,N/A,reference,"2mm (T8x2 single start), 4mm (T8x4 dual start), 8mm (T8x8 quad start)",,,,,
+usage_note,N/A,note,"Set rotation_distance in [stepper_z] section of printer.cfg. Common for Z-axis on Ender 3, CR-10, and many CoreXY printers.",,,,,
+klipper_reference,N/A,note,"From Klipper docs: rotation_distance = screw_pitch * number_of_separate_threads",,,,,https://www.klipper3d.org/Rotation_Distance.html#axes-with-a-lead-screw

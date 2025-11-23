@@ -212,6 +212,42 @@ class RunCurrentResponse(BaseModel):
     reference: str = Field(..., description="Reference documentation URL")
 
 
+class LeadScrewRotationDistanceRequest(BaseModel):
+    """Request for Lead Screw Rotation Distance calculation."""
+
+    pitch: float = Field(
+        ...,
+        gt=0,
+        le=10,
+        description="Distance between threads on the lead screw (mm)",
+        examples=[2.0, 8.0],
+    )
+    number_of_threads: int = Field(
+        ...,
+        gt=0,
+        le=8,
+        description="Number of separate threads (starts) on the lead screw",
+        examples=[1, 2, 4],
+    )
+    screw_type: str | None = Field(
+        None,
+        description="Optional lead screw type for reference",
+        examples=["T8x2", "T8x4", "T8x8"],
+    )
+
+
+class LeadScrewRotationDistanceResponse(BaseModel):
+    """Response with calculated lead screw rotation distance."""
+
+    rotation_distance: float = Field(..., description="Calculated rotation distance (mm)")
+    pitch: float = Field(..., description="Input pitch value (mm)")
+    number_of_threads: int = Field(..., description="Input number of threads")
+    common_examples: dict = Field(..., description="Common T8 lead screw examples")
+    klipper_config: str = Field(..., description="Klipper config snippet to copy")
+    recommendation: str = Field(..., description="Usage recommendations")
+    reference: str = Field(..., description="Klipper documentation URL")
+
+
 class PressureAdvanceRequest(BaseModel):
     """Request for pressure advance calibration guidance."""
 
@@ -333,6 +369,15 @@ async def list_calculators():
                 "csv_source": "klipper_calibrations/run_current.csv",
                 "description": "Calculate proper run_current for TMC stepper drivers from peak current",
                 "endpoint": "/api/v1/calculators/run-current",
+                "method": "POST",
+            },
+            {
+                "id": "lead-screw-rotation-distance",
+                "name": "Lead Screw Rotation Distance",
+                "category": "Mechanical",
+                "csv_source": "klipper_calibrations/lead_screw_rotation_distance.csv",
+                "description": "Calculate rotation_distance for Z-axis lead screws (pitch × threads)",
+                "endpoint": "/api/v1/calculators/lead-screw-rotation-distance",
                 "method": "POST",
             },
         ]
@@ -1154,6 +1199,132 @@ stealthchop_threshold: 0"""
         rms_factor=rms_factor,
         driver_max=driver_max,
         within_limits=within_limits,
+        klipper_config=klipper_config,
+        recommendation=recommendation,
+        reference=reference,
+    )
+
+
+@router.post(
+    "/lead-screw-rotation-distance",
+    response_model=LeadScrewRotationDistanceResponse,
+    summary="Calculate Lead Screw Rotation Distance",
+    description="""
+    Calculate rotation_distance for Z-axis lead screws.
+
+    **Formula**: `rotation_distance = pitch × number_of_threads`
+
+    **How to Use**:
+    1. Check your lead screw specifications (usually printed on screw or in documentation)
+    2. Identify the **pitch** (distance between threads in mm)
+    3. Count the **number of starts** (separate thread lines)
+    4. Calculator multiplies pitch by number of threads
+    5. Copy result to your printer.cfg [stepper_z] section
+
+    **Common T8 Lead Screws**:
+    - **T8x2**: 2mm pitch, 1 start (single thread) = 2mm rotation distance
+    - **T8x4**: 2mm pitch, 2 starts (dual thread) = 4mm rotation distance
+    - **T8x8**: 2mm pitch, 4 starts (quad thread) = 8mm rotation distance
+
+    **How to Identify Number of Starts**:
+    - Look at the end of the lead screw
+    - Count how many separate grooves/threads you see
+    - Single start: 1 groove (most common)
+    - Dual start: 2 grooves (faster Z movement)
+    - Quad start: 4 grooves (fastest Z movement)
+
+    **Common Printers**:
+    - Ender 3 / CR-10: Usually T8x2 (2mm)
+    - Prusa i3: T8x8 (8mm) for faster Z
+    - Voron: Often T8x2 or T8x4
+
+    **Reference**: https://www.klipper3d.org/Rotation_Distance.html#axes-with-a-lead-screw
+
+    **Phase**: CSV-driven formula calculation
+    """,
+    tags=["calculators", "klipper"],
+)
+async def calculate_lead_screw_rotation_distance(
+    request: LeadScrewRotationDistanceRequest,
+) -> LeadScrewRotationDistanceResponse:
+    """
+    Calculate rotation_distance for lead screw Z-axis.
+
+    Formula from Klipper documentation:
+    rotation_distance = screw_pitch * number_of_separate_threads
+
+    Args:
+        request: LeadScrewRotationDistanceRequest with pitch and number_of_threads
+
+    Returns:
+        LeadScrewRotationDistanceResponse with calculated rotation distance
+    """
+    logger.info(
+        f"Lead Screw calculation: pitch={request.pitch}, threads={request.number_of_threads}"
+    )
+
+    # Load formula from CSV (validates CSV exists and is loaded)
+    csv_loader = get_csv_loader()
+    _ = csv_loader.get_lead_screw_rotation_distance_formula()  # Validates CSV is loaded
+
+    # Calculate rotation distance
+    rotation_distance = request.pitch * request.number_of_threads
+
+    # Common T8 lead screw examples
+    common_examples = {
+        "T8x2 (single start)": 2.0,
+        "T8x4 (dual start)": 4.0,
+        "T8x8 (quad start)": 8.0,
+    }
+
+    # Generate Klipper config snippet
+    screw_comment = f"  # {request.screw_type}" if request.screw_type else ""
+    klipper_config = f"""[stepper_z]{screw_comment}
+step_pin: <YOUR_PIN>
+dir_pin: <YOUR_DIR>
+enable_pin: !<YOUR_ENABLE>
+microsteps: 16
+rotation_distance: {rotation_distance}
+endstop_pin: probe:z_virtual_endstop
+position_max: 300
+homing_speed: 8.0"""
+
+    # Generate recommendations
+    screw_info = f" ({request.screw_type})" if request.screw_type else ""
+    recommendation = (
+        f"Set rotation_distance: {rotation_distance} in your [stepper_z] section{screw_info}. "
+        f"With {request.pitch}mm pitch and {request.number_of_threads} start(s), "
+        f"each full motor rotation moves the Z-axis {rotation_distance}mm. "
+    )
+
+    if request.number_of_threads > 1:
+        recommendation += (
+            f"Multi-start lead screws ({request.number_of_threads} starts) provide faster Z movement "
+            f"compared to single-start screws, useful for tall prints."
+        )
+    else:
+        recommendation += (
+            "Single-start lead screws are most common and provide good precision for layer heights."
+        )
+
+    # Reference URL
+    reference = "https://www.klipper3d.org/Rotation_Distance.html#axes-with-a-lead-screw"
+
+    # Track calculator usage
+    await track_calculator_use(
+        "lead_screw_rotation_distance",
+        params={
+            "pitch": request.pitch,
+            "number_of_threads": request.number_of_threads,
+            "rotation_distance": rotation_distance,
+        },
+    )
+
+    return LeadScrewRotationDistanceResponse(
+        rotation_distance=rotation_distance,
+        pitch=request.pitch,
+        number_of_threads=request.number_of_threads,
+        common_examples=common_examples,
         klipper_config=klipper_config,
         recommendation=recommendation,
         reference=reference,

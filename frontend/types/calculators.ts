@@ -123,3 +123,19 @@ export interface RunCurrentResponse {
   recommendation: string
   reference: string
 }
+
+export interface LeadScrewRotationDistanceRequest {
+  pitch: number
+  number_of_threads: number
+  screw_type?: string
+}
+
+export interface LeadScrewRotationDistanceResponse {
+  rotation_distance: number
+  pitch: number
+  number_of_threads: number
+  common_examples: Record<string, number>
+  klipper_config: string
+  recommendation: string
+  reference: string
+}

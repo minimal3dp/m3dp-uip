@@ -13,7 +13,9 @@ import type {
   MaxVolumetricSpeedRequest,
   MaxVolumetricSpeedResponse,
   RunCurrentRequest,
-  RunCurrentResponse
+  RunCurrentResponse,
+  LeadScrewRotationDistanceRequest,
+  LeadScrewRotationDistanceResponse
 } from '~/types/calculators'
 
 export const useCalculatorApi = () => {
@@ -69,6 +71,13 @@ export const useCalculatorApi = () => {
     })
   }
 
+  const calculateLeadScrewRotationDistance = async (data: LeadScrewRotationDistanceRequest): Promise<LeadScrewRotationDistanceResponse> => {
+    return await $fetch<LeadScrewRotationDistanceResponse>(`${apiBase}/api/v1/calculators/lead-screw-rotation-distance`, {
+      method: 'POST',
+      body: data,
+    })
+  }
+
   const listCalculators = async () => {
     return await $fetch<any>(`${apiBase}/api/v1/calculators`)
   }
@@ -81,6 +90,7 @@ export const useCalculatorApi = () => {
     calculateInputShaping,
     calculateMaxVolumetricSpeed,
     calculateRunCurrent,
+    calculateLeadScrewRotationDistance,
     listCalculators,
   }
 }

@@ -47,6 +47,12 @@ interface CalculatorState {
     driverType: string
     result: any | null
   }
+  leadScrewRotationDistance: {
+    pitch: number | null
+    numberOfThreads: number | null
+    screwType: string | null
+    result: any | null
+  }
   loading: boolean
   error: string | null
 }
@@ -95,6 +101,12 @@ export const useCalculatorStore = defineStore('calculator', {
       peakCurrent: null,
       motorModel: null,
       driverType: 'TMC2209',
+      result: null,
+    },
+    leadScrewRotationDistance: {
+      pitch: 2.0,
+      numberOfThreads: 1,
+      screwType: null,
       result: null,
     },
     loading: false,
@@ -306,6 +318,30 @@ export const useCalculatorStore = defineStore('calculator', {
       this.runCurrent.motorModel = null
       this.runCurrent.driverType = 'TMC2209'
       this.runCurrent.result = null
+      this.error = null
+    },
+
+    async calculateLeadScrewRotationDistance(request: any) {
+      this.loading = true
+      this.error = null
+
+      try {
+        const api = useCalculatorApi()
+        const result = await api.calculateLeadScrewRotationDistance(request)
+        this.leadScrewRotationDistance.result = result
+      } catch (err: any) {
+        this.error = err.data?.detail || 'Calculation failed'
+        throw err
+      } finally {
+        this.loading = false
+      }
+    },
+
+    resetLeadScrewRotationDistance() {
+      this.leadScrewRotationDistance.pitch = 2.0
+      this.leadScrewRotationDistance.numberOfThreads = 1
+      this.leadScrewRotationDistance.screwType = null
+      this.leadScrewRotationDistance.result = null
       this.error = null
     },
   },
