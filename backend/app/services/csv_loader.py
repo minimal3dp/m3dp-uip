@@ -105,6 +105,11 @@ class CSVLoader:
         key = "klipper:max_volumetric_speed"
         return self.cache.get(key)
 
+    def get_run_current_formula(self) -> pd.DataFrame | None:
+        """Get run current (TMC stepper driver) calculator data."""
+        key = "klipper:run_current"
+        return self.cache.get(key)
+
     def get_material_recommendations(
         self,
         material_type: str,

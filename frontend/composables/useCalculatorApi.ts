@@ -11,7 +11,9 @@ import type {
   InputShapingRequest,
   InputShapingResponse,
   MaxVolumetricSpeedRequest,
-  MaxVolumetricSpeedResponse
+  MaxVolumetricSpeedResponse,
+  RunCurrentRequest,
+  RunCurrentResponse
 } from '~/types/calculators'
 
 export const useCalculatorApi = () => {
@@ -60,6 +62,13 @@ export const useCalculatorApi = () => {
     })
   }
 
+  const calculateRunCurrent = async (data: RunCurrentRequest): Promise<RunCurrentResponse> => {
+    return await $fetch<RunCurrentResponse>(`${apiBase}/api/v1/calculators/run-current`, {
+      method: 'POST',
+      body: data,
+    })
+  }
+
   const listCalculators = async () => {
     return await $fetch<any>(`${apiBase}/api/v1/calculators`)
   }
@@ -71,6 +80,7 @@ export const useCalculatorApi = () => {
     calculateOrcaSlicerFlowYolo,
     calculateInputShaping,
     calculateMaxVolumetricSpeed,
+    calculateRunCurrent,
     listCalculators,
   }
 }

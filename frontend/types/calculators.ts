@@ -106,3 +106,20 @@ export interface MaxVolumetricSpeedResponse {
     hotend_type?: string
   }
 }
+
+export interface RunCurrentRequest {
+  peak_current: number
+  motor_model?: string
+  driver_type: string
+}
+
+export interface RunCurrentResponse {
+  run_current: number
+  peak_current: number
+  rms_factor: number
+  driver_max: number
+  within_limits: boolean
+  klipper_config: string
+  recommendation: string
+  reference: string
+}

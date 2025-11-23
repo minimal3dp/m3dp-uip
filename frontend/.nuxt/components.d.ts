@@ -21,6 +21,7 @@ interface _GlobalComponents {
     'PressureAdvanceCalculator': typeof import("../components/PressureAdvanceCalculator.vue")['default']
     'ResultsDisplay': typeof import("../components/ResultsDisplay.vue")['default']
     'RotationDistanceCalculator': typeof import("../components/RotationDistanceCalculator.vue")['default']
+    'RunCurrentCalculator': typeof import("../components/RunCurrentCalculator.vue")['default']
     'TextInput': typeof import("../components/TextInput.vue")['default']
     'NuxtWelcome': typeof import("../node_modules/nuxt/dist/app/components/welcome.vue")['default']
     'NuxtLayout': typeof import("../node_modules/nuxt/dist/app/components/nuxt-layout")['default']
@@ -55,6 +56,7 @@ interface _GlobalComponents {
     'LazyPressureAdvanceCalculator': LazyComponent<typeof import("../components/PressureAdvanceCalculator.vue")['default']>
     'LazyResultsDisplay': LazyComponent<typeof import("../components/ResultsDisplay.vue")['default']>
     'LazyRotationDistanceCalculator': LazyComponent<typeof import("../components/RotationDistanceCalculator.vue")['default']>
+    'LazyRunCurrentCalculator': LazyComponent<typeof import("../components/RunCurrentCalculator.vue")['default']>
     'LazyTextInput': LazyComponent<typeof import("../components/TextInput.vue")['default']>
     'LazyNuxtWelcome': LazyComponent<typeof import("../node_modules/nuxt/dist/app/components/welcome.vue")['default']>
     'LazyNuxtLayout': LazyComponent<typeof import("../node_modules/nuxt/dist/app/components/nuxt-layout")['default']>
@@ -95,6 +97,7 @@ export const OrcaSlicerFlowYoloCalculator: typeof import("../components/OrcaSlic
 export const PressureAdvanceCalculator: typeof import("../components/PressureAdvanceCalculator.vue")['default']
 export const ResultsDisplay: typeof import("../components/ResultsDisplay.vue")['default']
 export const RotationDistanceCalculator: typeof import("../components/RotationDistanceCalculator.vue")['default']
+export const RunCurrentCalculator: typeof import("../components/RunCurrentCalculator.vue")['default']
 export const TextInput: typeof import("../components/TextInput.vue")['default']
 export const NuxtWelcome: typeof import("../node_modules/nuxt/dist/app/components/welcome.vue")['default']
 export const NuxtLayout: typeof import("../node_modules/nuxt/dist/app/components/nuxt-layout")['default']
@@ -129,6 +132,7 @@ export const LazyOrcaSlicerFlowYoloCalculator: LazyComponent<typeof import("../c
 export const LazyPressureAdvanceCalculator: LazyComponent<typeof import("../components/PressureAdvanceCalculator.vue")['default']>
 export const LazyResultsDisplay: LazyComponent<typeof import("../components/ResultsDisplay.vue")['default']>
 export const LazyRotationDistanceCalculator: LazyComponent<typeof import("../components/RotationDistanceCalculator.vue")['default']>
+export const LazyRunCurrentCalculator: LazyComponent<typeof import("../components/RunCurrentCalculator.vue")['default']>
 export const LazyTextInput: LazyComponent<typeof import("../components/TextInput.vue")['default']>
 export const LazyNuxtWelcome: LazyComponent<typeof import("../node_modules/nuxt/dist/app/components/welcome.vue")['default']>
 export const LazyNuxtLayout: LazyComponent<typeof import("../node_modules/nuxt/dist/app/components/nuxt-layout")['default']>

@@ -26,6 +26,9 @@
 
         <!-- Max Volumetric Speed -->
         <MaxVolumetricSpeedCalculator />
+
+        <!-- Run Current (TMC Drivers) -->
+        <RunCurrentCalculator />
       </div>
 
       <div class="mt-12 text-center text-zinc-500 text-sm">

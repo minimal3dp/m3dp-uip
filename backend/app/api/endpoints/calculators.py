@@ -177,6 +177,41 @@ class MaxVolumetricSpeedResponse(BaseModel):
     test_details: dict = Field(..., description="Test parameters for reference")
 
 
+class RunCurrentRequest(BaseModel):
+    """Request for Run Current (TMC stepper driver) calculation."""
+
+    peak_current: float = Field(
+        ...,
+        gt=0,
+        le=3.0,
+        description="Peak current from stepper motor specification sheet (A)",
+        examples=[1.5, 1.68, 2.0],
+    )
+    motor_model: str | None = Field(
+        None,
+        description="Optional motor model for reference",
+        examples=["NEMA17 17HS19-2004S1", "LDO 42STH48-2504AH"],
+    )
+    driver_type: str = Field(
+        "TMC2209",
+        description="TMC driver type",
+        examples=["TMC2209", "TMC2208", "TMC5160"],
+    )
+
+
+class RunCurrentResponse(BaseModel):
+    """Response with calculated run current for TMC driver."""
+
+    run_current: float = Field(..., description="Calculated run current (A)")
+    peak_current: float = Field(..., description="Input peak current from motor spec (A)")
+    rms_factor: float = Field(..., description="RMS conversion factor (0.707)")
+    driver_max: float = Field(..., description="Maximum capacity of selected driver (A)")
+    within_limits: bool = Field(..., description="Whether calculated value is within driver limits")
+    klipper_config: str = Field(..., description="Klipper config snippet to copy")
+    recommendation: str = Field(..., description="Usage and tuning recommendations")
+    reference: str = Field(..., description="Reference documentation URL")
+
+
 class PressureAdvanceRequest(BaseModel):
     """Request for pressure advance calibration guidance."""
 
@@ -289,6 +324,15 @@ async def list_calculators():
                 "csv_source": "klipper_calibrations/max_volumetric_speed.csv",
                 "description": "Calculate maximum flow rate your hotend can handle",
                 "endpoint": "/api/v1/calculators/max-volumetric-speed",
+                "method": "POST",
+            },
+            {
+                "id": "run-current",
+                "name": "Run Current (TMC Drivers)",
+                "category": "Mechanical",
+                "csv_source": "klipper_calibrations/run_current.csv",
+                "description": "Calculate proper run_current for TMC stepper drivers from peak current",
+                "endpoint": "/api/v1/calculators/run-current",
                 "method": "POST",
             },
         ]
@@ -976,4 +1020,141 @@ async def calculate_max_volumetric_speed(request: MaxVolumetricSpeedRequest):
         slicer_config=slicer_config,
         recommendation=recommendation,
         test_details=test_details,
+    )
+
+
+@router.post(
+    "/run-current",
+    response_model=RunCurrentResponse,
+    summary="Calculate TMC Run Current",
+    description="""
+    Calculate proper run_current value for TMC stepper drivers (TMC2209, TMC2208, TMC5160).
+
+    **Formula**: `run_current = peak_current * 0.707`
+
+    **How to Use**:
+    1. Locate your stepper motor's datasheet
+    2. Find the **peak current** specification (typically 1.5A - 2.5A for NEMA17)
+    3. Enter the peak current value
+    4. Calculator will compute the RMS run current (peak × 0.707)
+    5. Copy the result to your printer.cfg TMC section
+
+    **Important Notes**:
+    - Result is automatically rounded down to nearest 0.1A for safety
+    - TMC2209 max: 1.2A, TMC2208 max: 1.4A, TMC5160 max: 3.0A
+    - Start 10-20% below calculated value and increase gradually
+    - Monitor motor temperature during testing
+    - Motors should be warm but not hot to touch
+
+    **Example Motors**:
+    - NEMA17 17HS19-2004S1: 2.0A peak → 1.4A run
+    - LDO 42STH48-2504AH: 2.5A peak → 1.7A run (use 1.2A max for TMC2209)
+    - Moons MS17HD6P4200: 2.0A peak → 1.4A run
+
+    **Reference**: https://docs.vorondesign.com/community/howto/120decibell/calculating_driver_current.html
+
+    **Phase**: CSV-driven formula calculation
+    """,
+    tags=["calculators", "klipper"],
+)
+async def calculate_run_current(request: RunCurrentRequest) -> RunCurrentResponse:
+    """
+    Calculate run_current for TMC stepper drivers.
+
+    Formula from Voron documentation:
+    run_current = peak_current * 0.707 (RMS conversion)
+
+    Args:
+        request: RunCurrentRequest with peak_current, optional motor_model and driver_type
+
+    Returns:
+        RunCurrentResponse with calculated run_current and safety recommendations
+    """
+    logger.info(
+        f"Run Current calculation: peak_current={request.peak_current}, "
+        f"driver={request.driver_type}"
+    )
+
+    # Load formula from CSV (validates CSV exists and is loaded)
+    csv_loader = get_csv_loader()
+    _ = csv_loader.get_run_current_formula()  # Validates CSV is loaded
+
+    # Get RMS factor (constant)
+    rms_factor = 0.707
+
+    # Calculate run current
+    calculated_current = request.peak_current * rms_factor
+
+    # Round down to nearest 0.1A for safety
+    run_current = round(calculated_current * 10) / 10
+
+    # Driver maximum currents
+    driver_limits = {
+        "TMC2209": 1.2,
+        "TMC2208": 1.4,
+        "TMC5160": 3.0,
+    }
+
+    driver_max = driver_limits.get(request.driver_type, 1.2)
+
+    # Check if within driver limits
+    within_limits = run_current <= driver_max
+
+    # If over limit, cap at driver max and warn
+    if not within_limits:
+        logger.warning(
+            f"Calculated run_current {run_current}A exceeds {request.driver_type} "
+            f"maximum of {driver_max}A. Capping at driver limit."
+        )
+        run_current = driver_max
+
+    # Generate Klipper config snippet
+    motor_comment = f"  # {request.motor_model}" if request.motor_model else ""
+    klipper_config = f"""[tmc2209 stepper_x]{motor_comment}
+uart_pin: <YOUR_PIN>
+run_current: {run_current}
+sense_resistor: 0.110
+stealthchop_threshold: 0"""
+
+    # Generate recommendations
+    if within_limits:
+        recommendation = (
+            f"Set run_current: {run_current} in your [tmc2209 stepper_x/y/z] sections. "
+            f"Start at {run_current * 0.8:.1f}A (80%) and increase gradually while monitoring temperature. "
+            f"Motors should be warm but not uncomfortable to touch. "
+            f"If motors are too hot, reduce current by 0.1A increments."
+        )
+    else:
+        recommendation = (
+            f"Your motor's peak current ({request.peak_current}A) exceeds {request.driver_type} "
+            f"capacity ({driver_max}A). Using maximum safe value of {driver_max}A. "
+            f"Consider upgrading to TMC5160 drivers for higher current motors, "
+            f"or use a lower current motor for {request.driver_type} drivers."
+        )
+
+    # Reference URL
+    reference = (
+        "https://docs.vorondesign.com/community/howto/120decibell/calculating_driver_current.html"
+    )
+
+    # Track calculator usage
+    await track_calculator_use(
+        "run_current",
+        params={
+            "peak_current": request.peak_current,
+            "run_current": run_current,
+            "driver_type": request.driver_type,
+            "within_limits": within_limits,
+        },
+    )
+
+    return RunCurrentResponse(
+        run_current=run_current,
+        peak_current=request.peak_current,
+        rms_factor=rms_factor,
+        driver_max=driver_max,
+        within_limits=within_limits,
+        klipper_config=klipper_config,
+        recommendation=recommendation,
+        reference=reference,
     )
