@@ -62,7 +62,7 @@ Remaining to implement: **14**
 
 ---
 
-## 3. OrcaSlicer Flow Calibration ❌ NOT IMPLEMENTED
+## 3. OrcaSlicer Flow Calibration ✅ IMPLEMENTED
 
 **Sheet**: OrcaSlicer Flow Calibration (Recommended)
 
@@ -85,7 +85,7 @@ Remaining to implement: **14**
 
 ---
 
-## 4. OrcaSlicer Flow YOLO ❌ NOT IMPLEMENTED
+## 4. OrcaSlicer Flow YOLO ✅ IMPLEMENTED
 
 **Sheet**: OrcaSlicer Flow YOLO (Single-pass method)
 
@@ -103,7 +103,7 @@ Remaining to implement: **14**
 
 ---
 
-## 5. Run Current (TMC2208/2209) ❌ NOT IMPLEMENTED
+## 5. Run Current (TMC2208/2209) ✅ IMPLEMENTED
 
 **Sheet**: Run Current
 
@@ -171,7 +171,7 @@ Remaining to implement: **14**
 
 ---
 
-## 8. Input Shaping ❌ NOT IMPLEMENTED
+## 8. Input Shaping ✅ IMPLEMENTED
 
 **Sheet**: Input Shaping
 
@@ -206,7 +206,7 @@ Remaining to implement: **14**
 
 ---
 
-## 9. X and Y Offsets ❌ NOT IMPLEMENTED
+## 9. X and Y Offsets ✅ IMPLEMENTED
 
 **Sheet**: X and Y Offsets
 
@@ -231,7 +231,7 @@ Remaining to implement: **14**
 
 ---
 
-## 10. Max Volumetric Speed (OrcaSlicer) ❌ NOT IMPLEMENTED
+## 10. Max Volumetric Speed (OrcaSlicer) ✅ IMPLEMENTED
 
 **Sheet**: Max Volumetric Speed
 
@@ -293,7 +293,7 @@ Remaining to implement: **14**
 
 ---
 
-## 12. Lead Screw Rotation Distance ❌ NOT IMPLEMENTED
+## 12. Lead Screw Rotation Distance ✅ IMPLEMENTED
 
 **Sheet**: Lead Screw Rotation Distance
 
@@ -341,7 +341,7 @@ Remaining to implement: **14**
 
 ---
 
-## 14. Line Widths (OrcaSlicer) ❌ NOT IMPLEMENTED
+## 14. Line Widths (OrcaSlicer) ✅ IMPLEMENTED
 
 **Sheet**: Line Widths
 
@@ -365,7 +365,7 @@ Examples:
 
 ---
 
-## 15. Skew Correction ❌ NOT IMPLEMENTED
+## 15. Skew Correction ✅ IMPLEMENTED
 
 **Sheet**: Skew Correction
 
