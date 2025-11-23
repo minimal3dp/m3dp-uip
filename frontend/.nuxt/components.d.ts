@@ -23,6 +23,7 @@ interface _GlobalComponents {
     'ResultsDisplay': typeof import("../components/ResultsDisplay.vue")['default']
     'RotationDistanceCalculator': typeof import("../components/RotationDistanceCalculator.vue")['default']
     'RunCurrentCalculator': typeof import("../components/RunCurrentCalculator.vue")['default']
+    'SkewCorrectionCalculator': typeof import("../components/SkewCorrectionCalculator.vue")['default']
     'TextInput': typeof import("../components/TextInput.vue")['default']
     'XAndYOffsetsCalculator': typeof import("../components/XAndYOffsetsCalculator.vue")['default']
     'NuxtWelcome': typeof import("../node_modules/nuxt/dist/app/components/welcome.vue")['default']
@@ -60,6 +61,7 @@ interface _GlobalComponents {
     'LazyResultsDisplay': LazyComponent<typeof import("../components/ResultsDisplay.vue")['default']>
     'LazyRotationDistanceCalculator': LazyComponent<typeof import("../components/RotationDistanceCalculator.vue")['default']>
     'LazyRunCurrentCalculator': LazyComponent<typeof import("../components/RunCurrentCalculator.vue")['default']>
+    'LazySkewCorrectionCalculator': LazyComponent<typeof import("../components/SkewCorrectionCalculator.vue")['default']>
     'LazyTextInput': LazyComponent<typeof import("../components/TextInput.vue")['default']>
     'LazyXAndYOffsetsCalculator': LazyComponent<typeof import("../components/XAndYOffsetsCalculator.vue")['default']>
     'LazyNuxtWelcome': LazyComponent<typeof import("../node_modules/nuxt/dist/app/components/welcome.vue")['default']>
@@ -103,6 +105,7 @@ export const PressureAdvanceCalculator: typeof import("../components/PressureAdv
 export const ResultsDisplay: typeof import("../components/ResultsDisplay.vue")['default']
 export const RotationDistanceCalculator: typeof import("../components/RotationDistanceCalculator.vue")['default']
 export const RunCurrentCalculator: typeof import("../components/RunCurrentCalculator.vue")['default']
+export const SkewCorrectionCalculator: typeof import("../components/SkewCorrectionCalculator.vue")['default']
 export const TextInput: typeof import("../components/TextInput.vue")['default']
 export const XAndYOffsetsCalculator: typeof import("../components/XAndYOffsetsCalculator.vue")['default']
 export const NuxtWelcome: typeof import("../node_modules/nuxt/dist/app/components/welcome.vue")['default']
@@ -140,6 +143,7 @@ export const LazyPressureAdvanceCalculator: LazyComponent<typeof import("../comp
 export const LazyResultsDisplay: LazyComponent<typeof import("../components/ResultsDisplay.vue")['default']>
 export const LazyRotationDistanceCalculator: LazyComponent<typeof import("../components/RotationDistanceCalculator.vue")['default']>
 export const LazyRunCurrentCalculator: LazyComponent<typeof import("../components/RunCurrentCalculator.vue")['default']>
+export const LazySkewCorrectionCalculator: LazyComponent<typeof import("../components/SkewCorrectionCalculator.vue")['default']>
 export const LazyTextInput: LazyComponent<typeof import("../components/TextInput.vue")['default']>
 export const LazyXAndYOffsetsCalculator: LazyComponent<typeof import("../components/XAndYOffsetsCalculator.vue")['default']>
 export const LazyNuxtWelcome: LazyComponent<typeof import("../node_modules/nuxt/dist/app/components/welcome.vue")['default']>
