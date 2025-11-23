@@ -25,13 +25,37 @@ BACKEND_PORT="${BACKEND_PORT:-8000}"
 FRONTEND_PORT="${FRONTEND_PORT:-3000}"
 
 # Resolve Python interpreter (prefer local virtual environment)
+AUTO_BOOTSTRAP_VENV="${AUTO_BOOTSTRAP_VENV:-true}" # set to false to disable auto creation
+
 if [ -x ".venv/bin/python" ]; then
   PYTHON_CMD="./.venv/bin/python"
 else
-  PYTHON_CMD="$(command -v python3 || command -v python || echo python)"
+  # Attempt bootstrap if requested
+  if [ "$AUTO_BOOTSTRAP_VENV" = "true" ]; then
+    echo "[BOOTSTRAP] Creating local virtual environment (.venv)"
+    if command -v python3 >/dev/null 2>&1; then
+      python3 -m venv .venv || { echo "[BOOTSTRAP ERROR] Failed to create venv"; exit 1; }
+    elif command -v python >/dev/null 2>&1; then
+      python -m venv .venv || { echo "[BOOTSTRAP ERROR] Failed to create venv"; exit 1; }
+    else
+      echo "[BACKEND ERROR] No python interpreter found to create venv."; exit 1
+    fi
+    if [ -x ".venv/bin/python" ]; then
+      echo "[BOOTSTRAP] Installing backend dependencies (editable + dev)"
+      ./.venv/bin/python -m pip install --upgrade pip >/dev/null 2>&1 || true
+      ./.venv/bin/python -m pip install -e ".[dev]" || { echo "[BOOTSTRAP ERROR] pip install failed"; exit 1; }
+    fi
+  fi
+  if [ -x ".venv/bin/python" ]; then
+    PYTHON_CMD="./.venv/bin/python"
+  else
+    PYTHON_CMD="$(command -v python3 || command -v python || echo python)"
+  fi
 fi
-if ! command -v "$PYTHON_CMD" >/dev/null 2>&1; then
-  echo "[BACKEND ERROR] Python interpreter not found. Activate venv or install Python."
+
+echo "[INFO] Using Python interpreter: $PYTHON_CMD"
+if ! "$PYTHON_CMD" -c 'import sys; print(sys.version)' >/dev/null 2>&1; then
+  echo "[BACKEND ERROR] Python interpreter not functional. Check installation."
   exit 1
 fi
 
