@@ -38,6 +38,9 @@
 
           <!-- Skew Correction -->
           <SkewCorrectionCalculator />
+
+          <!-- Line Width Recommendations -->
+          <LineWidthsCalculator />
       </div>
 
       <div class="mt-12 text-center text-zinc-500 text-sm">

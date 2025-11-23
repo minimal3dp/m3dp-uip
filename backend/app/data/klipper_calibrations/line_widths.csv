@@ -1,0 +1,10 @@
+calculator_name,Line Width Recommendations
+category,Extrusion Geometry
+formula,"Recommended line width is derived from nozzle diameter and extrusion role. Typical perimeter width: 100-110% of nozzle diameter; external perimeter: 95-105%; solid infill: 110-130%; sparse infill: 120-150%; first layer: 120-140%. Maintain width <= 80% of layer height * (square corner factor) for sharp features."
+description,Compute recommended line width ranges for different print feature types given a nozzle diameter.
+inputs,"nozzle_diameter (float, mm): physical nozzle orifice diameter; feature_type (string): one of [external_perimeter, perimeter, solid_infill, sparse_infill, first_layer, support]."
+outputs,"recommended_min (float, mm); recommended_max (float, mm); default_target (float, mm); extrusion_multiplier_hint (string); slicer_config (string)."
+usage_notes,"Choose feature type; adjust flow only after establishing dimensional accuracy. Wider infill can improve time; avoid exceeding ~150% of nozzle diameter to prevent under-extrusion/poor layer bonding. First layer wider improves adhesion. External perimeters narrower improve detail."
+reference,https://ellis3dp.com/Print-Tuning-Guide/ (Line Width section)
+common_examples,"0.4 mm nozzle perimeter: 0.40-0.44 (default 0.42); solid infill: 0.44-0.52 (default 0.48); sparse infill: 0.48-0.60 (default 0.56); first layer: 0.48-0.56 (default 0.52)."
+calibration_model,https://github.com/minimal3dp/minimal3dp.github.io

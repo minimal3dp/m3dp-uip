@@ -125,6 +125,11 @@ class CSVLoader:
         key = "klipper:skew_correction"
         return self.cache.get(key)
 
+    def get_line_widths_formula(self) -> pd.DataFrame | None:
+        """Get line widths calculator data."""
+        key = "klipper:line_widths"
+        return self.cache.get(key)
+
     def get_material_recommendations(
         self,
         material_type: str,
