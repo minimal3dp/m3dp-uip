@@ -24,11 +24,22 @@ set -euo pipefail
 BACKEND_PORT="${BACKEND_PORT:-8000}"
 FRONTEND_PORT="${FRONTEND_PORT:-3000}"
 
+# Resolve Python interpreter (prefer local virtual environment)
+if [ -x ".venv/bin/python" ]; then
+  PYTHON_CMD="./.venv/bin/python"
+else
+  PYTHON_CMD="$(command -v python3 || command -v python || echo python)"
+fi
+if ! command -v "$PYTHON_CMD" >/dev/null 2>&1; then
+  echo "[BACKEND ERROR] Python interpreter not found. Activate venv or install Python."
+  exit 1
+fi
+
 echo "==> Starting Backend (port $BACKEND_PORT)"
 (
   cd backend || { echo "[BACKEND ERROR] backend directory not found"; exit 1; }
   # Run from inside backend so imports like 'from app.api...' resolve
-  python -m uvicorn app.main:app \
+  "$PYTHON_CMD" -m uvicorn app.main:app \
     --host 0.0.0.0 \
     --port "$BACKEND_PORT" \
     --reload
