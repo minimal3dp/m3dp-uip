@@ -23,6 +23,15 @@
 
         <!-- Input Shaping -->
         <InputShapingCalculator />
+
+        <!-- Max Volumetric Speed -->
+        <MaxVolumetricSpeedCalculator />
+
+        <!-- Run Current (TMC Drivers) -->
+        <RunCurrentCalculator />
+
+        <!-- Lead Screw Rotation Distance -->
+        <LeadScrewRotationDistanceCalculator />
       </div>
 
       <div class="mt-12 text-center text-zinc-500 text-sm">

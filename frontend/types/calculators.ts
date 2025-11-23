@@ -77,3 +77,65 @@ export interface InputShapingResponse {
   klipper_config: string
   notes: string
 }
+
+export interface MaxVolumetricSpeedRequest {
+  start_value: number
+  step_value: number
+  height_measured: number
+  temperature?: number
+  hotend_type?: string
+}
+
+export interface MaxVolumetricSpeedResponse {
+  max_flow: number
+  safe_flow_95: number
+  safe_flow_90: number
+  comparison: {
+    your_max_flow: number
+    closest_hotend: string
+    closest_flow: number
+    common_hotends: Record<string, number>
+  }
+  slicer_config: string
+  recommendation: string
+  test_details: {
+    start_value: number
+    step_value: number
+    height_measured: number
+    temperature?: number
+    hotend_type?: string
+  }
+}
+
+export interface RunCurrentRequest {
+  peak_current: number
+  motor_model?: string
+  driver_type: string
+}
+
+export interface RunCurrentResponse {
+  run_current: number
+  peak_current: number
+  rms_factor: number
+  driver_max: number
+  within_limits: boolean
+  klipper_config: string
+  recommendation: string
+  reference: string
+}
+
+export interface LeadScrewRotationDistanceRequest {
+  pitch: number
+  number_of_threads: number
+  screw_type?: string
+}
+
+export interface LeadScrewRotationDistanceResponse {
+  rotation_distance: number
+  pitch: number
+  number_of_threads: number
+  common_examples: Record<string, number>
+  klipper_config: string
+  recommendation: string
+  reference: string
+}

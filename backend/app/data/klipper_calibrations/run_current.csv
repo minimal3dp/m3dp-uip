@@ -1,0 +1,10 @@
+name,value,type,description,unit,min_value,max_value,examples,reference
+formula,run_current,output,Calculated run current for TMC stepper driver,A,,,,"Peak Current * RMS Factor (0.707)"
+peak_current,N/A,input,Peak current from stepper motor specification sheet,A,0.5,2.5,"1.5, 1.68, 2.0",See motor datasheet
+rms_factor,0.707,constant,RMS conversion factor (sine wave RMS = peak * 0.707),,,,0.707,https://docs.vorondesign.com/community/howto/120decibell/calculating_driver_current.html
+tmc2209_max,1.2,constant,Maximum capacity of TMC2209 driver,A,,,1.2,TMC2209 datasheet
+tmc2208_max,1.4,constant,Maximum capacity of TMC2208 driver,A,,,1.4,TMC2208 datasheet
+tmc5160_max,3.0,constant,Maximum capacity of TMC5160 driver,A,,,3.0,TMC5160 datasheet
+common_motors,N/A,reference,"NEMA17 17HS19-2004S1: 2.0A peak, Moons MS17HD6P4200: 2.0A peak, OMC 17HS19-2004S1: 2.0A peak, LDO 42STH48-2504AH: 2.5A peak",,,,,
+safety_note,N/A,note,"Round down to nearest 0.1A. Start 10-20% below calculated value and increase gradually while monitoring temperature.",,,,,
+usage_note,N/A,note,"Update [tmc2209 stepper_x], [tmc2209 stepper_y], [tmc2209 stepper_z] sections in printer.cfg with calculated run_current value.",,,,,

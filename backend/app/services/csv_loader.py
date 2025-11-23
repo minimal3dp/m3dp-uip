@@ -100,6 +100,21 @@ class CSVLoader:
         key = "klipper:input_shaping"
         return self.cache.get(key)
 
+    def get_max_volumetric_speed_formula(self) -> pd.DataFrame | None:
+        """Get max volumetric speed calculator data."""
+        key = "klipper:max_volumetric_speed"
+        return self.cache.get(key)
+
+    def get_run_current_formula(self) -> pd.DataFrame | None:
+        """Get run current (TMC stepper driver) calculator data."""
+        key = "klipper:run_current"
+        return self.cache.get(key)
+
+    def get_lead_screw_rotation_distance_formula(self) -> pd.DataFrame | None:
+        """Get lead screw rotation distance calculator data."""
+        key = "klipper:lead_screw_rotation_distance"
+        return self.cache.get(key)
+
     def get_material_recommendations(
         self,
         material_type: str,

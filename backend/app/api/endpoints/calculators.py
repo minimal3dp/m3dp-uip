@@ -102,6 +102,44 @@ class OrcaSlicerFlowYoloRequest(BaseModel):
     )
 
 
+class MaxVolumetricSpeedRequest(BaseModel):
+    """Request for Max Volumetric Speed calculation."""
+
+    start_value: float = Field(
+        ...,
+        gt=0,
+        le=50,
+        description="Starting volumetric speed for test (mm³/s)",
+        examples=[5.0],
+    )
+    step_value: float = Field(
+        ...,
+        gt=0,
+        le=5,
+        description="Increment between test sections (mm³/s)",
+        examples=[0.5],
+    )
+    height_measured: float = Field(
+        ...,
+        gt=0,
+        le=200,
+        description="Height where print quality starts degrading (mm)",
+        examples=[27.23],
+    )
+    temperature: float | None = Field(
+        None,
+        ge=150,
+        le=300,
+        description="Hotend temperature during test (°C)",
+        examples=[240],
+    )
+    hotend_type: str | None = Field(
+        None,
+        description="Hotend type for reference comparisons",
+        examples=["E3D V6", "Dragon HF", "Rapido UHF"],
+    )
+
+
 class OrcaSlicerFlowResponse(BaseModel):
     """Response with calculated OrcaSlicer flow rate."""
 
@@ -125,6 +163,89 @@ class OrcaSlicerFlowYoloResponse(BaseModel):
     )
     slicer_config: str = Field(..., description="Slicer config value to copy")
     recommendation: str = Field(..., description="Action recommendation")
+
+
+class MaxVolumetricSpeedResponse(BaseModel):
+    """Response with calculated max volumetric speed."""
+
+    max_flow: float = Field(..., description="Maximum volumetric speed (mm³/s)")
+    safe_flow_95: float = Field(..., description="Safe value at 95% of max (recommended)")
+    safe_flow_90: float = Field(..., description="Conservative value at 90% of max")
+    comparison: dict = Field(..., description="Comparison with common hotend flow rates")
+    slicer_config: str = Field(..., description="Slicer config value to copy (95% safe)")
+    recommendation: str = Field(..., description="Usage recommendations")
+    test_details: dict = Field(..., description="Test parameters for reference")
+
+
+class RunCurrentRequest(BaseModel):
+    """Request for Run Current (TMC stepper driver) calculation."""
+
+    peak_current: float = Field(
+        ...,
+        gt=0,
+        le=3.0,
+        description="Peak current from stepper motor specification sheet (A)",
+        examples=[1.5, 1.68, 2.0],
+    )
+    motor_model: str | None = Field(
+        None,
+        description="Optional motor model for reference",
+        examples=["NEMA17 17HS19-2004S1", "LDO 42STH48-2504AH"],
+    )
+    driver_type: str = Field(
+        "TMC2209",
+        description="TMC driver type",
+        examples=["TMC2209", "TMC2208", "TMC5160"],
+    )
+
+
+class RunCurrentResponse(BaseModel):
+    """Response with calculated run current for TMC driver."""
+
+    run_current: float = Field(..., description="Calculated run current (A)")
+    peak_current: float = Field(..., description="Input peak current from motor spec (A)")
+    rms_factor: float = Field(..., description="RMS conversion factor (0.707)")
+    driver_max: float = Field(..., description="Maximum capacity of selected driver (A)")
+    within_limits: bool = Field(..., description="Whether calculated value is within driver limits")
+    klipper_config: str = Field(..., description="Klipper config snippet to copy")
+    recommendation: str = Field(..., description="Usage and tuning recommendations")
+    reference: str = Field(..., description="Reference documentation URL")
+
+
+class LeadScrewRotationDistanceRequest(BaseModel):
+    """Request for Lead Screw Rotation Distance calculation."""
+
+    pitch: float = Field(
+        ...,
+        gt=0,
+        le=10,
+        description="Distance between threads on the lead screw (mm)",
+        examples=[2.0, 8.0],
+    )
+    number_of_threads: int = Field(
+        ...,
+        gt=0,
+        le=8,
+        description="Number of separate threads (starts) on the lead screw",
+        examples=[1, 2, 4],
+    )
+    screw_type: str | None = Field(
+        None,
+        description="Optional lead screw type for reference",
+        examples=["T8x2", "T8x4", "T8x8"],
+    )
+
+
+class LeadScrewRotationDistanceResponse(BaseModel):
+    """Response with calculated lead screw rotation distance."""
+
+    rotation_distance: float = Field(..., description="Calculated rotation distance (mm)")
+    pitch: float = Field(..., description="Input pitch value (mm)")
+    number_of_threads: int = Field(..., description="Input number of threads")
+    common_examples: dict = Field(..., description="Common T8 lead screw examples")
+    klipper_config: str = Field(..., description="Klipper config snippet to copy")
+    recommendation: str = Field(..., description="Usage recommendations")
+    reference: str = Field(..., description="Klipper documentation URL")
 
 
 class PressureAdvanceRequest(BaseModel):
@@ -230,6 +351,33 @@ async def list_calculators():
                 "csv_source": "klipper_calibrations/input_shaping.csv",
                 "description": "Recommend input shaper types based on resonance frequencies",
                 "endpoint": "/api/v1/calculators/input-shaping",
+                "method": "POST",
+            },
+            {
+                "id": "max-volumetric-speed",
+                "name": "Max Volumetric Speed",
+                "category": "Performance",
+                "csv_source": "klipper_calibrations/max_volumetric_speed.csv",
+                "description": "Calculate maximum flow rate your hotend can handle",
+                "endpoint": "/api/v1/calculators/max-volumetric-speed",
+                "method": "POST",
+            },
+            {
+                "id": "run-current",
+                "name": "Run Current (TMC Drivers)",
+                "category": "Mechanical",
+                "csv_source": "klipper_calibrations/run_current.csv",
+                "description": "Calculate proper run_current for TMC stepper drivers from peak current",
+                "endpoint": "/api/v1/calculators/run-current",
+                "method": "POST",
+            },
+            {
+                "id": "lead-screw-rotation-distance",
+                "name": "Lead Screw Rotation Distance",
+                "category": "Mechanical",
+                "csv_source": "klipper_calibrations/lead_screw_rotation_distance.csv",
+                "description": "Calculate rotation_distance for Z-axis lead screws (pitch × threads)",
+                "endpoint": "/api/v1/calculators/lead-screw-rotation-distance",
                 "method": "POST",
             },
         ]
@@ -796,4 +944,388 @@ async def calculate_pressure_advance(request: PressureAdvanceRequest):
         test_parameters=test_parameters,
         klipper_config=klipper_config,
         calibration_method=calibration_method,
+    )
+
+
+@router.post("/max-volumetric-speed", response_model=MaxVolumetricSpeedResponse)
+async def calculate_max_volumetric_speed(request: MaxVolumetricSpeedRequest):
+    """
+    Calculate maximum volumetric flow rate from test print measurements.
+
+    **Purpose**:
+    Determine the maximum mm³/s your hotend can reliably extrude at a given
+    temperature. This value limits print speeds to prevent underextrusion.
+
+    **Formula** (from CSV and Ellis3DP guide):
+    ```
+    max_flow = start + (height_measured * step)
+    safe_flow_95 = max_flow * 0.95
+    safe_flow_90 = max_flow * 0.90
+    ```
+
+    **Method**:
+    1. Use OrcaSlicer "Calibration → More... → Max Flowrate" test
+    2. Print tower with increasing volumetric speeds
+    3. Measure height where quality degrades (layer skipping, gaps, etc.)
+    4. Calculate max flow and use 95% value in slicer
+
+    **Common Hotend Ranges** (from CSV and Ellis3DP):
+    - E3D V6 / Revo: ~11 mm³/s
+    - Dragon SF: ~15 mm³/s
+    - Dragon HF / Rapido HF: ~24 mm³/s
+    - Rapido UHF / Mosquito Magnum: ~30 mm³/s
+
+    **Speed Formula**:
+    `max_speed = max_flow / layer_height / line_width`
+
+    Example: 24 mm³/s / 0.2mm / 0.4mm = 300 mm/s
+
+    Args:
+        request: Start value, step increment, and measured height
+
+    Returns:
+        Max flow rate, safe values (95%/90%), and slicer config
+
+    Raises:
+        HTTPException: If calculated values are outside expected ranges
+    """
+    logger.info(
+        f"Max volumetric speed calculation: start={request.start_value}, "
+        f"step={request.step_value}, height={request.height_measured}"
+    )
+
+    # Formula from CSV: max_flow = start + (height_measured * step)
+    max_flow = request.start_value + (request.height_measured * request.step_value)
+
+    # Safety margins (CSV rows 5-6)
+    safe_flow_95 = max_flow * 0.95
+    safe_flow_90 = max_flow * 0.90
+
+    # Validate result is reasonable
+    if max_flow < 5 or max_flow > 50:
+        logger.warning(f"Calculated max flow {max_flow:.2f} mm³/s is outside typical range (5-50)")
+
+    # Hotend comparison data (from CSV and Ellis3DP)
+    common_hotends = {
+        "E3D V6": 11,
+        "E3D Revo": 11,
+        "Dragon SF": 15,
+        "Dragon HF": 24,
+        "Rapido HF": 24,
+        "Rapido UHF": 30,
+        "Mosquito": 20,
+        "Mosquito Magnum": 30,
+    }
+
+    # Find closest hotend match
+    closest_hotend = min(common_hotends.items(), key=lambda x: abs(x[1] - max_flow))
+    comparison = {
+        "your_max_flow": round(max_flow, 2),
+        "closest_hotend": closest_hotend[0],
+        "closest_flow": closest_hotend[1],
+        "common_hotends": common_hotends,
+    }
+
+    # Generate slicer config (use 95% safe value)
+    slicer_config = f"max_volumetric_speed: {safe_flow_95:.2f}"
+
+    # Usage recommendations
+    temp_note = f" at {request.temperature}°C" if request.temperature else " at test temperature"
+    recommendation = (
+        f"Use {safe_flow_95:.2f} mm³/s (95% of max) in your slicer{temp_note}. "
+        f"For critical prints, consider {safe_flow_90:.2f} mm³/s (90%). "
+        f"Higher temperatures may increase flow rate but can cause stringing. "
+        f"Your result is similar to a {closest_hotend[0]}."
+    )
+
+    # Test details for reference
+    test_details = {
+        "start_value": request.start_value,
+        "step_value": request.step_value,
+        "height_measured": request.height_measured,
+        "temperature": request.temperature,
+        "hotend_type": request.hotend_type,
+    }
+
+    # Track calculator usage
+    await track_calculator_use(
+        "max_volumetric_speed",
+        params={
+            "max_flow": round(max_flow, 2),
+            "safe_flow_95": round(safe_flow_95, 2),
+            "closest_hotend": closest_hotend[0],
+        },
+    )
+
+    return MaxVolumetricSpeedResponse(
+        max_flow=round(max_flow, 2),
+        safe_flow_95=round(safe_flow_95, 2),
+        safe_flow_90=round(safe_flow_90, 2),
+        comparison=comparison,
+        slicer_config=slicer_config,
+        recommendation=recommendation,
+        test_details=test_details,
+    )
+
+
+@router.post(
+    "/run-current",
+    response_model=RunCurrentResponse,
+    summary="Calculate TMC Run Current",
+    description="""
+    Calculate proper run_current value for TMC stepper drivers (TMC2209, TMC2208, TMC5160).
+
+    **Formula**: `run_current = peak_current * 0.707`
+
+    **How to Use**:
+    1. Locate your stepper motor's datasheet
+    2. Find the **peak current** specification (typically 1.5A - 2.5A for NEMA17)
+    3. Enter the peak current value
+    4. Calculator will compute the RMS run current (peak × 0.707)
+    5. Copy the result to your printer.cfg TMC section
+
+    **Important Notes**:
+    - Result is automatically rounded down to nearest 0.1A for safety
+    - TMC2209 max: 1.2A, TMC2208 max: 1.4A, TMC5160 max: 3.0A
+    - Start 10-20% below calculated value and increase gradually
+    - Monitor motor temperature during testing
+    - Motors should be warm but not hot to touch
+
+    **Example Motors**:
+    - NEMA17 17HS19-2004S1: 2.0A peak → 1.4A run
+    - LDO 42STH48-2504AH: 2.5A peak → 1.7A run (use 1.2A max for TMC2209)
+    - Moons MS17HD6P4200: 2.0A peak → 1.4A run
+
+    **Reference**: https://docs.vorondesign.com/community/howto/120decibell/calculating_driver_current.html
+
+    **Phase**: CSV-driven formula calculation
+    """,
+    tags=["calculators", "klipper"],
+)
+async def calculate_run_current(request: RunCurrentRequest) -> RunCurrentResponse:
+    """
+    Calculate run_current for TMC stepper drivers.
+
+    Formula from Voron documentation:
+    run_current = peak_current * 0.707 (RMS conversion)
+
+    Args:
+        request: RunCurrentRequest with peak_current, optional motor_model and driver_type
+
+    Returns:
+        RunCurrentResponse with calculated run_current and safety recommendations
+    """
+    logger.info(
+        f"Run Current calculation: peak_current={request.peak_current}, "
+        f"driver={request.driver_type}"
+    )
+
+    # Load formula from CSV (validates CSV exists and is loaded)
+    csv_loader = get_csv_loader()
+    _ = csv_loader.get_run_current_formula()  # Validates CSV is loaded
+
+    # Get RMS factor (constant)
+    rms_factor = 0.707
+
+    # Calculate run current
+    calculated_current = request.peak_current * rms_factor
+
+    # Round down to nearest 0.1A for safety
+    run_current = round(calculated_current * 10) / 10
+
+    # Driver maximum currents
+    driver_limits = {
+        "TMC2209": 1.2,
+        "TMC2208": 1.4,
+        "TMC5160": 3.0,
+    }
+
+    driver_max = driver_limits.get(request.driver_type, 1.2)
+
+    # Check if within driver limits
+    within_limits = run_current <= driver_max
+
+    # If over limit, cap at driver max and warn
+    if not within_limits:
+        logger.warning(
+            f"Calculated run_current {run_current}A exceeds {request.driver_type} "
+            f"maximum of {driver_max}A. Capping at driver limit."
+        )
+        run_current = driver_max
+
+    # Generate Klipper config snippet
+    motor_comment = f"  # {request.motor_model}" if request.motor_model else ""
+    klipper_config = f"""[tmc2209 stepper_x]{motor_comment}
+uart_pin: <YOUR_PIN>
+run_current: {run_current}
+sense_resistor: 0.110
+stealthchop_threshold: 0"""
+
+    # Generate recommendations
+    if within_limits:
+        recommendation = (
+            f"Set run_current: {run_current} in your [tmc2209 stepper_x/y/z] sections. "
+            f"Start at {run_current * 0.8:.1f}A (80%) and increase gradually while monitoring temperature. "
+            f"Motors should be warm but not uncomfortable to touch. "
+            f"If motors are too hot, reduce current by 0.1A increments."
+        )
+    else:
+        recommendation = (
+            f"Your motor's peak current ({request.peak_current}A) exceeds {request.driver_type} "
+            f"capacity ({driver_max}A). Using maximum safe value of {driver_max}A. "
+            f"Consider upgrading to TMC5160 drivers for higher current motors, "
+            f"or use a lower current motor for {request.driver_type} drivers."
+        )
+
+    # Reference URL
+    reference = (
+        "https://docs.vorondesign.com/community/howto/120decibell/calculating_driver_current.html"
+    )
+
+    # Track calculator usage
+    await track_calculator_use(
+        "run_current",
+        params={
+            "peak_current": request.peak_current,
+            "run_current": run_current,
+            "driver_type": request.driver_type,
+            "within_limits": within_limits,
+        },
+    )
+
+    return RunCurrentResponse(
+        run_current=run_current,
+        peak_current=request.peak_current,
+        rms_factor=rms_factor,
+        driver_max=driver_max,
+        within_limits=within_limits,
+        klipper_config=klipper_config,
+        recommendation=recommendation,
+        reference=reference,
+    )
+
+
+@router.post(
+    "/lead-screw-rotation-distance",
+    response_model=LeadScrewRotationDistanceResponse,
+    summary="Calculate Lead Screw Rotation Distance",
+    description="""
+    Calculate rotation_distance for Z-axis lead screws.
+
+    **Formula**: `rotation_distance = pitch × number_of_threads`
+
+    **How to Use**:
+    1. Check your lead screw specifications (usually printed on screw or in documentation)
+    2. Identify the **pitch** (distance between threads in mm)
+    3. Count the **number of starts** (separate thread lines)
+    4. Calculator multiplies pitch by number of threads
+    5. Copy result to your printer.cfg [stepper_z] section
+
+    **Common T8 Lead Screws**:
+    - **T8x2**: 2mm pitch, 1 start (single thread) = 2mm rotation distance
+    - **T8x4**: 2mm pitch, 2 starts (dual thread) = 4mm rotation distance
+    - **T8x8**: 2mm pitch, 4 starts (quad thread) = 8mm rotation distance
+
+    **How to Identify Number of Starts**:
+    - Look at the end of the lead screw
+    - Count how many separate grooves/threads you see
+    - Single start: 1 groove (most common)
+    - Dual start: 2 grooves (faster Z movement)
+    - Quad start: 4 grooves (fastest Z movement)
+
+    **Common Printers**:
+    - Ender 3 / CR-10: Usually T8x2 (2mm)
+    - Prusa i3: T8x8 (8mm) for faster Z
+    - Voron: Often T8x2 or T8x4
+
+    **Reference**: https://www.klipper3d.org/Rotation_Distance.html#axes-with-a-lead-screw
+
+    **Phase**: CSV-driven formula calculation
+    """,
+    tags=["calculators", "klipper"],
+)
+async def calculate_lead_screw_rotation_distance(
+    request: LeadScrewRotationDistanceRequest,
+) -> LeadScrewRotationDistanceResponse:
+    """
+    Calculate rotation_distance for lead screw Z-axis.
+
+    Formula from Klipper documentation:
+    rotation_distance = screw_pitch * number_of_separate_threads
+
+    Args:
+        request: LeadScrewRotationDistanceRequest with pitch and number_of_threads
+
+    Returns:
+        LeadScrewRotationDistanceResponse with calculated rotation distance
+    """
+    logger.info(
+        f"Lead Screw calculation: pitch={request.pitch}, threads={request.number_of_threads}"
+    )
+
+    # Load formula from CSV (validates CSV exists and is loaded)
+    csv_loader = get_csv_loader()
+    _ = csv_loader.get_lead_screw_rotation_distance_formula()  # Validates CSV is loaded
+
+    # Calculate rotation distance
+    rotation_distance = request.pitch * request.number_of_threads
+
+    # Common T8 lead screw examples
+    common_examples = {
+        "T8x2 (single start)": 2.0,
+        "T8x4 (dual start)": 4.0,
+        "T8x8 (quad start)": 8.0,
+    }
+
+    # Generate Klipper config snippet
+    screw_comment = f"  # {request.screw_type}" if request.screw_type else ""
+    klipper_config = f"""[stepper_z]{screw_comment}
+step_pin: <YOUR_PIN>
+dir_pin: <YOUR_DIR>
+enable_pin: !<YOUR_ENABLE>
+microsteps: 16
+rotation_distance: {rotation_distance}
+endstop_pin: probe:z_virtual_endstop
+position_max: 300
+homing_speed: 8.0"""
+
+    # Generate recommendations
+    screw_info = f" ({request.screw_type})" if request.screw_type else ""
+    recommendation = (
+        f"Set rotation_distance: {rotation_distance} in your [stepper_z] section{screw_info}. "
+        f"With {request.pitch}mm pitch and {request.number_of_threads} start(s), "
+        f"each full motor rotation moves the Z-axis {rotation_distance}mm. "
+    )
+
+    if request.number_of_threads > 1:
+        recommendation += (
+            f"Multi-start lead screws ({request.number_of_threads} starts) provide faster Z movement "
+            f"compared to single-start screws, useful for tall prints."
+        )
+    else:
+        recommendation += (
+            "Single-start lead screws are most common and provide good precision for layer heights."
+        )
+
+    # Reference URL
+    reference = "https://www.klipper3d.org/Rotation_Distance.html#axes-with-a-lead-screw"
+
+    # Track calculator usage
+    await track_calculator_use(
+        "lead_screw_rotation_distance",
+        params={
+            "pitch": request.pitch,
+            "number_of_threads": request.number_of_threads,
+            "rotation_distance": rotation_distance,
+        },
+    )
+
+    return LeadScrewRotationDistanceResponse(
+        rotation_distance=rotation_distance,
+        pitch=request.pitch,
+        number_of_threads=request.number_of_threads,
+        common_examples=common_examples,
+        klipper_config=klipper_config,
+        recommendation=recommendation,
+        reference=reference,
     )

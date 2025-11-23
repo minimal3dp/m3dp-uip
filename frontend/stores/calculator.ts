@@ -33,6 +33,26 @@ interface CalculatorState {
     yFrequency: number | null
     result: any | null
   }
+  maxVolumetricSpeed: {
+    startValue: number | null
+    stepValue: number | null
+    heightMeasured: number | null
+    temperature: number | null
+    hotendType: string | null
+    result: any | null
+  }
+  runCurrent: {
+    peakCurrent: number | null
+    motorModel: string | null
+    driverType: string
+    result: any | null
+  }
+  leadScrewRotationDistance: {
+    pitch: number | null
+    numberOfThreads: number | null
+    screwType: string | null
+    result: any | null
+  }
   loading: boolean
   error: string | null
 }
@@ -67,6 +87,26 @@ export const useCalculatorStore = defineStore('calculator', {
       testType: 'ADXL345',
       xFrequency: null,
       yFrequency: null,
+      result: null,
+    },
+    maxVolumetricSpeed: {
+      startValue: null,
+      stepValue: null,
+      heightMeasured: null,
+      temperature: null,
+      hotendType: null,
+      result: null,
+    },
+    runCurrent: {
+      peakCurrent: null,
+      motorModel: null,
+      driverType: 'TMC2209',
+      result: null,
+    },
+    leadScrewRotationDistance: {
+      pitch: 2.0,
+      numberOfThreads: 1,
+      screwType: null,
       result: null,
     },
     loading: false,
@@ -218,6 +258,90 @@ export const useCalculatorStore = defineStore('calculator', {
       this.inputShaping.xFrequency = null
       this.inputShaping.yFrequency = null
       this.inputShaping.result = null
+      this.error = null
+    },
+
+    async calculateMaxVolumetricSpeed() {
+      if (!this.maxVolumetricSpeed.startValue || !this.maxVolumetricSpeed.stepValue || !this.maxVolumetricSpeed.heightMeasured) {
+        this.error = 'Please fill in all required fields'
+        return
+      }
+
+      this.loading = true
+      this.error = null
+
+      try {
+        const api = useCalculatorApi()
+        const result = await api.calculateMaxVolumetricSpeed({
+          start_value: this.maxVolumetricSpeed.startValue,
+          step_value: this.maxVolumetricSpeed.stepValue,
+          height_measured: this.maxVolumetricSpeed.heightMeasured,
+          temperature: this.maxVolumetricSpeed.temperature || undefined,
+          hotend_type: this.maxVolumetricSpeed.hotendType || undefined,
+        })
+        this.maxVolumetricSpeed.result = result
+      } catch (err: any) {
+        this.error = err.data?.detail || 'Calculation failed'
+      } finally {
+        this.loading = false
+      }
+    },
+
+    resetMaxVolumetricSpeed() {
+      this.maxVolumetricSpeed.startValue = null
+      this.maxVolumetricSpeed.stepValue = null
+      this.maxVolumetricSpeed.heightMeasured = null
+      this.maxVolumetricSpeed.temperature = null
+      this.maxVolumetricSpeed.hotendType = null
+      this.maxVolumetricSpeed.result = null
+      this.error = null
+    },
+
+    async calculateRunCurrent(request: any) {
+      this.loading = true
+      this.error = null
+
+      try {
+        const api = useCalculatorApi()
+        const result = await api.calculateRunCurrent(request)
+        this.runCurrent.result = result
+      } catch (err: any) {
+        this.error = err.data?.detail || 'Calculation failed'
+        throw err
+      } finally {
+        this.loading = false
+      }
+    },
+
+    resetRunCurrent() {
+      this.runCurrent.peakCurrent = null
+      this.runCurrent.motorModel = null
+      this.runCurrent.driverType = 'TMC2209'
+      this.runCurrent.result = null
+      this.error = null
+    },
+
+    async calculateLeadScrewRotationDistance(request: any) {
+      this.loading = true
+      this.error = null
+
+      try {
+        const api = useCalculatorApi()
+        const result = await api.calculateLeadScrewRotationDistance(request)
+        this.leadScrewRotationDistance.result = result
+      } catch (err: any) {
+        this.error = err.data?.detail || 'Calculation failed'
+        throw err
+      } finally {
+        this.loading = false
+      }
+    },
+
+    resetLeadScrewRotationDistance() {
+      this.leadScrewRotationDistance.pitch = 2.0
+      this.leadScrewRotationDistance.numberOfThreads = 1
+      this.leadScrewRotationDistance.screwType = null
+      this.leadScrewRotationDistance.result = null
       this.error = null
     },
   },

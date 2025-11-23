@@ -1,0 +1,13 @@
+# Klipper Calibrations - Max Volumetric Speed
+# Source: Ellis3DP Print Tuning Guide + OrcaSlicer Wiki + CNC Kitchen methodology
+# Purpose: Determine maximum flow rate your hotend can reliably handle
+
+Name,Description,Formula,Units,Expected_Range,Notes
+Start Value,Starting volumetric speed for test,N/A,mm³/s,5-10,"Lower for conservative approach, higher for high-flow hotends"
+Step Value,Increment between test sections,N/A,mm³/s,0.5-1.0,"Smaller steps = more precision, 0.5 is recommended"
+Height Measured,Height where print quality degrades,N/A,mm,10-50,"Measure with calipers where layer quality starts failing"
+Max Flow Value,Calculated maximum volumetric speed,start + (height_measured * step),mm³/s,11-30,"E3D V6: ~11, Dragon HF: ~24, Rapido: ~24-30"
+Safe Flow (95%),Recommended value with 5% safety margin,max_flow * 0.95,mm³/s,10-28,"Use this value in slicer for reliable printing"
+Safe Flow (90%),Conservative value with 10% safety margin,max_flow * 0.90,mm³/s,10-27,"Use for critical prints or to avoid any dropoff"
+Filament Diameter,Diameter of filament used,1.75 or 2.85,mm,1.75-2.85,"Standard filament sizes"
+Temperature,Hotend temperature during test,N/A,°C,180-270,"Higher temps increase flow rate but may cause stringing"
