@@ -25,19 +25,37 @@ BACKEND_PORT="${BACKEND_PORT:-8000}"
 FRONTEND_PORT="${FRONTEND_PORT:-3000}"
 
 echo "==> Starting Backend (port $BACKEND_PORT)"
-python -m uvicorn backend.app.main:app \
-  --host 0.0.0.0 \
-  --port "$BACKEND_PORT" \
-  --reload &
+(
+  cd backend || { echo "[BACKEND ERROR] backend directory not found"; exit 1; }
+  # Run from inside backend so imports like 'from app.api...' resolve
+  python -m uvicorn app.main:app \
+    --host 0.0.0.0 \
+    --port "$BACKEND_PORT" \
+    --reload
+) &
 BACKEND_PID=$!
 
+sleep 1
+if ! kill -0 "$BACKEND_PID" 2>/dev/null; then
+  echo "[BACKEND ERROR] Backend process failed to start. Check Python deps or uvicorn install."
+  exit 1
+fi
+
 echo "==> Starting Frontend (port $FRONTEND_PORT)"
-pushd frontend >/dev/null
-NUXT_PUBLIC_API_BASE="${NUXT_PUBLIC_API_BASE:-http://localhost:$BACKEND_PORT}" \
-FRONTEND_PORT="$FRONTEND_PORT" \
-npm run dev -- --port "$FRONTEND_PORT" &
+(
+  cd frontend || { echo "[FRONTEND ERROR] frontend directory not found"; exit 1; }
+  NUXT_PUBLIC_API_BASE="${NUXT_PUBLIC_API_BASE:-http://localhost:$BACKEND_PORT}" \
+  FRONTEND_PORT="$FRONTEND_PORT" \
+  npm run dev -- --port "$FRONTEND_PORT"
+) &
 FRONTEND_PID=$!
-popd >/dev/null
+
+sleep 1
+if ! kill -0 "$FRONTEND_PID" 2>/dev/null; then
+  echo "[FRONTEND ERROR] Frontend process failed to start. Verify Node modules installed (npm install)."
+  kill "$BACKEND_PID" 2>/dev/null || true
+  exit 1
+fi
 
 cleanup() {
   echo "\n==> Shutting down..."
