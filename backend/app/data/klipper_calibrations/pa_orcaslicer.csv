@@ -1,0 +1,8 @@
+Name,Description,Formula,Units,Expected_Range,Notes
+Measured Height,Height on test print where best PA is observed,User measured,mm,0-50,Measure the Z height where corners look best
+Start PA,Starting PA value for test,0,N/A,0,Always start from 0
+Direct Drive Step,PA increment per mm height (direct drive),0.002,PA/mm,0.001-0.005,Standard for direct drive extruders
+Bowden Step,PA increment per mm height (Bowden),0.02,PA/mm,0.01-0.03,Standard for Bowden extruders
+Calculated PA (Direct),Final PA for direct drive,"Start + (Measured Height × Direct Drive Step)",N/A,0.0-0.2,Use this value in printer.cfg for direct drive
+Calculated PA (Bowden),Final PA for Bowden,"Start + (Measured Height × Bowden Step)",N/A,0.0-1.0,Use this value in printer.cfg for Bowden
+Common Example,"Direct Drive: Measured Height 30.3mm → PA = 0 + (30.3 × 0.002) = 0.061 | Bowden: Measured Height 30.3mm → PA = 0 + (30.3 × 0.02) = 0.606"

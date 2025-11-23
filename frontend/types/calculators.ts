@@ -197,3 +197,46 @@ export interface LineWidthsResponse {
   extrusion_volume_check: string | null
   layer_height_constraint_applied: boolean
 }
+
+export interface PAOrcaSlicerRequest {
+  measured_height: number
+  extruder_type: string
+}
+
+export interface PAOrcaSlicerResponse {
+  calculated_pa: number
+  step_used: number
+  extruder_type: string
+  klipper_config: string
+  notes: string
+}
+
+export interface ExtrusionRateSmoothingRequest {
+  acceleration: number
+  line_width: number
+  layer_height: number
+}
+
+export interface ExtrusionRateSmoothingResponse {
+  ers_max: number
+  ers_60_percent: number
+  ers_80_percent: number
+  recommended: string
+  orcaslicer_config: string
+  notes: string
+}
+
+export interface AdaptivePressureAdvanceRequest {
+  pa_values: number[]
+}
+
+export interface AdaptivePressureAdvanceResponse {
+  min_pa_tested: number
+  max_pa_tested: number
+  pa_range: number
+  adaptive_min_pa: number
+  adaptive_max_pa: number
+  adaptive_step: number
+  orcaslicer_config: string
+  notes: string
+}

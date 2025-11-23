@@ -79,6 +79,21 @@ interface CalculatorState {
     layerHeight: number | null
     result: LineWidthsResponse | null
   }
+  paOrcaSlicer: {
+    measuredHeight: number | null
+    extruderType: string
+    result: any | null
+  }
+  extrusionRateSmoothing: {
+    acceleration: number
+    lineWidth: number
+    layerHeight: number
+    result: any | null
+  }
+  adaptivePressureAdvance: {
+    paValues: string
+    result: any | null
+  }
   loading: boolean
   error: string | null
 }
@@ -158,6 +173,21 @@ export const useCalculatorStore = defineStore('calculator', {
       nozzleDiameter: 0.4,
       featureType: 'perimeter',
       layerHeight: null,
+      result: null,
+    },
+    paOrcaSlicer: {
+      measuredHeight: null,
+      extruderType: 'direct_drive',
+      result: null,
+    },
+    extrusionRateSmoothing: {
+      acceleration: 12000,
+      lineWidth: 0.6,
+      layerHeight: 0.2,
+      result: null,
+    },
+    adaptivePressureAdvance: {
+      paValues: '',
       result: null,
     },
     loading: false,
@@ -475,6 +505,102 @@ export const useCalculatorStore = defineStore('calculator', {
       this.lineWidths.featureType = 'perimeter'
       this.lineWidths.layerHeight = null
       this.lineWidths.result = null
+      this.error = null
+    },
+
+    async calculatePAOrcaSlicer() {
+      if (!this.paOrcaSlicer.measuredHeight) {
+        this.error = 'Please enter measured height'
+        return
+      }
+
+      this.loading = true
+      this.error = null
+
+      try {
+        const api = useCalculatorApi()
+        const result = await api.calculatePAOrcaSlicer({
+          measured_height: this.paOrcaSlicer.measuredHeight,
+          extruder_type: this.paOrcaSlicer.extruderType,
+        })
+        this.paOrcaSlicer.result = result
+      } catch (err: any) {
+        this.error = err.data?.detail || 'Calculation failed'
+      } finally {
+        this.loading = false
+      }
+    },
+
+    resetPAOrcaSlicer() {
+      this.paOrcaSlicer.measuredHeight = null
+      this.paOrcaSlicer.extruderType = 'direct_drive'
+      this.paOrcaSlicer.result = null
+      this.error = null
+    },
+
+    async calculateExtrusionRateSmoothing() {
+      this.loading = true
+      this.error = null
+
+      try {
+        const api = useCalculatorApi()
+        const result = await api.calculateExtrusionRateSmoothing({
+          acceleration: this.extrusionRateSmoothing.acceleration,
+          line_width: this.extrusionRateSmoothing.lineWidth,
+          layer_height: this.extrusionRateSmoothing.layerHeight,
+        })
+        this.extrusionRateSmoothing.result = result
+      } catch (err: any) {
+        this.error = err.data?.detail || 'Calculation failed'
+      } finally {
+        this.loading = false
+      }
+    },
+
+    resetExtrusionRateSmoothing() {
+      this.extrusionRateSmoothing.acceleration = 12000
+      this.extrusionRateSmoothing.lineWidth = 0.6
+      this.extrusionRateSmoothing.layerHeight = 0.2
+      this.extrusionRateSmoothing.result = null
+      this.error = null
+    },
+
+    async calculateAdaptivePressureAdvance() {
+      if (!this.adaptivePressureAdvance.paValues) {
+        this.error = 'Please enter PA values'
+        return
+      }
+
+      this.loading = true
+      this.error = null
+
+      try {
+        // Parse comma-separated PA values
+        const paArray = this.adaptivePressureAdvance.paValues
+          .split(',')
+          .map(v => parseFloat(v.trim()))
+          .filter(v => !isNaN(v))
+
+        if (paArray.length < 2) {
+          this.error = 'Please enter at least 2 PA values'
+          return
+        }
+
+        const api = useCalculatorApi()
+        const result = await api.calculateAdaptivePressureAdvance({
+          pa_values: paArray,
+        })
+        this.adaptivePressureAdvance.result = result
+      } catch (err: any) {
+        this.error = err.data?.detail || 'Calculation failed'
+      } finally {
+        this.loading = false
+      }
+    },
+
+    resetAdaptivePressureAdvance() {
+      this.adaptivePressureAdvance.paValues = ''
+      this.adaptivePressureAdvance.result = null
       this.error = null
     },
   },

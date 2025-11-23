@@ -12,13 +12,17 @@ type HydrationStrategies = {
 }
 type LazyComponent<T> = (T & DefineComponent<HydrationStrategies, {}, {}, {}, {}, {}, {}, { hydrated: () => void }>)
 interface _GlobalComponents {
-      'ConsentBanner': typeof import("../components/ConsentBanner.vue")['default']
+      'AdaptivePressureAdvanceCalculator': typeof import("../components/AdaptivePressureAdvanceCalculator.vue")['default']
+    'ConsentBanner': typeof import("../components/ConsentBanner.vue")['default']
+    'ExtrusionRateSmoothingCalculator': typeof import("../components/ExtrusionRateSmoothingCalculator.vue")['default']
     'ImageUpload': typeof import("../components/ImageUpload.vue")['default']
     'InputShapingCalculator': typeof import("../components/InputShapingCalculator.vue")['default']
     'LeadScrewRotationDistanceCalculator': typeof import("../components/LeadScrewRotationDistanceCalculator.vue")['default']
+    'LineWidthsCalculator': typeof import("../components/LineWidthsCalculator.vue")['default']
     'MaxVolumetricSpeedCalculator': typeof import("../components/MaxVolumetricSpeedCalculator.vue")['default']
     'OrcaSlicerFlowCalculator': typeof import("../components/OrcaSlicerFlowCalculator.vue")['default']
     'OrcaSlicerFlowYoloCalculator': typeof import("../components/OrcaSlicerFlowYoloCalculator.vue")['default']
+    'PAOrcaSlicerCalculator': typeof import("../components/PAOrcaSlicerCalculator.vue")['default']
     'PressureAdvanceCalculator': typeof import("../components/PressureAdvanceCalculator.vue")['default']
     'ResultsDisplay': typeof import("../components/ResultsDisplay.vue")['default']
     'RotationDistanceCalculator': typeof import("../components/RotationDistanceCalculator.vue")['default']
@@ -50,13 +54,17 @@ interface _GlobalComponents {
     'Body': typeof import("../node_modules/nuxt/dist/head/runtime/components")['Body']
     'NuxtIsland': typeof import("../node_modules/nuxt/dist/app/components/nuxt-island")['default']
     'NuxtRouteAnnouncer': typeof import("../node_modules/nuxt/dist/app/components/server-placeholder")['default']
-      'LazyConsentBanner': LazyComponent<typeof import("../components/ConsentBanner.vue")['default']>
+      'LazyAdaptivePressureAdvanceCalculator': LazyComponent<typeof import("../components/AdaptivePressureAdvanceCalculator.vue")['default']>
+    'LazyConsentBanner': LazyComponent<typeof import("../components/ConsentBanner.vue")['default']>
+    'LazyExtrusionRateSmoothingCalculator': LazyComponent<typeof import("../components/ExtrusionRateSmoothingCalculator.vue")['default']>
     'LazyImageUpload': LazyComponent<typeof import("../components/ImageUpload.vue")['default']>
     'LazyInputShapingCalculator': LazyComponent<typeof import("../components/InputShapingCalculator.vue")['default']>
     'LazyLeadScrewRotationDistanceCalculator': LazyComponent<typeof import("../components/LeadScrewRotationDistanceCalculator.vue")['default']>
+    'LazyLineWidthsCalculator': LazyComponent<typeof import("../components/LineWidthsCalculator.vue")['default']>
     'LazyMaxVolumetricSpeedCalculator': LazyComponent<typeof import("../components/MaxVolumetricSpeedCalculator.vue")['default']>
     'LazyOrcaSlicerFlowCalculator': LazyComponent<typeof import("../components/OrcaSlicerFlowCalculator.vue")['default']>
     'LazyOrcaSlicerFlowYoloCalculator': LazyComponent<typeof import("../components/OrcaSlicerFlowYoloCalculator.vue")['default']>
+    'LazyPAOrcaSlicerCalculator': LazyComponent<typeof import("../components/PAOrcaSlicerCalculator.vue")['default']>
     'LazyPressureAdvanceCalculator': LazyComponent<typeof import("../components/PressureAdvanceCalculator.vue")['default']>
     'LazyResultsDisplay': LazyComponent<typeof import("../components/ResultsDisplay.vue")['default']>
     'LazyRotationDistanceCalculator': LazyComponent<typeof import("../components/RotationDistanceCalculator.vue")['default']>
@@ -94,13 +102,17 @@ declare module 'vue' {
   export interface GlobalComponents extends _GlobalComponents { }
 }
 
+export const AdaptivePressureAdvanceCalculator: typeof import("../components/AdaptivePressureAdvanceCalculator.vue")['default']
 export const ConsentBanner: typeof import("../components/ConsentBanner.vue")['default']
+export const ExtrusionRateSmoothingCalculator: typeof import("../components/ExtrusionRateSmoothingCalculator.vue")['default']
 export const ImageUpload: typeof import("../components/ImageUpload.vue")['default']
 export const InputShapingCalculator: typeof import("../components/InputShapingCalculator.vue")['default']
 export const LeadScrewRotationDistanceCalculator: typeof import("../components/LeadScrewRotationDistanceCalculator.vue")['default']
+export const LineWidthsCalculator: typeof import("../components/LineWidthsCalculator.vue")['default']
 export const MaxVolumetricSpeedCalculator: typeof import("../components/MaxVolumetricSpeedCalculator.vue")['default']
 export const OrcaSlicerFlowCalculator: typeof import("../components/OrcaSlicerFlowCalculator.vue")['default']
 export const OrcaSlicerFlowYoloCalculator: typeof import("../components/OrcaSlicerFlowYoloCalculator.vue")['default']
+export const PAOrcaSlicerCalculator: typeof import("../components/PAOrcaSlicerCalculator.vue")['default']
 export const PressureAdvanceCalculator: typeof import("../components/PressureAdvanceCalculator.vue")['default']
 export const ResultsDisplay: typeof import("../components/ResultsDisplay.vue")['default']
 export const RotationDistanceCalculator: typeof import("../components/RotationDistanceCalculator.vue")['default']
@@ -132,13 +144,17 @@ export const Html: typeof import("../node_modules/nuxt/dist/head/runtime/compone
 export const Body: typeof import("../node_modules/nuxt/dist/head/runtime/components")['Body']
 export const NuxtIsland: typeof import("../node_modules/nuxt/dist/app/components/nuxt-island")['default']
 export const NuxtRouteAnnouncer: typeof import("../node_modules/nuxt/dist/app/components/server-placeholder")['default']
+export const LazyAdaptivePressureAdvanceCalculator: LazyComponent<typeof import("../components/AdaptivePressureAdvanceCalculator.vue")['default']>
 export const LazyConsentBanner: LazyComponent<typeof import("../components/ConsentBanner.vue")['default']>
+export const LazyExtrusionRateSmoothingCalculator: LazyComponent<typeof import("../components/ExtrusionRateSmoothingCalculator.vue")['default']>
 export const LazyImageUpload: LazyComponent<typeof import("../components/ImageUpload.vue")['default']>
 export const LazyInputShapingCalculator: LazyComponent<typeof import("../components/InputShapingCalculator.vue")['default']>
 export const LazyLeadScrewRotationDistanceCalculator: LazyComponent<typeof import("../components/LeadScrewRotationDistanceCalculator.vue")['default']>
+export const LazyLineWidthsCalculator: LazyComponent<typeof import("../components/LineWidthsCalculator.vue")['default']>
 export const LazyMaxVolumetricSpeedCalculator: LazyComponent<typeof import("../components/MaxVolumetricSpeedCalculator.vue")['default']>
 export const LazyOrcaSlicerFlowCalculator: LazyComponent<typeof import("../components/OrcaSlicerFlowCalculator.vue")['default']>
 export const LazyOrcaSlicerFlowYoloCalculator: LazyComponent<typeof import("../components/OrcaSlicerFlowYoloCalculator.vue")['default']>
+export const LazyPAOrcaSlicerCalculator: LazyComponent<typeof import("../components/PAOrcaSlicerCalculator.vue")['default']>
 export const LazyPressureAdvanceCalculator: LazyComponent<typeof import("../components/PressureAdvanceCalculator.vue")['default']>
 export const LazyResultsDisplay: LazyComponent<typeof import("../components/ResultsDisplay.vue")['default']>
 export const LazyRotationDistanceCalculator: LazyComponent<typeof import("../components/RotationDistanceCalculator.vue")['default']>

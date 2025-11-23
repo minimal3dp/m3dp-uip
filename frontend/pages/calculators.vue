@@ -41,6 +41,15 @@
 
           <!-- Line Width Recommendations -->
           <LineWidthsCalculator />
+
+          <!-- PA & OrcaSlicer -->
+          <PAOrcaSlicerCalculator />
+
+          <!-- Extrusion Rate Smoothing -->
+          <ExtrusionRateSmoothingCalculator />
+
+          <!-- Adaptive Pressure Advance -->
+          <AdaptivePressureAdvanceCalculator />
       </div>
 
       <div class="mt-12 text-center text-zinc-500 text-sm">

@@ -22,6 +22,12 @@ import type {
   SkewCorrectionResponse,
   LineWidthsRequest,
   LineWidthsResponse,
+  PAOrcaSlicerRequest,
+  PAOrcaSlicerResponse,
+  ExtrusionRateSmoothingRequest,
+  ExtrusionRateSmoothingResponse,
+  AdaptivePressureAdvanceRequest,
+  AdaptivePressureAdvanceResponse,
 } from '~/types/calculators'
 
 export const useCalculatorApi = () => {
@@ -105,6 +111,27 @@ export const useCalculatorApi = () => {
     })
   }
 
+  const calculatePAOrcaSlicer = async (data: PAOrcaSlicerRequest): Promise<PAOrcaSlicerResponse> => {
+    return await $fetch<PAOrcaSlicerResponse>(`${apiBase}/api/v1/calculators/pa-orcaslicer`, {
+      method: 'POST',
+      body: data,
+    })
+  }
+
+  const calculateExtrusionRateSmoothing = async (data: ExtrusionRateSmoothingRequest): Promise<ExtrusionRateSmoothingResponse> => {
+    return await $fetch<ExtrusionRateSmoothingResponse>(`${apiBase}/api/v1/calculators/extrusion-rate-smoothing`, {
+      method: 'POST',
+      body: data,
+    })
+  }
+
+  const calculateAdaptivePressureAdvance = async (data: AdaptivePressureAdvanceRequest): Promise<AdaptivePressureAdvanceResponse> => {
+    return await $fetch<AdaptivePressureAdvanceResponse>(`${apiBase}/api/v1/calculators/adaptive-pressure-advance`, {
+      method: 'POST',
+      body: data,
+    })
+  }
+
   const listCalculators = async () => {
     return await $fetch<any>(`${apiBase}/api/v1/calculators`)
   }
@@ -121,6 +148,9 @@ export const useCalculatorApi = () => {
     calculateXAndYOffsets,
     calculateSkewCorrection,
     calculateLineWidths,
+    calculatePAOrcaSlicer,
+    calculateExtrusionRateSmoothing,
+    calculateAdaptivePressureAdvance,
     listCalculators,
   }
 }

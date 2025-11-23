@@ -530,6 +530,33 @@ async def list_calculators():
                 "endpoint": "/api/v1/calculators/line-widths",
                 "method": "POST",
             },
+            {
+                "id": "pa-orcaslicer",
+                "name": "PA & OrcaSlicer",
+                "category": "Extrusion",
+                "csv_source": "klipper_calibrations/pa_orcaslicer.csv",
+                "description": "Calculate pressure advance from OrcaSlicer test pattern height measurement",
+                "endpoint": "/api/v1/calculators/pa-orcaslicer",
+                "method": "POST",
+            },
+            {
+                "id": "extrusion-rate-smoothing",
+                "name": "Extrusion Rate Smoothing (ERS)",
+                "category": "Extrusion",
+                "csv_source": "klipper_calibrations/extrusion_rate_smoothing.csv",
+                "description": "Calculate ERS values for OrcaSlicer to smooth flow during acceleration",
+                "endpoint": "/api/v1/calculators/extrusion-rate-smoothing",
+                "method": "POST",
+            },
+            {
+                "id": "adaptive-pressure-advance",
+                "name": "Adaptive Pressure Advance",
+                "category": "Extrusion",
+                "csv_source": "klipper_calibrations/adaptive_pressure_advance.csv",
+                "description": "Calculate adaptive PA range from test matrix results for dynamic tuning",
+                "endpoint": "/api/v1/calculators/adaptive-pressure-advance",
+                "method": "POST",
+            },
         ]
     )
 
@@ -1946,4 +1973,321 @@ async def calculate_line_widths(request: LineWidthsRequest) -> LineWidthsRespons
         notes=notes,
         extrusion_volume_check=volume_check,
         layer_height_constraint_applied=constraint_applied,
+    )
+
+
+# ========== PA & OrcaSlicer Calculator ==========
+
+
+class PAOrcaSlicerRequest(BaseModel):
+    """Request for PA & OrcaSlicer calculator."""
+
+    measured_height: float = Field(
+        ...,
+        gt=0,
+        le=100,
+        description="Height on test print where best PA is observed (mm)",
+        examples=[30.3],
+    )
+    extruder_type: str = Field(
+        ...,
+        description="Extruder type: direct_drive or bowden",
+        examples=["direct_drive", "bowden"],
+    )
+
+
+class PAOrcaSlicerResponse(BaseModel):
+    """Response with calculated PA value."""
+
+    calculated_pa: float = Field(..., description="Calculated pressure advance value")
+    step_used: float = Field(..., description="Step value used in calculation")
+    extruder_type: str = Field(..., description="Extruder type")
+    klipper_config: str = Field(..., description="Klipper config snippet")
+    notes: str = Field(..., description="Usage notes")
+
+
+@router.post(
+    "/pa-orcaslicer",
+    response_model=PAOrcaSlicerResponse,
+    summary="Calculate PA from OrcaSlicer Test Pattern",
+    description="""
+    Calculate Pressure Advance value from OrcaSlicer test pattern measurements.
+
+    This method uses a linear ramp test pattern where PA increases with height.
+    User identifies the Z height where corners look best, and this calculator
+    computes the corresponding PA value.
+
+    Steps (Direct Drive: 0.002 PA/mm, Bowden: 0.02 PA/mm):
+    - Direct Drive: PA = 0 + (Height × 0.002)
+    - Bowden: PA = 0 + (Height × 0.02)
+
+    This is an alternative to the traditional TUNING_TOWER method.
+    """,
+    tags=["calculators", "extrusion"],
+)
+async def calculate_pa_orcaslicer(request: PAOrcaSlicerRequest) -> PAOrcaSlicerResponse:
+    """Calculate PA from OrcaSlicer test pattern height measurement."""
+    measured_height = request.measured_height
+    extruder_type = request.extruder_type.lower()
+
+    # Validate extruder type
+    if extruder_type not in ["direct_drive", "bowden"]:
+        raise HTTPException(
+            status_code=400,
+            detail="extruder_type must be 'direct_drive' or 'bowden'",
+        )
+
+        # Step values from CSV
+        step = (
+            0.002 if extruder_type == "direct_drive" else 0.02
+        )  # Calculate PA: Start (0) + (Measured Height × Step)
+    calculated_pa = round(0 + (measured_height * step), 3)
+
+    klipper_config = f"pressure_advance: {calculated_pa:.3f}"
+
+    notes = (
+        f"Using {extruder_type.replace('_', ' ')} step value of {step} PA/mm. "
+        f"Measured best results at {measured_height}mm height. "
+        "Test with actual prints and adjust ±0.005 if needed."
+    )
+
+    # Track calculator usage
+    await track_calculator_use(
+        "pa_orcaslicer",
+        params={
+            "extruder_type": extruder_type,
+            "measured_height": measured_height,
+            "calculated_pa": calculated_pa,
+        },
+    )
+
+    return PAOrcaSlicerResponse(
+        calculated_pa=calculated_pa,
+        step_used=step,
+        extruder_type=extruder_type,
+        klipper_config=klipper_config,
+        notes=notes,
+    )
+
+
+# ========== Extrusion Rate Smoothing (ERS) Calculator ==========
+
+
+class ExtrusionRateSmoothingRequest(BaseModel):
+    """Request for ERS calculator."""
+
+    acceleration: float = Field(
+        ...,
+        gt=0,
+        le=50000,
+        description="External perimeter acceleration (mm/s²)",
+        examples=[12000],
+    )
+    line_width: float = Field(
+        ...,
+        gt=0,
+        le=2,
+        description="Line width (mm)",
+        examples=[0.6],
+    )
+    layer_height: float = Field(
+        ...,
+        gt=0,
+        le=1,
+        description="Layer height (mm)",
+        examples=[0.2],
+    )
+
+
+class ExtrusionRateSmoothingResponse(BaseModel):
+    """Response with calculated ERS values."""
+
+    ers_max: float = Field(..., description="Maximum ERS value (mm³/s²)")
+    ers_60_percent: float = Field(..., description="Conservative ERS value (60% of max)")
+    ers_80_percent: float = Field(..., description="Aggressive ERS value (80% of max)")
+    recommended: str = Field(..., description="Recommended starting value")
+    orcaslicer_config: str = Field(..., description="OrcaSlicer setting")
+    notes: str = Field(..., description="Usage notes")
+
+
+@router.post(
+    "/extrusion-rate-smoothing",
+    response_model=ExtrusionRateSmoothingResponse,
+    summary="Calculate Extrusion Rate Smoothing (ERS)",
+    description="""
+    Calculate Extrusion Rate Smoothing values for OrcaSlicer.
+
+    ERS is an experimental OrcaSlicer feature that smooths extrusion rate changes
+    during acceleration/deceleration, reducing pressure fluctuations in the nozzle.
+
+    Formula: ERS Max = Acceleration × Line Width × Layer Height
+
+    Recommendations:
+    - Start with 60% of max for conservative tuning
+    - Use 80% of max for printers with good flow consistency
+    - Higher values = smoother flow but may reduce detail
+    - Lower values = preserve detail but more flow fluctuation
+
+    This feature requires OrcaSlicer 2.0+ and may not be compatible with all printers.
+    """,
+    tags=["calculators", "extrusion"],
+)
+async def calculate_extrusion_rate_smoothing(
+    request: ExtrusionRateSmoothingRequest,
+) -> ExtrusionRateSmoothingResponse:
+    """Calculate ERS values from acceleration and extrusion parameters."""
+    accel = request.acceleration
+    line_width = request.line_width
+    layer_height = request.layer_height
+
+    # Formula: ERS Max = Acceleration × Line Width × Layer Height
+    ers_max = round(accel * line_width * layer_height, 1)
+    ers_60 = round(ers_max * 0.6, 1)
+    ers_80 = round(ers_max * 0.8, 1)
+
+    recommended = f"Start with {ers_60} (60%), test up to {ers_80} (80%) if needed"
+    orcaslicer_config = f"extrusion_rate_smoothing: {ers_60}"
+
+    notes = (
+        f"ERS Max calculated as {accel} × {line_width} × {layer_height} = {ers_max} mm³/s². "
+        f"60% value ({ers_60}) recommended for initial testing. "
+        f"80% value ({ers_80}) for printers with excellent flow consistency. "
+        "Adjust based on print quality - reduce if losing detail, increase if seeing flow artifacts."
+    )
+
+    # Track calculator usage
+    await track_calculator_use(
+        "extrusion_rate_smoothing",
+        params={
+            "acceleration": accel,
+            "line_width": line_width,
+            "layer_height": layer_height,
+            "ers_max": ers_max,
+        },
+    )
+
+    return ExtrusionRateSmoothingResponse(
+        ers_max=ers_max,
+        ers_60_percent=ers_60,
+        ers_80_percent=ers_80,
+        recommended=recommended,
+        orcaslicer_config=orcaslicer_config,
+        notes=notes,
+    )
+
+
+# ========== Adaptive Pressure Advance Calculator ==========
+
+
+class AdaptivePressureAdvanceRequest(BaseModel):
+    """Request for Adaptive PA calculator."""
+
+    pa_values: list[float] = Field(
+        ...,
+        min_length=2,
+        description="List of PA values from test matrix",
+        examples=[[0.035, 0.045, 0.055, 0.065, 0.075, 0.085]],
+    )
+
+
+class AdaptivePressureAdvanceResponse(BaseModel):
+    """Response with adaptive PA configuration."""
+
+    min_pa_tested: float = Field(..., description="Minimum PA from test results")
+    max_pa_tested: float = Field(..., description="Maximum PA from test results")
+    pa_range: float = Field(..., description="Difference between max and min")
+    adaptive_min_pa: float = Field(..., description="Recommended minimum PA with safety margin")
+    adaptive_max_pa: float = Field(..., description="Recommended maximum PA with safety margin")
+    adaptive_step: float = Field(..., description="Step size for 16-step tuning")
+    orcaslicer_config: str = Field(..., description="OrcaSlicer adaptive PA settings")
+    notes: str = Field(..., description="Usage notes")
+
+
+@router.post(
+    "/adaptive-pressure-advance",
+    response_model=AdaptivePressureAdvanceResponse,
+    summary="Calculate Adaptive Pressure Advance Range",
+    description="""
+    Calculate adaptive pressure advance configuration from test matrix results.
+
+    Adaptive PA automatically adjusts pressure advance based on print speed,
+    flow rate, and acceleration. This requires testing PA values across different
+    printing conditions and finding the range that works.
+
+    Process:
+    1. Test PA at various speeds (50-250 mm/s)
+    2. Test PA at various flow rates (3.95-15.8 mm³/s)
+    3. Test PA at various accelerations (1000-6000 mm/s²)
+    4. Record all PA values that produced good results
+    5. Use this calculator to find the adaptive range
+
+    Formula:
+    - Min PA = MIN(all test values) - 0.005 (safety margin)
+    - Max PA = MAX(all test values) + 0.005 (safety margin)
+    - Step = (Max - Min) / 16 (OrcaSlicer default)
+
+    This is an advanced feature requiring extensive testing.
+    """,
+    tags=["calculators", "extrusion"],
+)
+async def calculate_adaptive_pressure_advance(
+    request: AdaptivePressureAdvanceRequest,
+) -> AdaptivePressureAdvanceResponse:
+    """Calculate adaptive PA range from test matrix results."""
+    pa_values = request.pa_values
+
+    # Validate PA values
+    for pa in pa_values:
+        if pa < 0 or pa > 2:
+            raise HTTPException(
+                status_code=400,
+                detail=f"PA value {pa} out of valid range (0-2)",
+            )
+
+    # Calculate min, max, and range
+    min_pa = min(pa_values)
+    max_pa = max(pa_values)
+    pa_range = max_pa - min_pa
+
+    # Add safety margins
+    adaptive_min = round(max(0, min_pa - 0.005), 3)
+    adaptive_max = round(max_pa + 0.005, 3)
+
+    # Calculate step for 16-step tuning (OrcaSlicer default)
+    adaptive_step = round(pa_range / 16, 6)
+
+    orcaslicer_config = (
+        f"adaptive_pressure_advance_min: {adaptive_min:.3f}\n"
+        f"adaptive_pressure_advance_max: {adaptive_max:.3f}\n"
+        f"adaptive_pressure_advance_step: {adaptive_step:.6f}"
+    )
+
+    notes = (
+        f"Analyzed {len(pa_values)} PA test values. "
+        f"Range spans {pa_range:.3f} PA units across test conditions. "
+        f"Adaptive PA will interpolate between {adaptive_min:.3f} and {adaptive_max:.3f} "
+        f"based on print speed, flow, and acceleration. "
+        "Monitor prints carefully and adjust range if needed."
+    )
+
+    # Track calculator usage
+    await track_calculator_use(
+        "adaptive_pressure_advance",
+        params={
+            "num_values": len(pa_values),
+            "min_pa": min_pa,
+            "max_pa": max_pa,
+            "range": pa_range,
+        },
+    )
+
+    return AdaptivePressureAdvanceResponse(
+        min_pa_tested=min_pa,
+        max_pa_tested=max_pa,
+        pa_range=pa_range,
+        adaptive_min_pa=adaptive_min,
+        adaptive_max_pa=adaptive_max,
+        adaptive_step=adaptive_step,
+        orcaslicer_config=orcaslicer_config,
+        notes=notes,
     )

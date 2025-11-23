@@ -1,0 +1,12 @@
+Name,Description,Formula,Units,Expected_Range,Notes
+Test Matrix,User provides PA values for different speed/flow/accel combinations,User measured matrix,N/A,N/A,Requires systematic testing across conditions
+Min PA Value,Minimum PA from all test results,"MIN(all PA values)",N/A,0.0-0.5,Lowest PA that worked across all conditions
+Max PA Value,Maximum PA from all test results,"MAX(all PA values)",N/A,0.0-1.0,Highest PA that worked across all conditions
+PA Range,Difference between max and min,"Max PA - Min PA",N/A,0.0-0.5,Shows how much PA varies across conditions
+Adaptive Min PA,Safety margin below minimum,"Min PA - 0.005",N/A,0.0-0.5,Recommended minimum for adaptive PA range
+Adaptive Max PA,Safety margin above maximum,"Max PA + 0.005",N/A,0.0-1.0,Recommended maximum for adaptive PA range
+Adaptive Step,Incremental step size for adaptive tuning,"PA Range / 16",N/A,0.001-0.05,OrcaSlicer uses 16 steps by default
+Common Example,"Test Results: Min PA = 0.035 | Max PA = 0.085 | Range = 0.050 → Adaptive Min = 0.030 | Adaptive Max = 0.090 | Step = 0.003125"
+Speed Range,Test speeds,50-250,mm/s,N/A,Test at various print speeds
+Flow Range,Volumetric flow rates,3.95-15.8,mm³/s,N/A,Test at various flow rates
+Accel Range,Acceleration values,1000-6000,mm/s²,N/A,Test at various accelerations
