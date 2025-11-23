@@ -64,9 +64,9 @@ fi
 
 echo "==> Starting Backend (port $BACKEND_PORT)"
 (
-  cd backend || { echo "[BACKEND ERROR] backend directory not found"; exit 1; }
-  # Run from inside backend so imports like 'from app.api...' resolve
-  "$PYTHON_CMD" -m uvicorn app.main:app \
+  # Run from repo root so backend.app.main:app module path resolves correctly
+  cd "$REPO_ROOT" || { echo "[BACKEND ERROR] repo root not found"; exit 1; }
+  "$PYTHON_CMD" -m uvicorn backend.app.main:app \
     --host 0.0.0.0 \
     --port "$BACKEND_PORT" \
     --reload
