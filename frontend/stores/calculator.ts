@@ -1,7 +1,7 @@
 // Pinia store for calculator state
 import { defineStore } from 'pinia'
 import { useCalculatorApi } from '~/composables/useCalculatorApi'
-import type { XAndYOffsetsRequest, XAndYOffsetsResponse } from '~/types/calculators'
+import type { XAndYOffsetsRequest, XAndYOffsetsResponse, SkewCorrectionRequest } from '~/types/calculators'
 
 interface CalculatorState {
   rotationDistance: {
@@ -60,6 +60,18 @@ interface CalculatorState {
     toolheadXNozzle: number | null
     toolheadYNozzle: number | null
     result: XAndYOffsetsResponse | null
+  }
+  skewCorrection: {
+    xyAc: number | null
+    xyBd: number | null
+    xyAd: number | null
+    xzAc: number | null
+    xzBd: number | null
+    xzAd: number | null
+    yzAc: number | null
+    yzBd: number | null
+    yzAd: number | null
+    result: any | null
   }
   loading: boolean
   error: string | null
@@ -122,6 +134,18 @@ export const useCalculatorStore = defineStore('calculator', {
       toolheadYProbe: null,
       toolheadXNozzle: null,
       toolheadYNozzle: null,
+      result: null,
+    },
+    skewCorrection: {
+      xyAc: null,
+      xyBd: null,
+      xyAd: null,
+      xzAc: null,
+      xzBd: null,
+      xzAd: null,
+      yzAc: null,
+      yzBd: null,
+      yzAd: null,
       result: null,
     },
     loading: false,
@@ -384,6 +408,38 @@ export const useCalculatorStore = defineStore('calculator', {
       this.xAndYOffsets.toolheadXNozzle = null
       this.xAndYOffsets.toolheadYNozzle = null
       this.xAndYOffsets.result = null
+      this.error = null
+    },
+
+    async calculateSkewCorrection(request: SkewCorrectionRequest) {
+      this.loading = true
+      this.error = null
+
+      try {
+        const api = useCalculatorApi()
+        const result = await api.calculateSkewCorrection(request)
+        this.skewCorrection.result = result
+      }
+      catch (err: any) {
+        this.error = err.data?.detail || err.message || 'Failed to calculate skew correction'
+        throw err
+      }
+      finally {
+        this.loading = false
+      }
+    },
+
+    resetSkewCorrection() {
+      this.skewCorrection.xyAc = null
+      this.skewCorrection.xyBd = null
+      this.skewCorrection.xyAd = null
+      this.skewCorrection.xzAc = null
+      this.skewCorrection.xzBd = null
+      this.skewCorrection.xzAd = null
+      this.skewCorrection.yzAc = null
+      this.skewCorrection.yzBd = null
+      this.skewCorrection.yzAd = null
+      this.skewCorrection.result = null
       this.error = null
     },
   },

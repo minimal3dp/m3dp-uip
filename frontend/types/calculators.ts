@@ -158,3 +158,25 @@ export interface XAndYOffsetsResponse {
   usage_guide: string
   reference: string
 }
+
+export interface SkewCorrectionRequest {
+  xy_ac: number
+  xy_bd: number
+  xy_ad: number
+  xz_ac?: number
+  xz_bd?: number
+  xz_ad?: number
+  yz_ac?: number
+  yz_bd?: number
+  yz_ad?: number
+}
+
+export interface SkewCorrectionResponse {
+  set_skew_command: string
+  calc_measured_skew_commands: Record<string, string>
+  skew_profile: Record<string, any>
+  interpretation: string
+  usage_guide: string
+  calibration_model: string
+  reference: string
+}
