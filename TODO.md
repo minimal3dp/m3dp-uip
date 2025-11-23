@@ -1111,12 +1111,6 @@ git push -u origin feature/your-feature-name
 
 #### HIGH PRIORITY (Research-Backed)
 
-**Path Optimization via ACO Algorithm**
-- **Source**: Fok - ACO Based Tool Path Optimizer.md, 131 Fundamental Path Optimization Strategies.md
-- **Impact**: 10-25% print time reduction through transition optimization
-- **Implementation**: Ant Colony Optimization for toolpath planning
-- **Integration**: Can be added to slicer workflow or post-processing tool
-
 **Real-Time Defect Detection System**
 - **Source**: applsci-12-08753.md, Cost-effective_sensor-2025.md
 - **Impact**: 97.2% accuracy anomaly detection during printing
