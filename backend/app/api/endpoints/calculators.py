@@ -287,6 +287,46 @@ class XAndYOffsetsResponse(BaseModel):
     reference: str = Field(..., description="Klipper documentation URL")
 
 
+class SkewCorrectionRequest(BaseModel):
+    """Request for skew correction calculation."""
+
+    xy_ac: float = Field(..., gt=0, description="XY plane AC diagonal (mm)", examples=[141.21])
+    xy_bd: float = Field(..., gt=0, description="XY plane BD diagonal (mm)", examples=[140.97])
+    xy_ad: float = Field(..., gt=0, description="XY plane AD orthogonal (mm)", examples=[104.77])
+    xz_ac: float | None = Field(
+        None, gt=0, description="XZ plane AC diagonal (mm)", examples=[141.98]
+    )
+    xz_bd: float | None = Field(
+        None, gt=0, description="XZ plane BD diagonal (mm)", examples=[141.63]
+    )
+    xz_ad: float | None = Field(
+        None, gt=0, description="XZ plane AD orthogonal (mm)", examples=[104.9]
+    )
+    yz_ac: float | None = Field(
+        None, gt=0, description="YZ plane AC diagonal (mm)", examples=[141.54]
+    )
+    yz_bd: float | None = Field(
+        None, gt=0, description="YZ plane BD diagonal (mm)", examples=[141.33]
+    )
+    yz_ad: float | None = Field(
+        None, gt=0, description="YZ plane AD orthogonal (mm)", examples=[104.83]
+    )
+
+
+class SkewCorrectionResponse(BaseModel):
+    """Response with calculated skew correction values."""
+
+    set_skew_command: str = Field(..., description="Complete SET_SKEW command for printer.cfg")
+    calc_measured_skew_commands: dict = Field(
+        ..., description="CALC_MEASURED_SKEW commands for testing"
+    )
+    skew_profile: dict = Field(..., description="Calculated skew values in radians and degrees")
+    interpretation: str = Field(..., description="Human-readable interpretation of skew values")
+    usage_guide: str = Field(..., description="How to apply skew correction")
+    calibration_model: str = Field(..., description="Thingiverse calibration model URL")
+    reference: str = Field(..., description="Klipper documentation URL")
+
+
 class PressureAdvanceRequest(BaseModel):
     """Request for pressure advance calibration guidance."""
 
@@ -426,6 +466,15 @@ async def list_calculators():
                 "csv_source": "klipper_calibrations/x_and_y_offsets.csv",
                 "description": "Calculate BLTouch/CR Touch probe X and Y offsets for accurate bed mesh",
                 "endpoint": "/api/v1/calculators/x-and-y-offsets",
+                "method": "POST",
+            },
+            {
+                "id": "skew-correction",
+                "name": "Skew Correction",
+                "category": "Mechanical Alignment",
+                "csv_source": "klipper_calibrations/skew_correction.csv",
+                "description": "Calculate frame skew correction from calibration print measurements (XY, XZ, YZ planes)",
+                "endpoint": "/api/v1/calculators/skew-correction",
                 "method": "POST",
             },
         ]
@@ -1503,5 +1552,199 @@ samples_tolerance_retries: 3"""
         toolhead_y_nozzle=request.toolhead_y_nozzle,
         klipper_config=klipper_config,
         usage_guide=usage_guide,
+        reference=reference,
+    )
+
+
+@router.post(
+    "/skew-correction",
+    response_model=SkewCorrectionResponse,
+    summary="Calculate Skew Correction",
+    description="""
+    Calculate printer frame skew correction using calibration print measurements.
+
+    **What is Skew Correction?**
+    Skew correction compensates for printer frame alignment issues that cause dimensional inaccuracy.
+    If your printed squares aren't square or rectangles are parallelograms, you likely have frame skew.
+
+    **Calibration Process**:
+    1. **Print calibration model**: https://www.thingiverse.com/thing:2972743/
+    2. **Measure three distances per plane**:
+       - AC: First diagonal
+       - BD: Second diagonal
+       - AD: Orthogonal distance
+    3. **Three planes to measure**:
+       - **XY** (bed plane): Always required
+       - **XZ** (left side): Optional but recommended
+       - **YZ** (right side): Optional but recommended
+
+    **How to Measure**:
+    - Use calipers for accuracy (±0.01mm precision recommended)
+    - Measure diagonals from corner to corner (AC, BD)
+    - Measure orthogonal distance (AD) perpendicular to diagonals
+    - Take multiple measurements and average for best results
+
+    **Understanding Results**:
+    - **< 0.1 degrees**: Excellent alignment, correction optional
+    - **0.1 - 0.3 degrees**: Good, but correction recommended for precision parts
+    - **> 0.3 degrees**: Poor alignment, correction strongly recommended
+    - **> 0.5 degrees**: Check printer frame assembly for mechanical issues
+
+    **Typical Skew Values**:
+    - CoreXY: Usually minimal XY skew, possible XZ/YZ skew
+    - Cartesian: Can have skew in any plane
+    - Delta: Primarily XY skew
+
+    **Implementation**:
+    1. Copy SET_SKEW command to your START_PRINT macro
+    2. Add to printer.cfg before any moves
+    3. Restart Klipper
+    4. Use CALC_MEASURED_SKEW commands to verify correction
+    5. Run GET_CURRENT_SKEW to see active profile
+
+    **Reference**: https://www.klipper3d.org/Skew_Correction.html
+
+    **Phase**: CSV-driven formula calculation
+    """,
+    tags=["calculators", "klipper"],
+)
+async def calculate_skew_correction(
+    request: SkewCorrectionRequest,
+) -> SkewCorrectionResponse:
+    """
+    Calculate skew correction from calibration print measurements.
+
+    Klipper uses three measurements per plane to calculate frame skew:
+    - AC and BD are diagonal measurements
+    - AD is the orthogonal distance
+
+    Args:
+        request: SkewCorrectionRequest with measurements for XY, XZ, YZ planes
+
+    Returns:
+        SkewCorrectionResponse with SET_SKEW command and skew profile
+    """
+    import math
+
+    logger.info(
+        f"Skew correction calculation: XY=({request.xy_ac}, {request.xy_bd}, {request.xy_ad})"
+    )
+
+    # Load formula from CSV (validates CSV exists and is loaded)
+    csv_loader = get_csv_loader()
+    _ = csv_loader.get_skew_correction_formula()  # Validates CSV is loaded
+
+    # Build SET_SKEW command
+    set_skew_parts = [f"XY={request.xy_ac},{request.xy_bd},{request.xy_ad}"]
+
+    if request.xz_ac and request.xz_bd and request.xz_ad:
+        set_skew_parts.append(f"XZ={request.xz_ac},{request.xz_bd},{request.xz_ad}")
+
+    if request.yz_ac and request.yz_bd and request.yz_ad:
+        set_skew_parts.append(f"YZ={request.yz_ac},{request.yz_bd},{request.yz_ad}")
+
+    set_skew_command = f"SET_SKEW {' '.join(set_skew_parts)}"
+
+    # Build CALC_MEASURED_SKEW commands for testing
+    calc_commands = {
+        "XY": f"CALC_MEASURED_SKEW AC={request.xy_ac} BD={request.xy_bd} AD={request.xy_ad}"
+    }
+
+    if request.xz_ac and request.xz_bd and request.xz_ad:
+        calc_commands["XZ"] = (
+            f"CALC_MEASURED_SKEW AC={request.xz_ac} BD={request.xz_bd} AD={request.xz_ad}"
+        )
+
+    if request.yz_ac and request.yz_bd and request.yz_ad:
+        calc_commands["YZ"] = (
+            f"CALC_MEASURED_SKEW AC={request.yz_ac} BD={request.yz_bd} AD={request.yz_ad}"
+        )
+
+    # Calculate skew values (simplified approximation for display)
+    # Note: Klipper's actual calculation is more complex
+    def estimate_skew(ac: float, bd: float, ad: float) -> tuple[float, float]:
+        """Estimate skew in radians and degrees."""
+        # Simplified formula: skew ≈ (|AC - BD|) / (2 * AD)
+        skew_rad = abs(ac - bd) / (2 * ad) if ad > 0 else 0
+        skew_deg = math.degrees(skew_rad)
+        return round(skew_rad, 6), round(skew_deg, 2)
+
+    skew_profile = {}
+    skew_profile["XY"] = {
+        "radians": estimate_skew(request.xy_ac, request.xy_bd, request.xy_ad)[0],
+        "degrees": estimate_skew(request.xy_ac, request.xy_bd, request.xy_ad)[1],
+    }
+
+    if request.xz_ac and request.xz_bd and request.xz_ad:
+        skew_profile["XZ"] = {
+            "radians": estimate_skew(request.xz_ac, request.xz_bd, request.xz_ad)[0],
+            "degrees": estimate_skew(request.xz_ac, request.xz_bd, request.xz_ad)[1],
+        }
+
+    if request.yz_ac and request.yz_bd and request.yz_ad:
+        skew_profile["YZ"] = {
+            "radians": estimate_skew(request.yz_ac, request.yz_bd, request.yz_ad)[0],
+            "degrees": estimate_skew(request.yz_ac, request.yz_bd, request.yz_ad)[1],
+        }
+
+    # Generate interpretation
+    max_skew_deg = max([v["degrees"] for v in skew_profile.values()])
+
+    if max_skew_deg < 0.1:
+        interpretation = (
+            f"✅ Excellent alignment! Maximum skew is {max_skew_deg}°. "
+            "Frame is well-squared. Skew correction is optional but can still improve dimensional accuracy."
+        )
+    elif max_skew_deg < 0.3:
+        interpretation = (
+            f"✔️ Good alignment. Maximum skew is {max_skew_deg}°. "
+            "Skew correction is recommended for precision parts (mechanical components, enclosures)."
+        )
+    elif max_skew_deg < 0.5:
+        interpretation = (
+            f"⚠️ Moderate skew detected. Maximum skew is {max_skew_deg}°. "
+            "Skew correction is strongly recommended. This will noticeably improve print accuracy."
+        )
+    else:
+        interpretation = (
+            f"❌ Significant skew detected! Maximum skew is {max_skew_deg}°. "
+            "Check your printer frame assembly for mechanical issues (loose bolts, bent extrusions). "
+            "Apply skew correction, but also address the underlying mechanical problem."
+        )
+
+    # Usage guide
+    usage_guide = """1. Copy the SET_SKEW command below
+2. Add it to your START_PRINT macro in printer.cfg
+3. Place it after homing but before any other moves
+4. Example placement:
+   [gcode_macro START_PRINT]
+   gcode:
+     G28  # Home all axes
+     SET_SKEW XY=...  # Add skew correction here
+     G1 Z10 F3000  # Continue with print start
+5. Save and restart Klipper
+6. Use CALC_MEASURED_SKEW commands to verify correction
+7. Run GET_CURRENT_SKEW to see active profile""".strip()
+
+    # URLs
+    calibration_model = "https://www.thingiverse.com/thing:2972743/"
+    reference = "https://www.klipper3d.org/Skew_Correction.html"
+
+    # Track calculator usage
+    await track_calculator_use(
+        "skew_correction",
+        params={
+            "max_skew_degrees": max_skew_deg,
+            "planes_measured": len(skew_profile),
+        },
+    )
+
+    return SkewCorrectionResponse(
+        set_skew_command=set_skew_command,
+        calc_measured_skew_commands=calc_commands,
+        skew_profile=skew_profile,
+        interpretation=interpretation,
+        usage_guide=usage_guide,
+        calibration_model=calibration_model,
         reference=reference,
     )

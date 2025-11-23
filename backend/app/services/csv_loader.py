@@ -120,6 +120,11 @@ class CSVLoader:
         key = "klipper:x_and_y_offsets"
         return self.cache.get(key)
 
+    def get_skew_correction_formula(self) -> pd.DataFrame | None:
+        """Get skew correction calculator data."""
+        key = "klipper:skew_correction"
+        return self.cache.get(key)
+
     def get_material_recommendations(
         self,
         material_type: str,

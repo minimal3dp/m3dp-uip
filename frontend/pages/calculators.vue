@@ -35,6 +35,9 @@
 
         <!-- X and Y Offsets -->
         <XAndYOffsetsCalculator />
+
+          <!-- Skew Correction -->
+          <SkewCorrectionCalculator />
       </div>
 
       <div class="mt-12 text-center text-zinc-500 text-sm">

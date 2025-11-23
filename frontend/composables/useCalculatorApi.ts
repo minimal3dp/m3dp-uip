@@ -18,6 +18,8 @@ import type {
   LeadScrewRotationDistanceResponse,
   XAndYOffsetsRequest,
   XAndYOffsetsResponse,
+  SkewCorrectionRequest,
+  SkewCorrectionResponse,
 } from '~/types/calculators'
 
 export const useCalculatorApi = () => {
@@ -87,6 +89,13 @@ export const useCalculatorApi = () => {
     })
   }
 
+  const calculateSkewCorrection = async (data: SkewCorrectionRequest): Promise<SkewCorrectionResponse> => {
+    return await $fetch<SkewCorrectionResponse>(`${apiBase}/api/v1/calculators/skew-correction`, {
+      method: 'POST',
+      body: data,
+    })
+  }
+
   const listCalculators = async () => {
     return await $fetch<any>(`${apiBase}/api/v1/calculators`)
   }
@@ -101,6 +110,7 @@ export const useCalculatorApi = () => {
     calculateRunCurrent,
     calculateLeadScrewRotationDistance,
     calculateXAndYOffsets,
+    calculateSkewCorrection,
     listCalculators,
   }
 }
