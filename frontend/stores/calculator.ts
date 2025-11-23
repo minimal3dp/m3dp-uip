@@ -1,7 +1,7 @@
 // Pinia store for calculator state
 import { defineStore } from 'pinia'
 import { useCalculatorApi } from '~/composables/useCalculatorApi'
-import type { XAndYOffsetsRequest, XAndYOffsetsResponse, SkewCorrectionRequest } from '~/types/calculators'
+import type { XAndYOffsetsRequest, XAndYOffsetsResponse, SkewCorrectionRequest, LineWidthsRequest, LineWidthsResponse } from '~/types/calculators'
 
 interface CalculatorState {
   rotationDistance: {
@@ -72,6 +72,12 @@ interface CalculatorState {
     yzBd: number | null
     yzAd: number | null
     result: any | null
+  }
+  lineWidths: {
+    nozzleDiameter: number | null
+    featureType: string
+    layerHeight: number | null
+    result: LineWidthsResponse | null
   }
   loading: boolean
   error: string | null
@@ -146,6 +152,12 @@ export const useCalculatorStore = defineStore('calculator', {
       yzAc: null,
       yzBd: null,
       yzAd: null,
+      result: null,
+    },
+    lineWidths: {
+      nozzleDiameter: 0.4,
+      featureType: 'perimeter',
+      layerHeight: null,
       result: null,
     },
     loading: false,
@@ -440,6 +452,29 @@ export const useCalculatorStore = defineStore('calculator', {
       this.skewCorrection.yzBd = null
       this.skewCorrection.yzAd = null
       this.skewCorrection.result = null
+      this.error = null
+    },
+
+    async calculateLineWidths(request: LineWidthsRequest) {
+      this.loading = true
+      this.error = null
+      try {
+        const api = useCalculatorApi()
+        const result = await api.calculateLineWidths(request)
+        this.lineWidths.result = result
+      } catch (err: any) {
+        this.error = err.data?.detail || err.message || 'Failed to calculate line widths'
+        throw err
+      } finally {
+        this.loading = false
+      }
+    },
+
+    resetLineWidths() {
+      this.lineWidths.nozzleDiameter = 0.4
+      this.lineWidths.featureType = 'perimeter'
+      this.lineWidths.layerHeight = null
+      this.lineWidths.result = null
       this.error = null
     },
   },

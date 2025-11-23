@@ -180,3 +180,20 @@ export interface SkewCorrectionResponse {
   calibration_model: string
   reference: string
 }
+
+export interface LineWidthsRequest {
+  nozzle_diameter: number
+  feature_type: string
+  layer_height?: number
+}
+
+export interface LineWidthsResponse {
+  recommended_min: number
+  recommended_max: number
+  default_target: number
+  extrusion_multiplier_hint: string
+  slicer_config: string
+  notes: string
+  extrusion_volume_check: string | null
+  layer_height_constraint_applied: boolean
+}

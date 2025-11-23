@@ -327,6 +327,50 @@ class SkewCorrectionResponse(BaseModel):
     reference: str = Field(..., description="Klipper documentation URL")
 
 
+class LineWidthsRequest(BaseModel):
+    """Request for line width recommendation calculator.
+
+    Provides nozzle diameter and feature type; returns recommended width range.
+    Feature types: external_perimeter, perimeter, solid_infill, sparse_infill, first_layer, support.
+    """
+
+    nozzle_diameter: float = Field(
+        0.4, gt=0, le=2, description="Nozzle diameter (mm)", examples=[0.4]
+    )
+    feature_type: str = Field(
+        "perimeter",
+        description="Print feature type",
+        examples=["perimeter"],
+        pattern="^(external_perimeter|perimeter|solid_infill|sparse_infill|first_layer|support)$",
+    )
+    layer_height: float | None = Field(
+        None,
+        gt=0,
+        le=1,
+        description="Optional layer height (mm) to constrain max width (≤1.5× layer_height)",
+        examples=[0.2],
+    )
+
+
+class LineWidthsResponse(BaseModel):
+    """Response with line width recommendations for a feature type."""
+
+    recommended_min: float = Field(..., description="Minimum recommended line width (mm)")
+    recommended_max: float = Field(..., description="Maximum recommended line width (mm)")
+    default_target: float = Field(..., description="Suggested target line width (mm)")
+    extrusion_multiplier_hint: str = Field(
+        ..., description="Hint about flow adjustments related to this width"
+    )
+    slicer_config: str = Field(..., description="Example slicer config line or setting reference")
+    notes: str = Field(..., description="Additional guidance and trade-offs")
+    extrusion_volume_check: str | None = Field(
+        None, description="Sanity check on extrusion volume if layer_height provided"
+    )
+    layer_height_constraint_applied: bool = Field(
+        False, description="Whether max width was constrained by layer_height"
+    )
+
+
 class PressureAdvanceRequest(BaseModel):
     """Request for pressure advance calibration guidance."""
 
@@ -475,6 +519,15 @@ async def list_calculators():
                 "csv_source": "klipper_calibrations/skew_correction.csv",
                 "description": "Calculate frame skew correction from calibration print measurements (XY, XZ, YZ planes)",
                 "endpoint": "/api/v1/calculators/skew-correction",
+                "method": "POST",
+            },
+            {
+                "id": "line-widths",
+                "name": "Line Width Recommendations",
+                "category": "Extrusion Geometry",
+                "csv_source": "klipper_calibrations/line_widths.csv",
+                "description": "Recommend line width ranges per feature type based on nozzle diameter",
+                "endpoint": "/api/v1/calculators/line-widths",
                 "method": "POST",
             },
         ]
@@ -1747,4 +1800,150 @@ async def calculate_skew_correction(
         usage_guide=usage_guide,
         calibration_model=calibration_model,
         reference=reference,
+    )
+
+
+@router.post(
+    "/line-widths",
+    response_model=LineWidthsResponse,
+    summary="Recommend Line Width Range",
+    description="""
+    Recommend a line width range for a given nozzle diameter and feature type.
+
+    Feature Types:
+    - external_perimeter: prioritize detail and dimensional accuracy
+    - perimeter: general walls, balance strength and speed
+    - solid_infill: strong top/bottom layers need slightly wider lines
+    - sparse_infill: maximize coverage and speed, widest typical lines
+    - first_layer: wider for adhesion and tolerance to bed variations
+    - support: moderate width for breakaway tuning
+
+    Typical Multipliers (× nozzle diameter):
+    - External Perimeter: 0.95–1.05×
+    - Perimeter: 1.00–1.10×
+    - Solid Infill: 1.10–1.30×
+    - Sparse Infill: 1.20–1.50×
+    - First Layer: 1.20–1.40×
+    - Support: 1.00–1.20×
+
+    Wider lines improve layer bonding and reduce print time, but exceeding ~150% of nozzle diameter risks under-extrusion and poor dimensional fidelity.
+    """,
+    tags=["calculators", "extrusion"],
+)
+async def calculate_line_widths(request: LineWidthsRequest) -> LineWidthsResponse:
+    """Compute recommended line width range from nozzle diameter and feature type."""
+    nozzle = request.nozzle_diameter
+    ft = request.feature_type
+    layer_height = request.layer_height
+
+    profiles: dict[str, tuple[float, float, float, str]] = {
+        "external_perimeter": (
+            0.95,
+            1.05,
+            1.00,
+            "Narrower width preserves fine detail and sharp corners.",
+        ),
+        "perimeter": (
+            1.00,
+            1.10,
+            1.05,
+            "Balanced strength and dimensional accuracy for general walls.",
+        ),
+        "solid_infill": (
+            1.10,
+            1.30,
+            1.20,
+            "Slightly wider for top/bottom surface strength and coverage.",
+        ),
+        "sparse_infill": (
+            1.20,
+            1.50,
+            1.40,
+            "Maximize coverage & speed; avoid >1.5× to prevent flow issues.",
+        ),
+        "first_layer": (
+            1.20,
+            1.40,
+            1.30,
+            "Improves bed adhesion and compensates for minor leveling errors.",
+        ),
+        "support": (
+            1.00,
+            1.20,
+            1.15,
+            "Slightly wider aids stability while keeping interfaces clean.",
+        ),
+    }
+
+    if ft not in profiles:
+        raise HTTPException(status_code=400, detail=f"Unsupported feature_type: {ft}")
+
+    min_mult, max_mult, default_mult, profile_notes = profiles[ft]
+    rec_min = round(nozzle * min_mult, 3)
+    rec_max = round(nozzle * max_mult, 3)
+    default_target = round(nozzle * default_mult, 3)
+
+    # Apply layer height constraint: max width ≤ 1.5× layer_height
+    constraint_applied = False
+    if layer_height is not None:
+        max_width_from_layer = round(1.5 * layer_height, 3)
+        if rec_max > max_width_from_layer:
+            rec_max = max_width_from_layer
+            constraint_applied = True
+            if default_target > max_width_from_layer:
+                default_target = max_width_from_layer
+
+    extrusion_hint = (
+        "If flow calibrated at 100%, keep extrusion multiplier constant; adjust only width."
+    )
+    slicer_config = f"line_width[{ft}] = {default_target}"  # Generic representation
+
+    notes = (
+        f"{profile_notes} Recommended range derived from {min_mult:.2f}–{max_mult:.2f}× nozzle diameter. "
+        "Ensure actual extrusion volume matches width adjustments; recalibrate flow if gaps or overfill persist."
+    )
+
+    # Extrusion volume sanity check
+    volume_check = None
+    if layer_height is not None:
+        # Extrusion volume per mm: width × layer_height
+        extrusion_volume = default_target * layer_height
+
+        # Rule of thumb: extrusion volume should be < nozzle orifice area × 3
+        nozzle_area = 3.14159 * (nozzle / 2) ** 2
+        max_safe_volume = nozzle_area * 3
+
+        if extrusion_volume > max_safe_volume:
+            volume_check = (
+                f"⚠️ High extrusion volume: {extrusion_volume:.3f} mm²/mm (width × layer_height). "
+                f"Max safe ~{max_safe_volume:.3f} mm²/mm. Consider reducing width or layer height to prevent under-extrusion."
+            )
+        elif extrusion_volume > nozzle_area * 2:
+            volume_check = f"⚡ Moderate extrusion volume: {extrusion_volume:.3f} mm²/mm. Within safe range but monitor flow quality."
+        else:
+            volume_check = f"✓ Extrusion volume: {extrusion_volume:.3f} mm²/mm (width × layer_height). Safe for {nozzle}mm nozzle."
+
+    if constraint_applied:
+        notes += f" Max width constrained to {rec_max}mm by layer_height × 1.5."
+
+    await track_calculator_use(
+        "line_widths",
+        params={
+            "feature_type": ft,
+            "nozzle_diameter": nozzle,
+            "default_target": default_target,
+            "layer_height": layer_height,
+            "constraint_applied": constraint_applied,
+        },
+    )
+
+    return LineWidthsResponse(
+        recommended_min=rec_min,
+        recommended_max=rec_max,
+        default_target=default_target,
+        extrusion_multiplier_hint=extrusion_hint,
+        slicer_config=slicer_config,
+        notes=notes,
+        extrusion_volume_check=volume_check,
+        layer_height_constraint_applied=constraint_applied,
     )

@@ -20,6 +20,8 @@ import type {
   XAndYOffsetsResponse,
   SkewCorrectionRequest,
   SkewCorrectionResponse,
+  LineWidthsRequest,
+  LineWidthsResponse,
 } from '~/types/calculators'
 
 export const useCalculatorApi = () => {
@@ -96,6 +98,13 @@ export const useCalculatorApi = () => {
     })
   }
 
+  const calculateLineWidths = async (data: LineWidthsRequest): Promise<LineWidthsResponse> => {
+    return await $fetch<LineWidthsResponse>(`${apiBase}/api/v1/calculators/line-widths`, {
+      method: 'POST',
+      body: data,
+    })
+  }
+
   const listCalculators = async () => {
     return await $fetch<any>(`${apiBase}/api/v1/calculators`)
   }
@@ -111,6 +120,7 @@ export const useCalculatorApi = () => {
     calculateLeadScrewRotationDistance,
     calculateXAndYOffsets,
     calculateSkewCorrection,
+    calculateLineWidths,
     listCalculators,
   }
 }
