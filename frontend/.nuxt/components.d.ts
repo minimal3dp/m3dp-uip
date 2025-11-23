@@ -15,6 +15,7 @@ interface _GlobalComponents {
       'ConsentBanner': typeof import("../components/ConsentBanner.vue")['default']
     'ImageUpload': typeof import("../components/ImageUpload.vue")['default']
     'InputShapingCalculator': typeof import("../components/InputShapingCalculator.vue")['default']
+    'LeadScrewRotationDistanceCalculator': typeof import("../components/LeadScrewRotationDistanceCalculator.vue")['default']
     'MaxVolumetricSpeedCalculator': typeof import("../components/MaxVolumetricSpeedCalculator.vue")['default']
     'OrcaSlicerFlowCalculator': typeof import("../components/OrcaSlicerFlowCalculator.vue")['default']
     'OrcaSlicerFlowYoloCalculator': typeof import("../components/OrcaSlicerFlowYoloCalculator.vue")['default']
@@ -23,6 +24,7 @@ interface _GlobalComponents {
     'RotationDistanceCalculator': typeof import("../components/RotationDistanceCalculator.vue")['default']
     'RunCurrentCalculator': typeof import("../components/RunCurrentCalculator.vue")['default']
     'TextInput': typeof import("../components/TextInput.vue")['default']
+    'XAndYOffsetsCalculator': typeof import("../components/XAndYOffsetsCalculator.vue")['default']
     'NuxtWelcome': typeof import("../node_modules/nuxt/dist/app/components/welcome.vue")['default']
     'NuxtLayout': typeof import("../node_modules/nuxt/dist/app/components/nuxt-layout")['default']
     'NuxtErrorBoundary': typeof import("../node_modules/nuxt/dist/app/components/nuxt-error-boundary.vue")['default']
@@ -50,6 +52,7 @@ interface _GlobalComponents {
       'LazyConsentBanner': LazyComponent<typeof import("../components/ConsentBanner.vue")['default']>
     'LazyImageUpload': LazyComponent<typeof import("../components/ImageUpload.vue")['default']>
     'LazyInputShapingCalculator': LazyComponent<typeof import("../components/InputShapingCalculator.vue")['default']>
+    'LazyLeadScrewRotationDistanceCalculator': LazyComponent<typeof import("../components/LeadScrewRotationDistanceCalculator.vue")['default']>
     'LazyMaxVolumetricSpeedCalculator': LazyComponent<typeof import("../components/MaxVolumetricSpeedCalculator.vue")['default']>
     'LazyOrcaSlicerFlowCalculator': LazyComponent<typeof import("../components/OrcaSlicerFlowCalculator.vue")['default']>
     'LazyOrcaSlicerFlowYoloCalculator': LazyComponent<typeof import("../components/OrcaSlicerFlowYoloCalculator.vue")['default']>
@@ -58,6 +61,7 @@ interface _GlobalComponents {
     'LazyRotationDistanceCalculator': LazyComponent<typeof import("../components/RotationDistanceCalculator.vue")['default']>
     'LazyRunCurrentCalculator': LazyComponent<typeof import("../components/RunCurrentCalculator.vue")['default']>
     'LazyTextInput': LazyComponent<typeof import("../components/TextInput.vue")['default']>
+    'LazyXAndYOffsetsCalculator': LazyComponent<typeof import("../components/XAndYOffsetsCalculator.vue")['default']>
     'LazyNuxtWelcome': LazyComponent<typeof import("../node_modules/nuxt/dist/app/components/welcome.vue")['default']>
     'LazyNuxtLayout': LazyComponent<typeof import("../node_modules/nuxt/dist/app/components/nuxt-layout")['default']>
     'LazyNuxtErrorBoundary': LazyComponent<typeof import("../node_modules/nuxt/dist/app/components/nuxt-error-boundary.vue")['default']>
@@ -91,6 +95,7 @@ declare module 'vue' {
 export const ConsentBanner: typeof import("../components/ConsentBanner.vue")['default']
 export const ImageUpload: typeof import("../components/ImageUpload.vue")['default']
 export const InputShapingCalculator: typeof import("../components/InputShapingCalculator.vue")['default']
+export const LeadScrewRotationDistanceCalculator: typeof import("../components/LeadScrewRotationDistanceCalculator.vue")['default']
 export const MaxVolumetricSpeedCalculator: typeof import("../components/MaxVolumetricSpeedCalculator.vue")['default']
 export const OrcaSlicerFlowCalculator: typeof import("../components/OrcaSlicerFlowCalculator.vue")['default']
 export const OrcaSlicerFlowYoloCalculator: typeof import("../components/OrcaSlicerFlowYoloCalculator.vue")['default']
@@ -99,6 +104,7 @@ export const ResultsDisplay: typeof import("../components/ResultsDisplay.vue")['
 export const RotationDistanceCalculator: typeof import("../components/RotationDistanceCalculator.vue")['default']
 export const RunCurrentCalculator: typeof import("../components/RunCurrentCalculator.vue")['default']
 export const TextInput: typeof import("../components/TextInput.vue")['default']
+export const XAndYOffsetsCalculator: typeof import("../components/XAndYOffsetsCalculator.vue")['default']
 export const NuxtWelcome: typeof import("../node_modules/nuxt/dist/app/components/welcome.vue")['default']
 export const NuxtLayout: typeof import("../node_modules/nuxt/dist/app/components/nuxt-layout")['default']
 export const NuxtErrorBoundary: typeof import("../node_modules/nuxt/dist/app/components/nuxt-error-boundary.vue")['default']
@@ -126,6 +132,7 @@ export const NuxtRouteAnnouncer: typeof import("../node_modules/nuxt/dist/app/co
 export const LazyConsentBanner: LazyComponent<typeof import("../components/ConsentBanner.vue")['default']>
 export const LazyImageUpload: LazyComponent<typeof import("../components/ImageUpload.vue")['default']>
 export const LazyInputShapingCalculator: LazyComponent<typeof import("../components/InputShapingCalculator.vue")['default']>
+export const LazyLeadScrewRotationDistanceCalculator: LazyComponent<typeof import("../components/LeadScrewRotationDistanceCalculator.vue")['default']>
 export const LazyMaxVolumetricSpeedCalculator: LazyComponent<typeof import("../components/MaxVolumetricSpeedCalculator.vue")['default']>
 export const LazyOrcaSlicerFlowCalculator: LazyComponent<typeof import("../components/OrcaSlicerFlowCalculator.vue")['default']>
 export const LazyOrcaSlicerFlowYoloCalculator: LazyComponent<typeof import("../components/OrcaSlicerFlowYoloCalculator.vue")['default']>
@@ -134,6 +141,7 @@ export const LazyResultsDisplay: LazyComponent<typeof import("../components/Resu
 export const LazyRotationDistanceCalculator: LazyComponent<typeof import("../components/RotationDistanceCalculator.vue")['default']>
 export const LazyRunCurrentCalculator: LazyComponent<typeof import("../components/RunCurrentCalculator.vue")['default']>
 export const LazyTextInput: LazyComponent<typeof import("../components/TextInput.vue")['default']>
+export const LazyXAndYOffsetsCalculator: LazyComponent<typeof import("../components/XAndYOffsetsCalculator.vue")['default']>
 export const LazyNuxtWelcome: LazyComponent<typeof import("../node_modules/nuxt/dist/app/components/welcome.vue")['default']>
 export const LazyNuxtLayout: LazyComponent<typeof import("../node_modules/nuxt/dist/app/components/nuxt-layout")['default']>
 export const LazyNuxtErrorBoundary: LazyComponent<typeof import("../node_modules/nuxt/dist/app/components/nuxt-error-boundary.vue")['default']>
