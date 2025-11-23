@@ -53,7 +53,29 @@ cp .env.example .env
 pre-commit install
 ```
 
-### Run Development Server
+### Run Development Servers (Full Stack)
+
+Use the combined runner to start both backend (FastAPI) and frontend (Nuxt) with one command:
+
+```bash
+chmod +x scripts/dev-all.sh   # first time only
+./scripts/dev-all.sh
+```
+
+Environment overrides:
+```bash
+BACKEND_PORT=9000 FRONTEND_PORT=3100 ./scripts/dev-all.sh
+```
+Frontend will automatically use `NUXT_PUBLIC_API_BASE` pointing at the backend port (override if needed):
+```bash
+NUXT_PUBLIC_API_BASE=https://api.dev.local ./scripts/dev-all.sh
+```
+
+Access:
+- Backend API: http://localhost:${BACKEND_PORT:-8000}
+- Frontend:    http://localhost:${FRONTEND_PORT:-3000}
+
+### Run Backend Only
 
 ```bash
 # Using script
@@ -70,7 +92,7 @@ Access the API:
 - **Swagger Docs**: http://localhost:8000/docs
 - **ReDoc**: http://localhost:8000/redoc
 
-### Run Frontend Prototype
+### Run Frontend Prototype (Legacy Static)
 
 ```bash
 # Open index.html in browser or use local server:
