@@ -1,6 +1,7 @@
 // Pinia store for calculator state
 import { defineStore } from 'pinia'
 import { useCalculatorApi } from '~/composables/useCalculatorApi'
+import type { XAndYOffsetsRequest, XAndYOffsetsResponse } from '~/types/calculators'
 
 interface CalculatorState {
   rotationDistance: {
@@ -48,10 +49,17 @@ interface CalculatorState {
     result: any | null
   }
   leadScrewRotationDistance: {
-    pitch: number | null
-    numberOfThreads: number | null
+    pitch: number
+    numberOfThreads: number
     screwType: string | null
     result: any | null
+  }
+  xAndYOffsets: {
+    toolheadXProbe: number | null
+    toolheadYProbe: number | null
+    toolheadXNozzle: number | null
+    toolheadYNozzle: number | null
+    result: XAndYOffsetsResponse | null
   }
   loading: boolean
   error: string | null
@@ -107,6 +115,13 @@ export const useCalculatorStore = defineStore('calculator', {
       pitch: 2.0,
       numberOfThreads: 1,
       screwType: null,
+      result: null,
+    },
+    xAndYOffsets: {
+      toolheadXProbe: null,
+      toolheadYProbe: null,
+      toolheadXNozzle: null,
+      toolheadYNozzle: null,
       result: null,
     },
     loading: false,
@@ -342,6 +357,33 @@ export const useCalculatorStore = defineStore('calculator', {
       this.leadScrewRotationDistance.numberOfThreads = 1
       this.leadScrewRotationDistance.screwType = null
       this.leadScrewRotationDistance.result = null
+      this.error = null
+    },
+
+    async calculateXAndYOffsets(request: XAndYOffsetsRequest) {
+      this.loading = true
+      this.error = null
+
+      try {
+        const api = useCalculatorApi()
+        const result = await api.calculateXAndYOffsets(request)
+        this.xAndYOffsets.result = result
+      }
+      catch (err: any) {
+        this.error = err.data?.detail || err.message || 'Failed to calculate X and Y offsets'
+        throw err
+      }
+      finally {
+        this.loading = false
+      }
+    },
+
+    resetXAndYOffsets() {
+      this.xAndYOffsets.toolheadXProbe = null
+      this.xAndYOffsets.toolheadYProbe = null
+      this.xAndYOffsets.toolheadXNozzle = null
+      this.xAndYOffsets.toolheadYNozzle = null
+      this.xAndYOffsets.result = null
       this.error = null
     },
   },

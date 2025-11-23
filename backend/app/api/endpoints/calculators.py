@@ -248,6 +248,45 @@ class LeadScrewRotationDistanceResponse(BaseModel):
     reference: str = Field(..., description="Klipper documentation URL")
 
 
+class XAndYOffsetsRequest(BaseModel):
+    """Request for X and Y probe offsets calculation."""
+
+    toolhead_x_probe: float = Field(
+        ...,
+        description="X position when probe triggers",
+        examples=[188.0],
+    )
+    toolhead_y_probe: float = Field(
+        ...,
+        description="Y position when probe triggers",
+        examples=[185.0],
+    )
+    toolhead_x_nozzle: float = Field(
+        ...,
+        description="X position when nozzle at marked spot",
+        examples=[224.0],
+    )
+    toolhead_y_nozzle: float = Field(
+        ...,
+        description="Y position when nozzle at marked spot",
+        examples=[148.0],
+    )
+
+
+class XAndYOffsetsResponse(BaseModel):
+    """Response with calculated X and Y probe offsets."""
+
+    x_offset: float = Field(..., description="Calculated X offset (mm)")
+    y_offset: float = Field(..., description="Calculated Y offset (mm)")
+    toolhead_x_probe: float = Field(..., description="Input probe X position")
+    toolhead_y_probe: float = Field(..., description="Input probe Y position")
+    toolhead_x_nozzle: float = Field(..., description="Input nozzle X position")
+    toolhead_y_nozzle: float = Field(..., description="Input nozzle Y position")
+    klipper_config: str = Field(..., description="Klipper config snippet to copy")
+    usage_guide: str = Field(..., description="Step-by-step usage instructions")
+    reference: str = Field(..., description="Klipper documentation URL")
+
+
 class PressureAdvanceRequest(BaseModel):
     """Request for pressure advance calibration guidance."""
 
@@ -378,6 +417,15 @@ async def list_calculators():
                 "csv_source": "klipper_calibrations/lead_screw_rotation_distance.csv",
                 "description": "Calculate rotation_distance for Z-axis lead screws (pitch × threads)",
                 "endpoint": "/api/v1/calculators/lead-screw-rotation-distance",
+                "method": "POST",
+            },
+            {
+                "id": "x-and-y-offsets",
+                "name": "X and Y Offsets",
+                "category": "Probe Calibration",
+                "csv_source": "klipper_calibrations/x_and_y_offsets.csv",
+                "description": "Calculate BLTouch/CR Touch probe X and Y offsets for accurate bed mesh",
+                "endpoint": "/api/v1/calculators/x-and-y-offsets",
                 "method": "POST",
             },
         ]
@@ -1327,5 +1375,133 @@ homing_speed: 8.0"""
         common_examples=common_examples,
         klipper_config=klipper_config,
         recommendation=recommendation,
+        reference=reference,
+    )
+
+
+@router.post(
+    "/x-and-y-offsets",
+    response_model=XAndYOffsetsResponse,
+    summary="Calculate Probe X and Y Offsets",
+    description="""
+    Calculate BLTouch/CR Touch X and Y offsets for Klipper printer.cfg.
+
+    **Formula**:
+    - `x_offset = toolhead_x_probe - toolhead_x_nozzle`
+    - `y_offset = toolhead_y_probe - toolhead_y_nozzle`
+
+    **Step-by-Step Process**:
+    1. **Home printer**: G28
+    2. **Run PROBE**: Issue PROBE command in terminal
+    3. **Get probe position**: Issue GET_POSITION
+    4. **Record toolhead X/Y**: Note "toolhead" X and Y values (not "mcu")
+    5. **Mark the bed**: Place tape/marker where probe triggered
+    6. **Move nozzle**: Manually jog nozzle to marked spot
+    7. **Get nozzle position**: Issue GET_POSITION again
+    8. **Record toolhead X/Y**: Note new "toolhead" X and Y values
+    9. **Calculate**: Enter all four values in this calculator
+
+    **Understanding the Offsets**:
+    - If probe is **left** of nozzle: X offset is **negative**
+    - If probe is **right** of nozzle: X offset is **positive**
+    - If probe is **front** of nozzle: Y offset is **negative**
+    - If probe is **back** of nozzle: Y offset is **positive**
+
+    **Common Configurations**:
+    - **Ender 3 S1**: x_offset: -30, y_offset: -40 (probe left/front)
+    - **Voron 2.4**: x_offset: -31.8, y_offset: -40.5 (probe left/front)
+    - **CR-6 SE**: x_offset: -31.8, y_offset: -40.5 (probe left/front)
+
+    **Why This Matters**:
+    - Accurate offsets ensure bed mesh is measured correctly
+    - Wrong offsets = nozzle won't be where Klipper thinks it is
+    - Critical for first layer adhesion and bed leveling
+
+    **Reference**: https://www.klipper3d.org/Probe_Calibrate.html#calibrating-probe-x-and-y-offsets
+
+    **Phase**: CSV-driven formula calculation
+    """,
+    tags=["calculators", "klipper"],
+)
+async def calculate_x_and_y_offsets(
+    request: XAndYOffsetsRequest,
+) -> XAndYOffsetsResponse:
+    """
+    Calculate probe X and Y offsets from toolhead positions.
+
+    Formula from Klipper documentation:
+    x_offset = toolhead_x_probe - toolhead_x_nozzle
+    y_offset = toolhead_y_probe - toolhead_y_nozzle
+
+    Args:
+        request: XAndYOffsetsRequest with toolhead positions
+
+    Returns:
+        XAndYOffsetsResponse with calculated offsets
+    """
+    logger.info(
+        f"X/Y Offsets calculation: probe=({request.toolhead_x_probe}, {request.toolhead_y_probe}), "
+        f"nozzle=({request.toolhead_x_nozzle}, {request.toolhead_y_nozzle})"
+    )
+
+    # Load formula from CSV (validates CSV exists and is loaded)
+    csv_loader = get_csv_loader()
+    _ = csv_loader.get_x_and_y_offsets_formula()  # Validates CSV is loaded
+
+    # Calculate offsets using the formula from Excel/JavaScript
+    x_offset = request.toolhead_x_probe - request.toolhead_x_nozzle
+    y_offset = request.toolhead_y_probe - request.toolhead_y_nozzle
+
+    # Generate Klipper config snippet
+    probe_type = "bltouch"  # Could be extended to support other probe types
+    klipper_config = f"""[{probe_type}]
+sensor_pin: ^PC14
+control_pin: PC13
+x_offset: {x_offset:.1f}
+y_offset: {y_offset:.1f}
+#z_offset: 0  # Set separately with PROBE_CALIBRATE
+speed: 3.0
+samples: 2
+samples_result: median
+sample_retract_dist: 6.0
+samples_tolerance: 0.01
+samples_tolerance_retries: 3"""
+
+    # Generate step-by-step usage guide
+    usage_guide = """
+1. Home your printer: G28
+2. Issue PROBE command in terminal
+3. Issue GET_POSITION and record toolhead X and Y
+4. Mark the bed at the probe point (tape works well)
+5. Manually jog the nozzle tip to the marked spot
+6. Issue GET_POSITION again and record toolhead X and Y
+7. Enter all four values in this calculator
+8. Copy the calculated offsets to your printer.cfg [probe] section
+9. Restart Klipper and verify with PROBE_ACCURACY
+""".strip()
+
+    # Reference URL
+    reference = "https://www.klipper3d.org/Probe_Calibrate.html#calibrating-probe-x-and-y-offsets"
+
+    # Track calculator usage
+    await track_calculator_use(
+        "x_and_y_offsets",
+        params={
+            "x_offset": x_offset,
+            "y_offset": y_offset,
+            "probe_position": f"({request.toolhead_x_probe}, {request.toolhead_y_probe})",
+            "nozzle_position": f"({request.toolhead_x_nozzle}, {request.toolhead_y_nozzle})",
+        },
+    )
+
+    return XAndYOffsetsResponse(
+        x_offset=round(x_offset, 3),
+        y_offset=round(y_offset, 3),
+        toolhead_x_probe=request.toolhead_x_probe,
+        toolhead_y_probe=request.toolhead_y_probe,
+        toolhead_x_nozzle=request.toolhead_x_nozzle,
+        toolhead_y_nozzle=request.toolhead_y_nozzle,
+        klipper_config=klipper_config,
+        usage_guide=usage_guide,
         reference=reference,
     )

@@ -115,6 +115,11 @@ class CSVLoader:
         key = "klipper:lead_screw_rotation_distance"
         return self.cache.get(key)
 
+    def get_x_and_y_offsets_formula(self) -> pd.DataFrame | None:
+        """Get X and Y offsets calculator data."""
+        key = "klipper:x_and_y_offsets"
+        return self.cache.get(key)
+
     def get_material_recommendations(
         self,
         material_type: str,
