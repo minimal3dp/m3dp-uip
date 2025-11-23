@@ -1,0 +1,9 @@
+calculator_name,X and Y Offsets
+category,Probe Calibration
+formula,"x_offset = toolhead_x_probe - toolhead_x_nozzle; y_offset = toolhead_y_probe - toolhead_y_nozzle"
+description,Calculate probe X and Y offsets for BLTouch/CR Touch by measuring toolhead positions when probe triggers vs when nozzle is at same bed location
+inputs,"toolhead_x_probe (float, mm): X position when probe triggers; toolhead_y_probe (float, mm): Y position when probe triggers; toolhead_x_nozzle (float, mm): X position when nozzle at marked spot; toolhead_y_nozzle (float, mm): Y position when nozzle at marked spot"
+outputs,"x_offset (float, mm): Probe X offset for printer.cfg [probe] section; y_offset (float, mm): Probe Y offset for printer.cfg [probe] section"
+usage_notes,"Run PROBE then GET_POSITION to get probe X/Y. Mark bed at probe point. Move nozzle to marked spot and GET_POSITION to get nozzle X/Y. Formula: x_offset = probe_x - nozzle_x, y_offset = probe_y - nozzle_y. Common values: BLTouch left/front of nozzle = negative offsets (e.g., -29, -34). Crucial for accurate bed mesh and first layer."
+reference,https://www.klipper3d.org/Probe_Calibrate.html#calibrating-probe-x-and-y-offsets
+common_examples,"Ender 3 S1: x=-30, y=-40; Voron 2.4: x=-31.8, y=-40.5; CR-6 SE: x=-31.8, y=-40.5"

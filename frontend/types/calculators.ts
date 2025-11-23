@@ -139,3 +139,22 @@ export interface LeadScrewRotationDistanceResponse {
   recommendation: string
   reference: string
 }
+
+export interface XAndYOffsetsRequest {
+  toolhead_x_probe: number
+  toolhead_y_probe: number
+  toolhead_x_nozzle: number
+  toolhead_y_nozzle: number
+}
+
+export interface XAndYOffsetsResponse {
+  x_offset: number
+  y_offset: number
+  toolhead_x_probe: number
+  toolhead_y_probe: number
+  toolhead_x_nozzle: number
+  toolhead_y_nozzle: number
+  klipper_config: string
+  usage_guide: string
+  reference: string
+}

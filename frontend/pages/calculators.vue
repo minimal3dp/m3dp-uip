@@ -32,6 +32,9 @@
 
         <!-- Lead Screw Rotation Distance -->
         <LeadScrewRotationDistanceCalculator />
+
+        <!-- X and Y Offsets -->
+        <XAndYOffsetsCalculator />
       </div>
 
       <div class="mt-12 text-center text-zinc-500 text-sm">

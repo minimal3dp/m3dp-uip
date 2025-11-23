@@ -15,7 +15,9 @@ import type {
   RunCurrentRequest,
   RunCurrentResponse,
   LeadScrewRotationDistanceRequest,
-  LeadScrewRotationDistanceResponse
+  LeadScrewRotationDistanceResponse,
+  XAndYOffsetsRequest,
+  XAndYOffsetsResponse,
 } from '~/types/calculators'
 
 export const useCalculatorApi = () => {
@@ -78,6 +80,13 @@ export const useCalculatorApi = () => {
     })
   }
 
+  const calculateXAndYOffsets = async (data: XAndYOffsetsRequest): Promise<XAndYOffsetsResponse> => {
+    return await $fetch<XAndYOffsetsResponse>(`${apiBase}/api/v1/calculators/x-and-y-offsets`, {
+      method: 'POST',
+      body: data,
+    })
+  }
+
   const listCalculators = async () => {
     return await $fetch<any>(`${apiBase}/api/v1/calculators`)
   }
@@ -91,6 +100,7 @@ export const useCalculatorApi = () => {
     calculateMaxVolumetricSpeed,
     calculateRunCurrent,
     calculateLeadScrewRotationDistance,
+    calculateXAndYOffsets,
     listCalculators,
   }
 }
