@@ -286,15 +286,41 @@ Development roadmap organized by feature branches. The `main` branch contains on
 - **Total Test Files**: 4 comprehensive test modules
 - **Total Lines**: 1,514 lines of test code
 
-#### Vision Model Validation (Future)
+#### Vision Model Validation 🚀 IN PROGRESS
+**Branch**: `feature/vision-model-validation`
+**Status**: Infrastructure complete, dataset collection in progress
+**Goal**: Validate and improve vision API accuracy through systematic testing
+
+**Completed (Commit: TBD)**:
+- [x] Created validation service infrastructure (`VisionValidator`)
+- [x] Implemented `ValidationMetadata`, `ValidationResult`, `ValidationReport` models
+- [x] Added CLI script for running validation (`validate_vision_model.py`)
+- [x] Created comprehensive test suite (23 tests)
+- [x] Added dataset directory structure (`backend/tests/fixtures/defect_images/`)
+- [x] Wrote validation guide (`docs/VISION_VALIDATION_GUIDE.md`)
+
+**In Progress**:
 - [ ] Collect reference defect images from industry guides:
-  - All3DP troubleshooting gallery
-  - Prusa Knowledge Base images
-  - Simplify3D before/after examples
-  - RepRap pictorial guide
-- [ ] Create test image dataset with known defects
-- [ ] Benchmark vision API accuracy against known classifications
-- [ ] Fine-tune system prompt based on misclassifications
+  - [ ] RepRap pictorial guide (open license - priority 1)
+  - [ ] All3DP troubleshooting gallery (40+ defects)
+  - [ ] Prusa Knowledge Base images (best quality)
+  - [ ] Simplify3D before/after examples
+- [ ] Create metadata JSON files for all collected images
+- [ ] Target: 5-10 images per primary defect type (8 classes)
+
+**Next Steps**:
+- [ ] Run initial baseline validation (current accuracy unknown)
+- [ ] Analyze misclassifications and failure patterns
+- [ ] Refine vision service system prompt based on results
+- [ ] Iterate: collect more examples for low-accuracy defects
+- [ ] Benchmark vision API accuracy improvement over iterations
+- [ ] Document optimal prompt configuration
+
+**Success Criteria**:
+- 80%+ overall accuracy across all defect types
+- 90%+ accuracy for primary defects (Stringing, Warping, Layer Shift)
+- Clear documentation of improvement process
+- Repeatable validation workflow for future changes
 
 #### API Endpoints ✅ COMPLETED
 - [x] Complete `/api/v1/analyze/image` endpoint (Commit: 90534aa)
