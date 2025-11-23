@@ -45,7 +45,7 @@ cleanup() {
     if kill -0 "$pid" 2>/dev/null; then
       kill "$pid" 2>/dev/null || true
     fi
-  end
+  done
   wait "$FRONTEND_PID" 2>/dev/null || true
   wait "$BACKEND_PID" 2>/dev/null || true
   echo "==> All processes stopped."
