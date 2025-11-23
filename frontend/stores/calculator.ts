@@ -76,6 +76,7 @@ interface CalculatorState {
   lineWidths: {
     nozzleDiameter: number | null
     featureType: string
+    layerHeight: number | null
     result: LineWidthsResponse | null
   }
   loading: boolean
@@ -156,6 +157,7 @@ export const useCalculatorStore = defineStore('calculator', {
     lineWidths: {
       nozzleDiameter: 0.4,
       featureType: 'perimeter',
+      layerHeight: null,
       result: null,
     },
     loading: false,
@@ -471,6 +473,7 @@ export const useCalculatorStore = defineStore('calculator', {
     resetLineWidths() {
       this.lineWidths.nozzleDiameter = 0.4
       this.lineWidths.featureType = 'perimeter'
+      this.lineWidths.layerHeight = null
       this.lineWidths.result = null
       this.error = null
     },

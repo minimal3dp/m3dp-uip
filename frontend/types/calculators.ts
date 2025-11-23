@@ -184,6 +184,7 @@ export interface SkewCorrectionResponse {
 export interface LineWidthsRequest {
   nozzle_diameter: number
   feature_type: string
+  layer_height?: number
 }
 
 export interface LineWidthsResponse {
@@ -193,4 +194,6 @@ export interface LineWidthsResponse {
   extrusion_multiplier_hint: string
   slicer_config: string
   notes: string
+  extrusion_volume_check: string | null
+  layer_height_constraint_applied: boolean
 }

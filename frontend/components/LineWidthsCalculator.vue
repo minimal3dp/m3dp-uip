@@ -6,7 +6,7 @@
     </p>
 
     <form @submit.prevent="handleCalculate" class="space-y-4 mb-6">
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div>
           <label for="nozzle" class="block text-sm font-medium mb-1">Nozzle Diameter (mm)</label>
           <input id="nozzle" v-model.number="nozzleDiameter" type="number" step="0.01" min="0.1" max="2" class="w-full px-3 py-2 rounded border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white" />
@@ -21,6 +21,10 @@
             <option value="first_layer">First Layer</option>
             <option value="support">Support</option>
           </select>
+        </div>
+        <div>
+          <label for="layer" class="block text-sm font-medium mb-1">Layer Height (mm) <span class="text-xs text-gray-500">optional</span></label>
+          <input id="layer" v-model.number="layerHeight" type="number" step="0.01" min="0.05" max="0.5" placeholder="e.g., 0.2" class="w-full px-3 py-2 rounded border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white" />
         </div>
       </div>
       <button type="submit" :disabled="loading" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 rounded transition-colors">
@@ -55,6 +59,12 @@
         <pre class="bg-black/90 text-green-400 text-xs p-3 rounded overflow-x-auto">{{ result.slicer_config }}</pre>
       </div>
 
+      <div v-if="result.extrusion_volume_check" class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded p-4">
+        <h4 class="text-md font-semibold mb-2 text-blue-900 dark:text-blue-100">Extrusion Volume Check</h4>
+        <p class="text-sm text-blue-800 dark:text-blue-200">{{ result.extrusion_volume_check }}</p>
+        <p v-if="result.layer_height_constraint_applied" class="text-xs mt-2 text-blue-600 dark:text-blue-300 font-medium">⚠️ Max width constrained by layer height × 1.5</p>
+      </div>
+
       <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded p-4">
         <h4 class="text-md font-semibold mb-2 text-gray-900 dark:text-white">Notes</h4>
         <p class="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-line">{{ result.notes }}</p>
@@ -73,6 +83,7 @@ const store = useCalculatorStore()
 
 const nozzleDiameter = ref<number>(store.lineWidths.nozzleDiameter || 0.4)
 const featureType = ref<string>(store.lineWidths.featureType)
+const layerHeight = ref<number | null>(store.lineWidths.layerHeight)
 const loading = computed(() => store.loading)
 const error = computed(() => store.error)
 const result = computed(() => store.lineWidths.result)
@@ -93,6 +104,9 @@ async function handleCalculate() {
   const req: LineWidthsRequest = {
     nozzle_diameter: nozzleDiameter.value,
     feature_type: featureType.value,
+  }
+  if (layerHeight.value !== null && layerHeight.value > 0) {
+    req.layer_height = layerHeight.value
   }
   try {
     await store.calculateLineWidths(req)
