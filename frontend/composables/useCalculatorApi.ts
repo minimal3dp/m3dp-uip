@@ -9,7 +9,9 @@ import type {
   OrcaSlicerFlowYoloRequest,
   OrcaSlicerFlowYoloResponse,
   InputShapingRequest,
-  InputShapingResponse
+  InputShapingResponse,
+  MaxVolumetricSpeedRequest,
+  MaxVolumetricSpeedResponse
 } from '~/types/calculators'
 
 export const useCalculatorApi = () => {
@@ -51,6 +53,13 @@ export const useCalculatorApi = () => {
     })
   }
 
+  const calculateMaxVolumetricSpeed = async (data: MaxVolumetricSpeedRequest): Promise<MaxVolumetricSpeedResponse> => {
+    return await $fetch<MaxVolumetricSpeedResponse>(`${apiBase}/api/v1/calculators/max-volumetric-speed`, {
+      method: 'POST',
+      body: data,
+    })
+  }
+
   const listCalculators = async () => {
     return await $fetch<any>(`${apiBase}/api/v1/calculators`)
   }
@@ -61,6 +70,7 @@ export const useCalculatorApi = () => {
     calculateOrcaSlicerFlow,
     calculateOrcaSlicerFlowYolo,
     calculateInputShaping,
+    calculateMaxVolumetricSpeed,
     listCalculators,
   }
 }

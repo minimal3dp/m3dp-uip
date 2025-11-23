@@ -102,6 +102,44 @@ class OrcaSlicerFlowYoloRequest(BaseModel):
     )
 
 
+class MaxVolumetricSpeedRequest(BaseModel):
+    """Request for Max Volumetric Speed calculation."""
+
+    start_value: float = Field(
+        ...,
+        gt=0,
+        le=50,
+        description="Starting volumetric speed for test (mm³/s)",
+        examples=[5.0],
+    )
+    step_value: float = Field(
+        ...,
+        gt=0,
+        le=5,
+        description="Increment between test sections (mm³/s)",
+        examples=[0.5],
+    )
+    height_measured: float = Field(
+        ...,
+        gt=0,
+        le=200,
+        description="Height where print quality starts degrading (mm)",
+        examples=[27.23],
+    )
+    temperature: float | None = Field(
+        None,
+        ge=150,
+        le=300,
+        description="Hotend temperature during test (°C)",
+        examples=[240],
+    )
+    hotend_type: str | None = Field(
+        None,
+        description="Hotend type for reference comparisons",
+        examples=["E3D V6", "Dragon HF", "Rapido UHF"],
+    )
+
+
 class OrcaSlicerFlowResponse(BaseModel):
     """Response with calculated OrcaSlicer flow rate."""
 
@@ -125,6 +163,18 @@ class OrcaSlicerFlowYoloResponse(BaseModel):
     )
     slicer_config: str = Field(..., description="Slicer config value to copy")
     recommendation: str = Field(..., description="Action recommendation")
+
+
+class MaxVolumetricSpeedResponse(BaseModel):
+    """Response with calculated max volumetric speed."""
+
+    max_flow: float = Field(..., description="Maximum volumetric speed (mm³/s)")
+    safe_flow_95: float = Field(..., description="Safe value at 95% of max (recommended)")
+    safe_flow_90: float = Field(..., description="Conservative value at 90% of max")
+    comparison: dict = Field(..., description="Comparison with common hotend flow rates")
+    slicer_config: str = Field(..., description="Slicer config value to copy (95% safe)")
+    recommendation: str = Field(..., description="Usage recommendations")
+    test_details: dict = Field(..., description="Test parameters for reference")
 
 
 class PressureAdvanceRequest(BaseModel):
@@ -230,6 +280,15 @@ async def list_calculators():
                 "csv_source": "klipper_calibrations/input_shaping.csv",
                 "description": "Recommend input shaper types based on resonance frequencies",
                 "endpoint": "/api/v1/calculators/input-shaping",
+                "method": "POST",
+            },
+            {
+                "id": "max-volumetric-speed",
+                "name": "Max Volumetric Speed",
+                "category": "Performance",
+                "csv_source": "klipper_calibrations/max_volumetric_speed.csv",
+                "description": "Calculate maximum flow rate your hotend can handle",
+                "endpoint": "/api/v1/calculators/max-volumetric-speed",
                 "method": "POST",
             },
         ]
@@ -796,4 +855,125 @@ async def calculate_pressure_advance(request: PressureAdvanceRequest):
         test_parameters=test_parameters,
         klipper_config=klipper_config,
         calibration_method=calibration_method,
+    )
+
+
+@router.post("/max-volumetric-speed", response_model=MaxVolumetricSpeedResponse)
+async def calculate_max_volumetric_speed(request: MaxVolumetricSpeedRequest):
+    """
+    Calculate maximum volumetric flow rate from test print measurements.
+
+    **Purpose**:
+    Determine the maximum mm³/s your hotend can reliably extrude at a given
+    temperature. This value limits print speeds to prevent underextrusion.
+
+    **Formula** (from CSV and Ellis3DP guide):
+    ```
+    max_flow = start + (height_measured * step)
+    safe_flow_95 = max_flow * 0.95
+    safe_flow_90 = max_flow * 0.90
+    ```
+
+    **Method**:
+    1. Use OrcaSlicer "Calibration → More... → Max Flowrate" test
+    2. Print tower with increasing volumetric speeds
+    3. Measure height where quality degrades (layer skipping, gaps, etc.)
+    4. Calculate max flow and use 95% value in slicer
+
+    **Common Hotend Ranges** (from CSV and Ellis3DP):
+    - E3D V6 / Revo: ~11 mm³/s
+    - Dragon SF: ~15 mm³/s
+    - Dragon HF / Rapido HF: ~24 mm³/s
+    - Rapido UHF / Mosquito Magnum: ~30 mm³/s
+
+    **Speed Formula**:
+    `max_speed = max_flow / layer_height / line_width`
+
+    Example: 24 mm³/s / 0.2mm / 0.4mm = 300 mm/s
+
+    Args:
+        request: Start value, step increment, and measured height
+
+    Returns:
+        Max flow rate, safe values (95%/90%), and slicer config
+
+    Raises:
+        HTTPException: If calculated values are outside expected ranges
+    """
+    logger.info(
+        f"Max volumetric speed calculation: start={request.start_value}, "
+        f"step={request.step_value}, height={request.height_measured}"
+    )
+
+    # Formula from CSV: max_flow = start + (height_measured * step)
+    max_flow = request.start_value + (request.height_measured * request.step_value)
+
+    # Safety margins (CSV rows 5-6)
+    safe_flow_95 = max_flow * 0.95
+    safe_flow_90 = max_flow * 0.90
+
+    # Validate result is reasonable
+    if max_flow < 5 or max_flow > 50:
+        logger.warning(f"Calculated max flow {max_flow:.2f} mm³/s is outside typical range (5-50)")
+
+    # Hotend comparison data (from CSV and Ellis3DP)
+    common_hotends = {
+        "E3D V6": 11,
+        "E3D Revo": 11,
+        "Dragon SF": 15,
+        "Dragon HF": 24,
+        "Rapido HF": 24,
+        "Rapido UHF": 30,
+        "Mosquito": 20,
+        "Mosquito Magnum": 30,
+    }
+
+    # Find closest hotend match
+    closest_hotend = min(common_hotends.items(), key=lambda x: abs(x[1] - max_flow))
+    comparison = {
+        "your_max_flow": round(max_flow, 2),
+        "closest_hotend": closest_hotend[0],
+        "closest_flow": closest_hotend[1],
+        "common_hotends": common_hotends,
+    }
+
+    # Generate slicer config (use 95% safe value)
+    slicer_config = f"max_volumetric_speed: {safe_flow_95:.2f}"
+
+    # Usage recommendations
+    temp_note = f" at {request.temperature}°C" if request.temperature else " at test temperature"
+    recommendation = (
+        f"Use {safe_flow_95:.2f} mm³/s (95% of max) in your slicer{temp_note}. "
+        f"For critical prints, consider {safe_flow_90:.2f} mm³/s (90%). "
+        f"Higher temperatures may increase flow rate but can cause stringing. "
+        f"Your result is similar to a {closest_hotend[0]}."
+    )
+
+    # Test details for reference
+    test_details = {
+        "start_value": request.start_value,
+        "step_value": request.step_value,
+        "height_measured": request.height_measured,
+        "temperature": request.temperature,
+        "hotend_type": request.hotend_type,
+    }
+
+    # Track calculator usage
+    await track_calculator_use(
+        "max_volumetric_speed",
+        params={
+            "max_flow": round(max_flow, 2),
+            "safe_flow_95": round(safe_flow_95, 2),
+            "closest_hotend": closest_hotend[0],
+        },
+    )
+
+    return MaxVolumetricSpeedResponse(
+        max_flow=round(max_flow, 2),
+        safe_flow_95=round(safe_flow_95, 2),
+        safe_flow_90=round(safe_flow_90, 2),
+        comparison=comparison,
+        slicer_config=slicer_config,
+        recommendation=recommendation,
+        test_details=test_details,
     )

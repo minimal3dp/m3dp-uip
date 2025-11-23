@@ -77,3 +77,32 @@ export interface InputShapingResponse {
   klipper_config: string
   notes: string
 }
+
+export interface MaxVolumetricSpeedRequest {
+  start_value: number
+  step_value: number
+  height_measured: number
+  temperature?: number
+  hotend_type?: string
+}
+
+export interface MaxVolumetricSpeedResponse {
+  max_flow: number
+  safe_flow_95: number
+  safe_flow_90: number
+  comparison: {
+    your_max_flow: number
+    closest_hotend: string
+    closest_flow: number
+    common_hotends: Record<string, number>
+  }
+  slicer_config: string
+  recommendation: string
+  test_details: {
+    start_value: number
+    step_value: number
+    height_measured: number
+    temperature?: number
+    hotend_type?: string
+  }
+}

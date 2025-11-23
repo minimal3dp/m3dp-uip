@@ -648,7 +648,8 @@ const _inlineRuntimeConfig = {
     }
   },
   "public": {
-    "apiBase": "http://localhost:8000"
+    "apiBase": "http://localhost:8000",
+    "gaMeasurementId": "G-VQ8RPWC2MK"
   }
 };
 const envOptions = {
@@ -1027,7 +1028,7 @@ const _dLePg1nMr8WlWorTKjbUydSKDctK17MOZ0Vnx_jxSs = (function(nitro) {
 
 const rootDir = "/Users/wilsonm/development/m3dp-uip/frontend";
 
-const appHead = {"meta":[{"charset":"utf-8"},{"name":"viewport","content":"width=device-width, initial-scale=1"},{"name":"description","content":"Minimal 3DP Unified Intelligence Platform - AI-powered diagnostic platform for 3D printing troubleshooting and calibration."}],"link":[{"rel":"icon","type":"image/x-icon","href":"/favicon.ico"}],"style":[],"script":[],"noscript":[],"title":"M3DP-UIP - AI-Powered 3D Printing Diagnostics"};
+const appHead = {"meta":[{"charset":"utf-8"},{"name":"viewport","content":"width=device-width, initial-scale=1"},{"name":"description","content":"Minimal 3DP Unified Intelligence Platform - AI-powered diagnostic platform for 3D printing troubleshooting and calibration."}],"link":[{"rel":"icon","type":"image/x-icon","href":"/favicon.ico"}],"style":[],"script":[{"src":"https://www.googletagmanager.com/gtag/js?id=G-VQ8RPWC2MK","async":true},{"innerHTML":"window.dataLayer = window.dataLayer || [];function gtag(){dataLayer.push(arguments);}gtag('js', new Date());gtag('config', 'G-VQ8RPWC2MK', { debug_mode: false });","type":"text/javascript"}],"noscript":[],"title":"M3DP-UIP - AI-Powered 3D Printing Diagnostics"};
 
 const appRootTag = "div";
 

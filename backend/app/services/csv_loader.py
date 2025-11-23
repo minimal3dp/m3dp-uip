@@ -100,6 +100,11 @@ class CSVLoader:
         key = "klipper:input_shaping"
         return self.cache.get(key)
 
+    def get_max_volumetric_speed_formula(self) -> pd.DataFrame | None:
+        """Get max volumetric speed calculator data."""
+        key = "klipper:max_volumetric_speed"
+        return self.cache.get(key)
+
     def get_material_recommendations(
         self,
         material_type: str,

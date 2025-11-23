@@ -23,6 +23,9 @@
 
         <!-- Input Shaping -->
         <InputShapingCalculator />
+
+        <!-- Max Volumetric Speed -->
+        <MaxVolumetricSpeedCalculator />
       </div>
 
       <div class="mt-12 text-center text-zinc-500 text-sm">

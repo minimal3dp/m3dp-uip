@@ -101,6 +101,8 @@ declare module 'nuxt/schema' {
   }
   interface PublicRuntimeConfig {
    apiBase: string,
+
+   gaMeasurementId: string,
   }
 }
 declare module 'vue' {
