@@ -1052,7 +1052,7 @@ git push -u origin feature/your-feature-name
 
 ## 🧮 Calculator Implementation Status
 
-### ✅ Implemented (11/16 from Klipper Calibrations.xlsx)
+### ✅ Implemented (14/16 from Klipper Calibrations.xlsx)
 1. **Extruder Rotation Distance** - Mechanical calibration for extruder stepper
 2. **Pressure Advance** - Material-specific PA recommendations
 3. **OrcaSlicer Flow Calibration** - Two-pass flow calibration method
@@ -1064,29 +1064,22 @@ git push -u origin feature/your-feature-name
 9. **X and Y Offsets** - Probe offset calculator
 10. **Skew Correction** - G-code generator for XY/XZ/YZ skew
 11. **Line Widths** - Nozzle diameter percentage calculator with volume checks
+12. **PA & OrcaSlicer** - Calculate PA from measured height with extruder type presets ✅ NEW (Commit: 21e93fa)
+13. **Extrusion Rate Smoothing (ERS)** - OrcaSlicer ERS calculator with 60%/80% recommendations ✅ NEW (Commit: 21e93fa)
+14. **Adaptive Pressure Advance** - Dynamic PA range calculator from test matrix ✅ NEW (Commit: 21e93fa)
 
-### ❌ Not Yet Implemented (5/16)
+### ❌ Not Implemented (2/16 - Explicitly Skipped)
 1. **Flow Calibration (Traditional)** - Wall thickness measurement method
-   - **Priority**: LOW (OrcaSlicer methods preferred)
+   - **Status**: SKIPPED (OrcaSlicer methods preferred)
+   - **Priority**: LOW
    - **Formula**: `Flow % = (Perimeters × Line Width) / Average Wall Thickness × 100`
-   - **CSV**: Needs creation
+   - **Reason**: OrcaSlicer Flow Calibration and Flow YOLO provide superior alternatives
 
-2. **PA & OrcaSlicer** - Combined pressure advance + flow calibration
-   - **Priority**: LOW (separate calculators already implemented)
-   - **Note**: Workflow tool, not formula-based
-
-3. **Ellis Max Volumetric Speed** - Alternative MVS method
-   - **Priority**: LOW (OrcaSlicer MVS already implemented)
+2. **Ellis Max Volumetric Speed** - Alternative MVS method
+   - **Status**: SKIPPED (OrcaSlicer MVS already implemented)
+   - **Priority**: LOW
    - **Formula**: `Volumetric Flow = Drop Off Point × Filament Diameter²`
-
-4. **Extrusion Rate Smoothing (ERS)** - OrcaSlicer ERS calculator
-   - **Priority**: MEDIUM
-   - **Formula**: `ERS Max = Acceleration × Line Width × Line Height`
-   - **Note**: Experimental OrcaSlicer feature
-
-5. **Adaptive Pressure Advance** - Dynamic PA based on speed/acceleration
-   - **Priority**: LOW (Advanced feature, limited user adoption)
-   - **Note**: Requires matrix of test results
+   - **Reason**: Standard Max Volumetric Speed calculator (implemented) is sufficient
 
 ### 🎯 Research-Based Feature Recommendations
 
