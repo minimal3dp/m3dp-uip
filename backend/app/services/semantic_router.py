@@ -11,7 +11,7 @@ import logging
 from typing import Any
 
 from semantic_router import Route
-from semantic_router.encoders import OpenAIEncoder
+from semantic_router.encoders import HuggingFaceEncoder, OpenAIEncoder
 from semantic_router.routers import SemanticRouter as SRRouter
 
 from app.core.config import settings
@@ -35,22 +35,26 @@ class SemanticRouter:
         self.encoder = None
         self.route_layer = None
 
-        # Initialize if API key is available
-        if settings.GOOGLE_GENAI_API_KEY:
-            try:
-                # Use OpenAI-compatible encoder (works with many providers)
-                # Could also use HuggingFaceEncoder for local execution
+        # Initialize encoder (fallback to free local HuggingFace if no API key)
+        try:
+            if settings.OPENAI_API_KEY:
+                # Option 1: OpenAI (requires API key, paid)
                 self.encoder = OpenAIEncoder(
                     name="text-embedding-3-small"  # Fast, cost-effective
                 )
-                # semantic-router API: use SemanticRouter, exposed as RouteLayer alias for tests
-                self.route_layer = RouteLayer(encoder=self.encoder, routes=self.routes)
                 logger.info("Semantic router initialized with OpenAI encoder")
-            except Exception as e:
-                logger.warning(f"Failed to initialize semantic router: {e}")
-                self.route_layer = None
-        else:
-            logger.warning("Semantic router not configured - missing API key")
+            else:
+                # Option 2: HuggingFace (free, runs locally)
+                self.encoder = HuggingFaceEncoder(
+                    name="sentence-transformers/all-MiniLM-L6-v2"  # 22MB model, fast
+                )
+                logger.info("Semantic router initialized with local HuggingFace encoder (free)")
+
+            # Initialize router with chosen encoder
+            self.route_layer = RouteLayer(encoder=self.encoder, routes=self.routes)
+        except Exception as e:
+            logger.warning(f"Failed to initialize semantic router: {e}")
+            self.route_layer = None
 
     def _define_routes(self) -> list[Route]:
         """
