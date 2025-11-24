@@ -11,61 +11,38 @@ Development roadmap organized by feature branches. The `main` branch contains on
 - 🚀 **Phase 4**: Integration & Testing - IN PROGRESS
 - ⏳ **Phase 5**: Deployment & Polish - READY
 
-## 🎯 Key Research Insights
+## 🎯 Core Mission
 
-**Primary Sources**:
-- "The Cyber-Physical Convergence" research document (Nov 2025)
-- "Slice-100K: A Multimodal Dataset for Extrusion-based 3D Printing" (arXiv:2407.04180v1)
-- Industry troubleshooting guides (All3DP, Prusa, Simplify3D, RepRap, etc.)
+**Application Goal**: System of calibration calculators and AI-powered defect diagnosis that helps users optimize their 3D printers and models.
 
-### Validated Architecture Decisions
-- ✅ **Router Pattern**: Research confirms classification-first approach avoids context pollution
-- ✅ **CSV-Driven Formulas**: Industry standard is deterministic calculations, not LLM generation
-- ✅ **Klipper Focus**: Minimal 3DP ecosystem cited as authoritative reference for calibration
-- ✅ **G-code as Foundation**: Slice-100K dataset validates machine instructions as core data structure
+**Key Capabilities**:
+1. **Calibration Calculators**: Deterministic math-based tools for printer calibration (rotation distance, pressure advance, flow rate, input shaping, etc.)
+2. **AI Defect Diagnosis**: Take a picture or describe a problem → receive recommended fix (calculator to use or troubleshooting steps)
+3. **Knowledge Base**: CSV-driven troubleshooting guide with 63+ defect types and solutions
 
-### New Opportunities Identified (Research-Backed)
+**Technical Foundation**:
+- ✅ **Router Pattern**: Query classification prevents context pollution
+- ✅ **CSV-Driven Formulas**: Industry-standard deterministic calculations
+- ✅ **Klipper Focus**: Minimal 3DP ecosystem as authoritative calibration reference
+- ✅ **Free Semantic Router**: HuggingFace local embeddings (no API costs)
+- ✅ **Vision API**: Gemini 1.5 Pro for image-based diagnosis (optional)
 
-#### Immediate (Phase 2-3)
-- ✅ **Semantic Router**: Implement query classification before LLM calls (aurelio-labs/semantic-router) - COMPLETED
-- 🎯 **Troubleshooting Taxonomy**: Expand CSV with industry-standard defect patterns from:
-  - All3DP: 40+ common issues with visual examples
-  - Prusa Knowledge Base: Detailed photo guides for defect recognition
-  - Simplify3D: 23 quality issues with before/after comparisons
-  - RepRap Pictorial Guide: Community-sourced defect catalog
-- 🎯 **Visual Training Data**: Industry guides provide reference images for vision model fine-tuning
+## 🎯 Development Priorities
 
-#### Medium-term (Phase 6-8)
-- 🔬 **Edge AI Monitoring**: PrintGuard integration for defect detection (>15 FPS on Pi Zero 2)
-- 🔬 **G-code Analysis**: Slice-100K dataset (100K+ G-code files) for:
-  - G-code flavor translation (Marlin ↔ Klipper ↔ RepRap)
-  - Predictive defect detection from toolpath analysis
-  - Optimization suggestions (print time vs. quality trade-offs)
+### Immediate (Phase 4 - Current)
+1. **Integration Testing**: Validate full diagnostic workflow (text + vision + calculators)
+2. **Vision Model Validation**: Build reference dataset, test accuracy, improve prompts
+3. **Troubleshooting CSV Quality**: Add success rates, time estimates, difficulty ratings
 
-#### Long-term (Phase 11)
-- 🔬 **Multimodal Foundation Model**: Slice-100K enables STL → G-code → Image pipeline
-- 🔬 **ShapeLLM Integration**: 3D-native AI for geometry-aware recommendations
+### Short-term (Phase 5-7)
+1. **Calculator Expansion**: Temperature tower, retraction tuning, belt tension, max acceleration
+2. **Enhanced Diagnosis**: Confidence levels, multi-image support, calculator links
+3. **G-code Export**: Generate test patterns from calculators (test cubes, pressure advance patterns, etc.)
 
-### Integration Targets
-
-**Phase 2 Enhancement (Current):**
-- ✅ Semantic Router - IMPLEMENTED
-- 🎯 **Expand troubleshooting.csv** with industry defect taxonomy:
-  - Add 40+ defect types from All3DP guide
-  - Include visual markers for each defect (for vision prompt engineering)
-  - Cross-reference with Prusa/Simplify3D solutions
-
-**Phase 7 (AI Monitoring):**
-- **Obico/PrintGuard**: Visual defect detection post-MVP
-- **Reference Image Database**: Curate defect examples from industry guides
-
-**Phase 8 (Semantic RAG):**
-- **Klipper-Backup**: Configuration version control integration
-- **Community Knowledge**: RepRap wiki integration for edge cases
-
-**Phase 11 (Advanced AI):**
-- **Slice-100K Dataset**: G-code analysis and translation
-- **Foundation Model**: STL → Slicing → G-code → Quality prediction
+### Long-term (Phase 8-10)
+1. **User Experience**: Diagnosis history, Klipper config export, calculator result explanations
+2. **Community Features**: User-submitted presets, voting system (optional, post-MVP)
+3. **Monetization**: Amazon affiliate product recommendations based on diagnostics
 
 ---
 
@@ -752,62 +729,85 @@ These refinements were completed after the initial Phase 2 stabilization to impr
 - Print history tracking
 - **Klipper-Backup Integration** - Research Section 7.1 (Git-based config version control)
 
-### Phase 7: AI Monitoring Integration (NEW)
-**Branch**: `feature/ai-monitoring`
-**Research Source**: Section 5 (Visual AI: Defect Detection and Process Control)
-**Priority**: HIGH (Post-MVP safety feature)
+### Phase 7: Vision Model Enhancement
+**Branch**: `feature/vision-enhancement`
+**Priority**: HIGH (Core diagnosis improvement)
+**Goal**: Improve AI accuracy for defect detection
 
-- [ ] **PrintGuard Integration** (recommended by research)
-  - ShuffleNetv2 architecture optimized for edge devices
-  - >15 FPS on Raspberry Pi Zero 2 (40x faster than Obico)
-  - Real-time spaghetti detection
-  - Integration with diagnostic workflow
-  - GitHub: Research cites open-source availability
-- [ ] **Obico Integration** (alternative/complementary)
-  - 7M+ hours training data
-  - Self-hosted or SaaS deployment options
-  - Cloud-based monitoring for remote users
-- [ ] Edge AI deployment guide for users
-- [ ] Defect detection result integration with router logic
-- [ ] Dark/shiny filament handling (research-cited edge case)
-- [ ] First-layer validation (LiDAR concept from Bambu research)
+- [ ] **Vision Validation Dataset** (In Progress)
+  - Collect 40-80 reference images (5-10 per defect type)
+  - Create metadata JSON files for each image
+  - Run baseline accuracy validation
+  - Iteratively improve system prompt
+  - Target: 80%+ overall accuracy
+- [ ] **Enhanced Diagnosis Response**
+  - Add confidence levels to recommendations
+  - Link diagnosis to relevant calculators
+  - Provide "why this happened" explanations
+  - Add preventive maintenance tips
+- [ ] **Multi-Image Support**
+  - Accept 3-5 images per diagnosis
+  - Cross-validate defect across angles
+  - Higher confidence from multiple views
 
-### Phase 8: Semantic RAG Optimization (NEW)
-**Branch**: `feature/semantic-rag`
-**Research Source**: Section 6.3 (Semantic Routing and RAG)
-**Priority**: MEDIUM (Cost optimization)
+### Phase 8: Calculator Expansion
+**Branch**: `feature/additional-calculators`
+**Priority**: MEDIUM (Expand toolkit)
+**Goal**: Cover all common calibration workflows
 
-- [ ] Implement `semantic-router` library (aurelio-labs)
-- [ ] Define route utterances for:
-  - Calibration queries
-  - Troubleshooting queries
-  - Material selection
-  - Quality settings
-  - General chat
-- [ ] Vector embeddings for route classification
-- [ ] Route confidence thresholds
-- [ ] Fallback to full LLM for edge cases
-- [ ] Performance benchmarking (latency reduction)
-- [ ] Token cost tracking and optimization
+- [ ] Temperature Tower Analyzer
+  - Input: Test tower results (temp range, observations)
+  - Output: Optimal temperature recommendation
+- [ ] Retraction Tuning Calculator
+  - Bowden vs Direct Drive presets
+  - String test pattern interpreter
+  - Distance and speed recommendations
+- [ ] Belt Tension Calculator
+  - Target: 110Hz for Gates 2GT belts
+  - Frequency measurement input
+  - Tension adjustment guidance
+- [ ] Max Acceleration Calculator
+  - Frame type consideration (CoreXY, Cartesian, Delta)
+  - Weight-based recommendations
+  - Jerk/junction deviation calculation
 
-### Phase 9: Amazon Integration
-**Branch**: `feature/amazon-paapi`
-- Amazon PA-API integration
-- Product recommendations based on diagnostics:
-  - Warping detected → build surface products
-  - Under-extrusion → hotend upgrade suggestions
-  - Ringing → belt/frame stiffness products
-- Affiliate link tracking (mwf064-20)
-- Dynamic pricing
+### Phase 9: User Experience Enhancement
+**Branch**: `feature/ux-improvements`
+**Priority**: MEDIUM (Polish)
+**Goal**: Make the app easier and more helpful to use
 
-### Phase 10: Community Features
-**Branch**: `feature/community`
-- User-submitted calibrations
-- Community voting system
-- Discussion forum
-- Print profile sharing
-- **Configuration Repository** (integrate Klipper-Backup - Research Section 7.1)
-- Crowdsourced defect training data
+- [ ] Calculator G-code Export
+  - Generate test patterns directly from calculators
+  - Rotation distance test cube
+  - Pressure advance test pattern
+  - Temperature tower G-code
+- [ ] Diagnosis History Tracking
+  - Store diagnosis history (local storage or optional account)
+  - Show improvement trends
+  - Suggest next calibration steps
+- [ ] Troubleshooting Enhancements
+  - Add fix success probability
+  - Include time estimates for fixes
+  - Add difficulty ratings
+  - Link to video tutorials (minimal3dp.com)
+
+### Phase 10: Community & Monetization
+**Branch**: `feature/community-features`
+**Priority**: LOW (Post-stable release)
+**Goal**: Build community and sustainable revenue
+
+- [ ] Community Presets Database
+  - User-submitted printer profiles
+  - Voting/rating system
+  - Search by printer model/material
+- [ ] Amazon Affiliate Integration
+  - Product recommendations based on diagnostics
+  - Affiliate link tracking (mwf064-20)
+  - Warping → build surfaces, Under-extrusion → hotends, etc.
+- [ ] Klipper Config Export
+  - Generate complete config sections from calculators
+  - Include explanatory comments
+  - Support multiple firmware formats
 
 ### Phase 11: Advanced AI Features (Long-term)
 **Branch**: `feature/advanced-ai`
@@ -1107,93 +1107,129 @@ git push -u origin feature/your-feature-name
    - **Formula**: `Volumetric Flow = Drop Off Point × Filament Diameter²`
    - **Reason**: Standard Max Volumetric Speed calculator (implemented) is sufficient
 
-### 🎯 Research-Based Feature Recommendations
+### 🎯 Feature Recommendations (Aligned with Core Mission)
 
-#### HIGH PRIORITY (Research-Backed)
+#### HIGH PRIORITY - Calibration & Diagnosis
 
-**Real-Time Defect Detection System**
-- **Source**: applsci-12-08753.md, Cost-effective_sensor-2025.md
-- **Impact**: 97.2% accuracy anomaly detection during printing
-- **Requirements**: Multi-sensor suite (thermistor, DHT, accelerometer, camera, spectrometer)
-- **Model**: MH-ED-TCN (Multi-Head Encoder-Decoder Temporal CNN)
-- **Detectable**: Nozzle clogging, layer shifting, under-extrusion, warping, strings
+**Vision Model Validation & Improvement**
+- **Status**: Infrastructure complete, dataset collection in progress
+- **Goal**: Validate and improve vision API accuracy for defect detection
+- **Action Items**:
+  - Collect 5-10 reference images per defect type (8 classes)
+  - Run baseline validation to measure current accuracy
+  - Iteratively refine system prompt based on failure patterns
+  - Target: 80%+ overall accuracy, 90%+ for primary defects
+- **Value**: Ensures reliable AI diagnosis of print defects
 
-**Anisotropy Data Collection Framework**
-- **Source**: FDM Filament Data Analysis and Tables.md
-- **Impact**: Critical gap - 90% of filament TDS ignore Z-axis strength penalties
-- **Examples**: Nylon 12CF (-50.6% Z tensile), ULTEM 9085 (-55.7% Z impact), ABS (-77.8% Z elongation)
-- **Implementation**: Database with XY and Z values for each material
-- **Standards**: ASTM D638 (tensile), D256 (impact), D790 (flexural)
+**Troubleshooting Knowledge Base Expansion**
+- **Status**: 63 defects documented with visual markers
+- **Goal**: Enhance defect data with user-focused guidance
+- **Action Items**:
+  - Add fix success probability for each solution
+  - Add time estimates (5 min vs 2 hours)
+  - Add difficulty ratings (beginner/intermediate/advanced)
+  - Link to video tutorials from minimal3dp.com YouTube
+  - Add "related issues" chains for complex problems
+- **Value**: Better user experience when troubleshooting
 
-**Slice-100K Dataset Integration**
-- **Source**: Slice-100K.md
-- **Impact**: 100K+ G-code files for LLM training and validation
-- **Use Cases**: G-code debugging, flavor translation (Marlin ↔ RepRap), geometric transformations
-- **Format**: STL + G-code + renderings + LVIS categories
+**Additional Calculator Implementations**
+- **Status**: 14/16 calculators complete
+- **Goal**: Cover all common calibration workflows
+- **Action Items**:
+  - Temperature tower analyzer (input test results → optimal temp)
+  - Retraction tuning calculator (bowden vs direct drive)
+  - Belt tension calculator (110Hz target for Gates 2GT)
+  - Max acceleration/jerk calculator (frame-based recommendations)
+- **Value**: Comprehensive calibration toolkit
 
-#### MEDIUM PRIORITY
+#### MEDIUM PRIORITY - User Experience
 
-**Machine Learning Process Optimization**
-- **Source**: ai for 3d printing_revised_accepted version.md, Machinelearningbasedmonitoring.md
-- **Models**: ANN, CNN, SVM for property prediction; Q-Learning for adaptive control
-- **Applications**: Surface roughness prediction, porosity detection, dimensional accuracy
-- **Closed-Loop**: Fuzzy logic + ML for real-time parameter adjustment (97% accuracy)
+**Enhanced Diagnosis Response Formatting**
+- **Goal**: Make AI recommendations more actionable
+- **Action Items**:
+  - Add "Quick Fix" vs "Detailed Calibration" categorization
+  - Include confidence levels in recommendations
+  - Link directly to relevant calculator from diagnosis
+  - Add "Why this happened" explanations
+  - Provide preventive tips
+- **Value**: Users get clearer guidance on next steps
 
-**Build Orientation Optimization**
-- **Source**: ai for 3d printing_revised_accepted version.md
-- **Model**: Double-Layered ELM (DL-ELM) for orientation assessment
-- **Criteria**: Viewpoint preference, visual saliency, smoothness entropy, support area
-- **Impact**: Reduces support material and surface defects
+**Multi-Image Diagnosis**
+- **Goal**: Analyze multiple angles of same defect
+- **Action Items**:
+  - Support batch image upload (3-5 images)
+  - Compare consistency across images
+  - Provide higher confidence diagnosis
+  - Detect multiple simultaneous issues
+- **Value**: More accurate defect identification
 
-**First Layer Calibration Automation**
-- **Source**: Cost-effective_sensor-2025.md
-- **Technology**: LiDAR + Vision for line width consistency and height verification
-- **Auto-Adjust**: Z-offset, flow rate, bed temperature based on scan results
+**Diagnosis History & Tracking**
+- **Goal**: Help users track calibration progress
+- **Action Items**:
+  - Store user's diagnosis history (local/optional cloud)
+  - Show improvement trends over time
+  - Suggest next calibration based on history
+  - Export calibration report
+- **Value**: Users see their printer improvement journey
 
-**Material Property Prediction Models**
-- **Source**: ai for 3d printing_revised_accepted version.md
-- **Inputs**: Layer height, speed, infill, line width, nozzle temp, bed temp, material
-- **Outputs**: Tensile strength, elongation, surface roughness, dimensional accuracy
-- **Models**: Random Forest Network (RFN), Support Vector Regression (SVR)
+#### FUTURE INTEGRATIONS (Post-MVP)
 
-#### INTEGRATION OPPORTUNITIES
+**Calculator G-code Export**
+- **Goal**: Generate test patterns directly from calculators
+- **Action Items**:
+  - Rotation distance test cube generator
+  - Pressure advance test pattern generator
+  - Temperature tower G-code generator
+  - Flow calibration cube generator
+- **Value**: One-click calibration test generation
 
-**OrcaSlicer API Integration** (HIGH)
-- **Features**: Embed calibration tools directly in slicer
-- **Workflow**: Auto-generate test G-code → Print → User input → Update profile
-- **Platform**: Python-based plugin architecture
+**Klipper Config Export**
+- **Goal**: Generate complete Klipper config sections
+- **Action Items**:
+  - Export all calculator results as formatted config
+  - Include comments explaining each value
+  - Validate config syntax before export
+  - Support Marlin firmware translation
+- **Value**: Easy config updates from calibration results
 
-**Obico/PrintGuard Integration** (HIGH)
-- **Obico**: 7M+ hours training data, cloud or self-hosted (Docker)
-- **PrintGuard**: ShuffleNetv2, >15 FPS on Pi Zero 2, open-source
-- **Features**: Spaghetti detection, timelapse, SMS alerts, remote control
+**Community Presets Database** (Optional)
+- **Goal**: Share successful calibration profiles
+- **Action Items**:
+  - User-submitted printer profiles
+  - Voting/rating system for presets
+  - Search by printer model/material
+  - Anonymous usage analytics (opt-in)
+- **Value**: Faster calibration with community knowledge
 
-**Klipper/Moonraker API** (HIGH)
-- **Endpoints**: `/printer/objects/query`, `/machine/system_info`, `/server/gcode_store`
-- **Control**: TUNING_TOWER, SET_PRESSURE_ADVANCE, SHAPER_CALIBRATE commands
-- **Use**: Close the loop between web app → firmware → sensors
+#### QUALITY & ACCURACY IMPROVEMENTS
 
-**Vision-Language Model for G-Code** (MEDIUM)
-- **Tasks**: G-code debugging, natural language → G-code, flavor translation
-- **Models**: GPT-2, Code Llama, WizardCoder fine-tuned on Slice-100K
-- **Challenge**: 100K+ line G-code files require RAG (Retrieval-Augmented Generation)
+**Defect Image Reference Library** (HIGH)
+- **Status**: Infrastructure built, needs content
+- **Goal**: Validate vision API with real defect examples
+- **Action Items**:
+  - Collect 5-10 images per defect type from industry guides
+  - RepRap, All3DP, Prusa KB, Simplify3D sources
+  - Create metadata JSON for each image
+  - Run validation and measure accuracy
+- **Value**: Data-driven vision model improvement
 
-#### DATA COLLECTION NEEDS
+**Calculator Formula Validation** (MEDIUM)
+- **Goal**: Ensure calculation accuracy
+- **Action Items**:
+  - Cross-reference formulas with Klipper documentation
+  - Add unit tests for edge cases
+  - Validate against community-known values
+  - Add formula explanations in UI
+- **Value**: User trust in calculator accuracy
 
-**Sensor Data Logging System** (HIGH)
-- **Sampling Rate**: 2047 Hz for vibration/acoustic, 1 Hz for temperature
-- **Storage**: Time-series database (InfluxDB, TimescaleDB) for ML training
-- **Format**: CSV with timestamp, labeled by success/failure
-
-**Defect Image Dataset** (HIGH)
-- **Types**: Spaghetti, layer shifting, warping, under-extrusion, strings, blobs, cracks
-- **Annotations**: Bounding boxes, segmentation masks, severity labels
-- **Use**: Train CNN (EfficientDet, YOLOv8n) for visual detection
-
-**Material Property Database Expansion** (MEDIUM)
-- **Fields**: Tensile (XY & Z), modulus, elongation, HDT, Tg, impact, density, anisotropy
-- **Standards**: ASTM/ISO compliance labels
-- **Sources**: Manufacturer TDS, academic studies, independent testing (CNC Kitchen)
+**Troubleshooting CSV Quality** (MEDIUM)
+- **Goal**: Keep defect data current and accurate
+- **Action Items**:
+  - Review and update fix solutions quarterly
+  - Add "last verified" dates to fixes
+  - Track which fixes are most effective
+  - Remove outdated solutions
+- **Value**: Recommendations stay relevant over time
 
 ---
 
@@ -1230,4 +1266,5 @@ git push -u origin feature/name
 - Import errors → `uv pip install -e ".[dev]"`
 - Test failures → Check `.env` configuration
 - Pre-commit fails → Run `./scripts/format_code.sh`
-- Research references → See research/Project Report Resource Generation Guide.md
+- Semantic router errors → Uses free HuggingFace by default (no API key needed)
+- Vision API errors → GOOGLE_API_KEY required only for image diagnosis
