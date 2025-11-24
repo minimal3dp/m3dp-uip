@@ -65,7 +65,9 @@ class RouterService:
         # Step 2: Determine handler based on classification
         if classification["handler"] == "csv_lookup":
             # Direct CSV lookup - most efficient
-            result = await self._handle_csv_lookup(semantic_router, route_name, query, context)
+            result = await self._handle_csv_lookup(
+                semantic_router, route_name, confidence, query, context
+            )
         else:
             # Fallback to LLM for general queries
             result = await self._handle_llm_diagnosis(route_name, confidence, query, context)
@@ -117,6 +119,7 @@ class RouterService:
         self,
         semantic_router: Any,
         route_name: str,
+        confidence: float,
         query: str,
         context: dict | None = None,
     ) -> dict[str, Any]:
@@ -125,6 +128,7 @@ class RouterService:
 
         Args:
             route_name: Semantic route classification
+            confidence: Classification confidence from semantic router
             query: Original user query
             context: Optional context
 
@@ -138,6 +142,7 @@ class RouterService:
         if not csv_category:
             return {
                 "classification": route_name,
+                "confidence": confidence,
                 "error": f"No CSV mapping for route: {route_name}",
                 "recommendations": [],
             }
@@ -162,7 +167,7 @@ class RouterService:
 
         return {
             "classification": route_name,
-            "confidence": 0.85,  # High confidence for direct CSV lookup
+            "confidence": confidence,  # Use semantic router's confidence
             "csv_category": csv_category,
             "csv_file": csv_file,
             "recommendations": recommendations,

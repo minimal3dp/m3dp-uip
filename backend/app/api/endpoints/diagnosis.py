@@ -38,13 +38,17 @@ class DiagnosisResponse(BaseModel):
 
     issue_type: str = Field(..., description="Mechanical, Slicer, Material, or Multi-factor")
     classification: str = Field(..., description="Specific defect classification")
-    confidence: float = Field(..., ge=0.0, le=1.0, description="Confidence score")
+    confidence: float = Field(..., ge=0.0, le=1.0, description="Confidence score (0.0-1.0)")
     handler: str = Field(..., description="Handler used: vision_api, csv_lookup, or llm")
     observations: list[str] | None = Field(None, description="Observable issues (vision only)")
     likely_causes: list[str] | None = Field(None, description="Probable root causes")
     recommendations: list[dict] = Field(..., description="CSV-backed recommendations")
     csv_category: str | None = Field(None, description="CSV category used")
     csv_file: str | None = Field(None, description="Specific CSV file used")
+    confidence_warning: str | None = Field(
+        None,
+        description="Warning message if confidence is below threshold (< 0.6)",
+    )
 
 
 @router.post("/analyze/image", response_model=DiagnosisResponse)
@@ -122,16 +126,27 @@ async def analyze_image(
             contents, context=context if context else None
         )
 
+        # Add confidence warning if below threshold
+        confidence = result["confidence"]
+        confidence_warning = None
+        if confidence < 0.6:
+            confidence_warning = (
+                f"Low confidence ({confidence:.1%}). "
+                "Consider providing more context (printer model, filament type) "
+                "or uploading multiple images from different angles for better accuracy."
+            )
+
         return DiagnosisResponse(
             issue_type=result["issue_type"],
             classification=result["classification"],
-            confidence=result["confidence"],
+            confidence=confidence,
             handler=result["handler"],
             observations=result.get("observations"),
             likely_causes=result.get("likely_causes"),
             recommendations=result.get("recommendations", []),
             csv_category=result.get("csv_category"),
             csv_file=result.get("csv_file"),
+            confidence_warning=confidence_warning,
         )
     except ValueError as e:
         logger.error(f"Vision API configuration error: {e}")
@@ -212,18 +227,33 @@ async def analyze_text(request: DiagnosisRequest):
             recommendations=recommendations,
             csv_category="orca_recommendations" if recommendations else None,
             csv_file="troubleshooting" if recommendations else None,
+            confidence_warning=(
+                "Low confidence (55.0%). Using fallback classification. "
+                "Consider rephrasing your query with more specific details."
+            ),
+        )
+
+    # Add confidence warning if below threshold
+    confidence = result["confidence"]
+    confidence_warning = None
+    if confidence < 0.6:
+        confidence_warning = (
+            f"Low confidence ({confidence:.1%}). "
+            "Consider rephrasing your query with more specific details "
+            "(printer model, filament type, specific symptoms) for better accuracy."
         )
 
     return DiagnosisResponse(
         issue_type=result.get("issue_type", result["classification"]),
         classification=result["classification"],
-        confidence=result["confidence"],
+        confidence=confidence,
         handler=result["handler"],
         observations=result.get("observations"),
         likely_causes=result.get("likely_causes"),
         recommendations=result.get("recommendations", []),
         csv_category=result.get("csv_category"),
         csv_file=result.get("csv_file"),
+        confidence_warning=confidence_warning,
     )
 
 
