@@ -1,0 +1,123 @@
+Calculator Type,Belt Tension Calibration
+Description,Calculate and verify proper belt tension using frequency measurement
+Category,Mechanical
+Priority,Important
+Formula,Tension (N) = (4 * length² * frequency² * mass) / 1000000
+Validation,Frequency measurement with phone app or Klipper
+Units,Frequency in Hz tension in Newtons (N)
+
+Parameter,Type,Default,Min,Max,Description
+belt_type,string,required,,,GT2 (2mm pitch) or GT3 (3mm pitch)
+belt_width,float,6,6,9,Belt width in mm (typically 6mm or 9mm)
+measured_frequency_x,float,required,30,150,Measured frequency for X axis belt (Hz)
+measured_frequency_y,float,required,30,150,Measured frequency for Y axis belt (Hz)
+belt_length_x,float,required,100,2000,X axis belt span length (mm)
+belt_length_y,float,required,100,2000,Y axis belt span length (mm)
+kinematics,string,required,,,CoreXY Cartesian or Delta
+
+Belt_Specifications,Type,Width,Mass_Per_Meter,Typical_Frequency_Target
+GT2 6mm,GT2,6mm,3.2g/m,110Hz (±10Hz)
+GT2 9mm,GT2,9mm,4.8g/m,110Hz (±10Hz)
+GT3 9mm,GT3,9mm,5.5g/m,100Hz (±10Hz)
+
+Target_Frequency,Belt_Type,Printer_Type,Recommended_Hz
+GT2,CoreXY Small (< 250mm),115-120Hz
+GT2,CoreXY Large (> 250mm),105-115Hz
+GT2,Cartesian,100-110Hz
+GT3,Any,95-105Hz
+
+Measurement_Methods,Method,Tool,Accuracy
+Klipper MEASURE_RESONANCES,ADXL345 accelerometer,±2Hz High precision
+Phone Frequency App,Spectroid (Android) or similar,±5Hz Moderate
+Manual Pluck Test,Tuner app,±10Hz Low but usable
+Tension Meter,Physical gauge,Varies Direct tension reading
+
+Frequency_Interpretation,Measured_Hz,Assessment,Action
+< 80Hz,Too Loose,Significant ringing and dimensional inaccuracy Tighten immediately
+80-95Hz,Slightly Loose,May work but not optimal Tighten by 1/4 turn
+100-120Hz,Good,Optimal range for most setups
+120-140Hz,Slightly Tight,Acceptable may reduce bearing life slightly
+> 140Hz,Too Tight,Risk of bearing damage and belt wear Loosen
+
+CoreXY_Specific,Belt,Measurement_Location,Note
+Belt A,Pluck between motors and XY joint,Should match Belt B within 5Hz
+Belt B,Pluck between motors and XY joint,Should match Belt A within 5Hz
+Imbalance,Difference > 10Hz,Causes skewing and poor print quality
+
+Cartesian_Specific,Axis,Typical_Length,Target_Frequency
+X Axis,300-500mm,105-115Hz
+Y Axis,300-500mm,105-115Hz
+Single Belt,Full axis span,Measure at midpoint
+
+Output,Description
+tension_x_newtons,Calculated tension for X belt in Newtons
+tension_y_newtons,Calculated tension for Y belt in Newtons
+assessment_x,Loose Good or Tight assessment for X
+assessment_y,Loose Good or Tight assessment for Y
+adjustment_needed,Whether tensioning adjustment recommended
+turns_to_adjust,Estimated pulley/idler turns needed (1/4 1/2 3/4 full)
+resonance_note,Impact on input shaping requirements
+
+Klipper_Testing,Command,Purpose
+MEASURE_RESONANCES AXIS=X,Measures X axis frequency with accelerometer
+MEASURE_RESONANCES AXIS=Y,Measures Y axis frequency with accelerometer
+SHAPER_CALIBRATE,Full resonance scan and shaper recommendation
+
+Phone_App_Method,Step,Description
+1,Install frequency analyzer app,Spectroid (Android) or similar
+2,Pluck belt firmly but not excessively,Like plucking guitar string
+3,Observe dominant frequency peak,Look for clear peak in 50-150Hz range
+4,Record frequency value,Note both X and Y belt frequencies
+5,Compare to target range,110Hz ± 10Hz for GT2 belts
+
+Tension_Effects,Symptom,Cause,Fix
+Layer Shifting,Loose belts skipping,Frequency < 90Hz,Tighten by 1/2 turn test again
+Ringing/Ghosting,Resonance at specific frequency,May need input shaping,Run SHAPER_CALIBRATE
+Binding,Belts too tight,Frequency > 140Hz,Loosen by 1/4 turn
+Uneven Quality,Belt tension imbalance,X and Y differ by > 10Hz,Adjust to match frequencies
+Accelerometer Peaks,Multiple frequency peaks,Loose belt or loose fasteners,Tighten belt check frame rigidity
+
+Formula_Details
+mass = belt_mass_per_meter * (belt_length / 1000)
+tension = (4 * (belt_length/1000)² * frequency² * mass) / 1
+OR simplified for GT2 6mm belt:
+tension_newtons = 0.0000128 * length_mm² * frequency_hz²
+
+Example_Calculation
+- GT2 6mm belt 400mm span measured at 110Hz
+- mass = 3.2g/m * 0.4m = 1.28g = 0.00128kg
+- tension = (4 * 0.4² * 110² * 0.00128) / 1
+- tension = (4 * 0.16 * 12100 * 0.00128) / 1
+- tension ≈ 9.95N (acceptable range)
+
+Tightening_Procedure
+1. Loosen belt completely
+2. Tension by hand until no visible slack
+3. Tighten pulley/idler by 1/4 turn
+4. Measure frequency
+5. Repeat step 3-4 until in target range (100-120Hz)
+6. Verify both X and Y within 5Hz of each other
+7. Run test print observe quality
+8. Fine-tune if needed
+
+Common_Issues,Problem,Likely_Cause,Solution
+Belts Stretch Over Time,Frequency drops 10-15Hz,Normal belt wear,Re-tension every 500 hours
+One Belt Looser,CoreXY imbalance,Uneven initial tension,Adjust individual belt tensioners
+Cannot Reach Target,Frequency plateaus < 100Hz,Belt too long or worn,Replace belt or redesign path
+Too Tight Out of Box,Frequency > 130Hz,Over-tensioned from factory,Loosen until 110Hz achieved
+
+Maintenance_Schedule
+- Check frequency every 250 print hours
+- Inspect belts for wear cracks or fraying
+- Clean belt teeth with brush (no solvents)
+- Lubricate bearing idlers (not belt itself)
+- Re-tension if frequency drops below 95Hz
+
+Notes
+- Gates GT2 belts are industry standard (Reprap/Chinese belts vary)
+- Belt tension affects input shaping results (recalibrate after adjustment)
+- CoreXY requires balanced tension (within 5Hz) or skewing occurs
+- Over-tensioning reduces bearing life and motor efficiency
+- Under-tensioning causes layer shifts and dimensional inaccuracy
+- Use same tension for A and B belts on CoreXY kinematics
+- Temperature affects belt tension (measure at operating temp)

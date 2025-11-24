@@ -1,0 +1,106 @@
+Calculator Type,Retraction Tuning
+Description,Optimize retraction settings to eliminate stringing while maintaining quality
+Category,Calibration
+Priority,Essential
+Formula,Best retraction found through systematic testing
+Validation,Visual inspection of test prints for stringing
+Units,Distance in mm speed in mm/s
+
+Parameter,Type,Default,Min,Max,Description
+extruder_type,string,required,,,Direct Drive or Bowden
+current_retraction_distance,float,0,0,10,Current retraction distance (mm)
+current_retraction_speed,float,25,10,100,Current retraction speed (mm/s)
+stringing_severity,string,moderate,,,none slight moderate severe
+test_result,string,optional,,,Observation from retraction test print
+
+Extruder_Type,Typical_Distance,Typical_Speed,Max_Distance
+Direct Drive,0.5-2.0mm,25-45mm/s,3mm
+Bowden,4-8mm,40-70mm/s,10mm
+Titan Extruder,0.4-1.0mm,30-50mm/s,2mm
+BMG/Orbiter,0.5-1.5mm,30-45mm/s,3mm
+
+Test_Pattern,Description,Interpretation
+Retraction Tower,Segments with varying distance,Find minimum distance that eliminates stringing
+String Test,Two towers with travel moves,Binary test - strings or no strings
+Temperature Tower,Combined temp + retraction,Identify if temp or retraction is issue
+
+Stringing_Diagnosis,Cause,Solution
+Excessive Strings,Distance too low,Increase retraction distance by 0.5mm
+No Strings But Blobs,Distance too high,Decrease distance by 0.3mm
+Strings + Blobs,Retraction too slow,Increase retraction speed by 10mm/s
+Grinding Filament,Too much retraction,Reduce distance and/or speed
+Inconsistent Results,Temperature issue,Run temp tower first
+
+Bowden_Specific,Issue,Adjustment
+Long Tube,More retraction needed,Start at 6mm work up to 8mm
+Flexible Filament,Retraction ineffective,Reduce speed lower temp
+PTFE Drag,Inconsistent retraction,Clean tube check compression
+Tube Gap at Hotend,Oozing between retractions,Fix tube seating use Capricorn tube
+
+Direct_Drive_Specific,Issue,Adjustment
+Over-Retraction,Grinding or clicking,Reduce to 0.5-1.5mm range
+Under-Retraction,Still stringing,Check nozzle temp first then increase distance slightly
+Flexible Filament,Better than Bowden,Start at 1mm may work with less
+
+Output,Description
+recommended_distance,Optimal retraction distance for your setup
+recommended_speed,Optimal retraction speed
+z_hop,Whether to enable Z-hop (vertical lift on retract)
+z_hop_height,Recommended Z-hop height if enabled (0.2-0.4mm)
+wipe,Whether to enable wipe on retract
+temperature_note,If temp adjustment might help more than retraction
+
+Advanced_Settings,Parameter,Typical_Range,Effect
+Minimum Travel,1-3mm,Only retract on moves longer than this
+Retract on Layer Change,Enabled,Prevents blobs at layer seam
+Retract Before Wipe,Enabled,Cleans nozzle before travel
+Z-Hop Height,0.2-0.4mm,Prevents nozzle dragging over print
+Wipe Distance,1-5mm,Wipes nozzle on perimeter before travel
+
+Klipper_Config,Parameter,Example
+Retraction Distance,[extruder] rotation_distance based,Calculated from E-steps
+Firmware Retraction,SET_RETRACTION RETRACT_LENGTH=X,Enable with G10/G11
+Pressure Advance,PA value 0-0.1,Complements retraction don't confuse
+
+OrcaSlicer_Settings,Location,Setting
+Retraction Distance,Filament > Basic Info,Set per filament
+Retraction Speed,Filament > Basic Info,Set per filament
+Z-Hop,Quality > Avoiding Collisions,Per-filament override
+Wipe,Quality > Avoiding Collisions,Enable/disable
+Retract on Layer Change,Quality,Recommended: enabled
+
+Testing_Procedure
+1. Run temperature tower first (retraction won't fix temp issues)
+2. Set baseline retraction for your extruder type
+3. Print retraction test at optimal temperature
+4. Observe stringing between towers or on travel moves
+5. Adjust distance in 0.5mm increments (Bowden) or 0.2mm (Direct)
+6. Adjust speed if grinding occurs
+7. Re-test until stringing eliminated without blobs
+8. Document final settings in slicer profile
+
+Formula_Recommendations
+IF extruder_type == "Direct Drive" AND stringing_severity == "severe"
+  THEN recommended_distance = 1.5mm recommended_speed = 35mm/s
+ELSE IF extruder_type == "Bowden" AND stringing_severity == "severe"
+  THEN recommended_distance = 6.0mm recommended_speed = 50mm/s
+ELSE IF extruder_type == "Direct Drive" AND stringing_severity == "moderate"
+  THEN recommended_distance = 1.0mm recommended_speed = 30mm/s
+ELSE IF extruder_type == "Bowden" AND stringing_severity == "moderate"
+  THEN recommended_distance = 5.0mm recommended_speed = 45mm/s
+
+Common_Mistakes
+- Increasing retraction distance indefinitely (causes grinding)
+- Not running temp tower first (stringing may be thermal)
+- Testing with wet filament (gives false results)
+- Mixing up Pressure Advance with retraction
+- Using same settings for all filaments (each filament differs)
+- Ignoring Z-hop when printing tall thin parts
+
+Notes
+- Calibrate temperature first then retraction
+- Retraction settings are extruder-specific not printer-specific
+- Each filament may need slightly different settings
+- Wet filament causes stringing no matter retraction settings
+- Pressure Advance can reduce need for aggressive retraction
+- Some stringing acceptable if alternative is blobs or grinding

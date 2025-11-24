@@ -1,0 +1,74 @@
+Calculator Type,Temperature Tower Analysis
+Description,Analyze temperature tower test results to find optimal printing temperature
+Category,Calibration
+Priority,Essential
+Formula,Optimal Temp = Test_Temp_At_Best_Quality
+Validation,Visual inspection of each temperature segment for quality
+Units,Celsius (°C)
+
+Parameter,Type,Default,Min,Max,Description
+tower_start_temp,float,required,170,300,Starting temperature at bottom of tower (°C)
+tower_end_temp,float,required,170,300,Ending temperature at top of tower (°C)
+temp_increment,float,5,1,20,Temperature change per segment (°C)
+best_segment_height,float,required,0,500,Height (mm) where quality was best
+total_tower_height,float,required,10,500,Total height of temperature tower (mm)
+observations,string,optional,,,Visual observations at each temperature
+
+Quality_Indicators,Good_Signs,Bad_Signs
+Surface Finish,Smooth matte surface,Glossy or rough texture
+Stringing,No strings between segments,Visible strings or wisps
+Overhangs,Clean 45° overhangs,Drooping or sagging
+Bridging,Solid bridges no drooping,Sagging or broken bridges
+Layer Adhesion,Strong bonding visible,Delamination or gaps between layers
+Corner Quality,Sharp clean corners,Rounded or blobbing corners
+
+Output,Description
+optimal_temperature,Recommended printing temperature based on best segment
+temperature_range,Acceptable range (optimal ±5°C)
+quality_summary,Description of quality at optimal temperature
+adjustment_notes,Specific tuning recommendations based on observations
+klipper_config,Suggested temperature for START_PRINT macro
+
+Recommendations,Condition,Action
+Too_Hot_Symptoms,Stringing + glossy surface,Lower by 10-15°C and retest
+Too_Cold_Symptoms,Poor layer adhesion + rough,Raise by 5-10°C and retest
+Marginal_Quality,Small quality window,Consider different filament brand
+Good_Results,Large quality window (15°C+),Current filament is forgiving
+Inconsistent,Quality varies within segment,Check cooling fan or thermal runaway
+
+Notes
+- Run tower with consistent settings (speed print speed quality)
+- Use standard test model with overhangs bridges and fine details
+- Label each segment temperature clearly
+- Take photos of each segment before analysis
+- Best done after flow rate calibration
+- Results are filament-specific (different brands vary)
+- Ambient temperature affects results
+- PLA typically 190-220°C PETG 230-250°C ABS 240-260°C
+
+Common_Patterns,Observation,Interpretation
+Bottom_Too_Hot,Glossy sagging at base,Start temp too high
+Top_Too_Cold,Rough delamination at top,End temp too low
+Sweet_Spot_Middle,One perfect segment,Use that temperature
+No_Clear_Winner,All segments have issues,Check other calibration first (flow PA)
+Progressive_Degradation,Quality decreases linearly,Cooling or thermal creep issue
+
+OrcaSlicer_Integration
+- Use built-in temperature tower test
+- Set: Start temp Interval Tower height
+- Generates G-code with M104 temp changes
+- Default PLA: 220-180°C PETG: 260-230°C
+- Inspect printed tower visually (photos help)
+
+Formula_Details
+segment_height = total_tower_height / number_of_segments
+number_of_segments = (tower_start_temp - tower_end_temp) / temp_increment
+best_segment = floor(best_segment_height / segment_height)
+optimal_temperature = tower_start_temp - (best_segment * temp_increment)
+
+Example_Calculation
+- Tower: 200°C to 180°C in 5°C steps (80mm tall)
+- 4 segments @ 20mm each
+- Best quality at 45mm height = segment 2 (20-40mm)
+- Optimal temp = 200 - (2 * 5) = 190°C
+- Range: 185-195°C acceptable

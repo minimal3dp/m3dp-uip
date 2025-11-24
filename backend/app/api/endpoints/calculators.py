@@ -417,6 +417,111 @@ class CalculatorListResponse(BaseModel):
     calculators: list[dict] = Field(..., description="List of available calculators")
 
 
+class TemperatureTowerRequest(BaseModel):
+    """Request for temperature tower analysis."""
+
+    tower_start_temp: float = Field(
+        ..., ge=170, le=300, description="Starting temperature at bottom (°C)", examples=[220]
+    )
+    tower_end_temp: float = Field(
+        ..., ge=170, le=300, description="Ending temperature at top (°C)", examples=[180]
+    )
+    temp_increment: float = Field(
+        5, ge=1, le=20, description="Temperature change per segment (°C)", examples=[5]
+    )
+    best_segment_height: float = Field(
+        ..., ge=0, le=500, description="Height where quality was best (mm)", examples=[45]
+    )
+    total_tower_height: float = Field(
+        ..., ge=10, le=500, description="Total tower height (mm)", examples=[80]
+    )
+    observations: str | None = Field(
+        None,
+        description="Visual observations at each temperature",
+        examples=["Segment 2 had best surface"],
+    )
+
+
+class TemperatureTowerResponse(BaseModel):
+    """Response with optimal temperature recommendation."""
+
+    optimal_temperature: float = Field(..., description="Recommended printing temperature (°C)")
+    temperature_range: str = Field(..., description="Acceptable temperature range")
+    quality_summary: str = Field(..., description="Quality assessment at optimal temperature")
+    adjustment_notes: str = Field(..., description="Specific tuning recommendations")
+    klipper_config: str = Field(..., description="Suggested temperature for macros")
+
+
+class RetractionTuningRequest(BaseModel):
+    """Request for retraction tuning recommendations."""
+
+    extruder_type: str = Field(
+        ..., description="Direct Drive or Bowden", examples=["Direct Drive", "Bowden"]
+    )
+    current_retraction_distance: float = Field(
+        0, ge=0, le=10, description="Current retraction distance (mm)", examples=[1.0]
+    )
+    current_retraction_speed: float = Field(
+        25, ge=10, le=100, description="Current retraction speed (mm/s)", examples=[30]
+    )
+    stringing_severity: str = Field(
+        "moderate",
+        description="Stringing severity",
+        examples=["none", "slight", "moderate", "severe"],
+    )
+    test_result: str | None = Field(
+        None, description="Observations from retraction test", examples=["Still seeing strings"]
+    )
+
+
+class RetractionTuningResponse(BaseModel):
+    """Response with retraction recommendations."""
+
+    recommended_distance: float = Field(..., description="Optimal retraction distance (mm)")
+    recommended_speed: float = Field(..., description="Optimal retraction speed (mm/s)")
+    z_hop: bool = Field(..., description="Whether to enable Z-hop")
+    z_hop_height: float | None = Field(None, description="Recommended Z-hop height (mm)")
+    wipe: bool = Field(..., description="Whether to enable wipe on retract")
+    temperature_note: str | None = Field(
+        None, description="Temperature adjustment suggestion if applicable"
+    )
+    orcaslicer_settings: str = Field(..., description="OrcaSlicer configuration guide")
+
+
+class BeltTensionRequest(BaseModel):
+    """Request for belt tension analysis."""
+
+    belt_type: str = Field(..., description="Belt type", examples=["GT2", "GT3"])
+    belt_width: float = Field(6, ge=6, le=9, description="Belt width (mm)", examples=[6, 9])
+    measured_frequency_x: float = Field(
+        ..., ge=30, le=150, description="Measured frequency for X axis (Hz)", examples=[110]
+    )
+    measured_frequency_y: float = Field(
+        ..., ge=30, le=150, description="Measured frequency for Y axis (Hz)", examples=[108]
+    )
+    belt_length_x: float = Field(
+        ..., ge=100, le=2000, description="X axis belt span length (mm)", examples=[400]
+    )
+    belt_length_y: float = Field(
+        ..., ge=100, le=2000, description="Y axis belt span length (mm)", examples=[400]
+    )
+    kinematics: str = Field(..., description="Printer kinematics", examples=["CoreXY", "Cartesian"])
+
+
+class BeltTensionResponse(BaseModel):
+    """Response with belt tension analysis."""
+
+    tension_x_newtons: float = Field(..., description="Calculated X belt tension (N)")
+    tension_y_newtons: float = Field(..., description="Calculated Y belt tension (N)")
+    assessment_x: str = Field(
+        ..., description="Assessment for X belt", examples=["Good", "Too Loose", "Too Tight"]
+    )
+    assessment_y: str = Field(..., description="Assessment for Y belt")
+    adjustment_needed: bool = Field(..., description="Whether adjustment recommended")
+    turns_to_adjust: str | None = Field(None, description="Estimated adjustment needed")
+    resonance_note: str = Field(..., description="Impact on input shaping")
+
+
 # ============================================================================
 # Calculator Endpoints
 # ============================================================================
@@ -555,6 +660,33 @@ async def list_calculators():
                 "csv_source": "klipper_calibrations/adaptive_pressure_advance.csv",
                 "description": "Calculate adaptive PA range from test matrix results for dynamic tuning",
                 "endpoint": "/api/v1/calculators/adaptive-pressure-advance",
+                "method": "POST",
+            },
+            {
+                "id": "temperature-tower",
+                "name": "Temperature Tower Analysis",
+                "category": "Material",
+                "csv_source": "klipper_calibrations/temperature_tower.csv",
+                "description": "Determine optimal print temperature from temperature tower test results",
+                "endpoint": "/api/v1/calculators/temperature-tower",
+                "method": "POST",
+            },
+            {
+                "id": "retraction-tuning",
+                "name": "Retraction Tuning",
+                "category": "Extrusion",
+                "csv_source": "klipper_calibrations/retraction_tuning.csv",
+                "description": "Calculate optimal retraction settings based on extruder type and stringing tests",
+                "endpoint": "/api/v1/calculators/retraction-tuning",
+                "method": "POST",
+            },
+            {
+                "id": "belt-tension",
+                "name": "Belt Tension Calibration",
+                "category": "Mechanical",
+                "csv_source": "klipper_calibrations/belt_tension.csv",
+                "description": "Calculate belt tension from frequency measurements for optimal mechanical accuracy",
+                "endpoint": "/api/v1/calculators/belt-tension",
                 "method": "POST",
             },
         ]
@@ -2290,4 +2422,411 @@ async def calculate_adaptive_pressure_advance(
         adaptive_step=adaptive_step,
         orcaslicer_config=orcaslicer_config,
         notes=notes,
+    )
+
+
+@router.post(
+    "/temperature-tower",
+    response_model=TemperatureTowerResponse,
+    summary="Analyze Temperature Tower Test",
+    description="""
+    Calculate optimal print temperature from temperature tower test results.
+
+    CSV: temperature_tower.csv
+
+    A temperature tower prints segments at different temperatures to find the optimal
+    temperature for a specific filament. You visually inspect the tower and note which
+    segment height had the best quality.
+
+    Formula:
+    - segment_height = total_tower_height / number_of_segments
+    - best_segment = floor(best_segment_height / segment_height)
+    - optimal_temperature = tower_start_temp - (best_segment * temp_increment)
+
+    Example: 200-180°C tower, 60mm tall, 5°C steps (5 segments, 12mm each)
+    - Best quality at 45mm height → segment 3 (45/12 = 3.75, floor to 3)
+    - Optimal temp = 200 - (3 * 5) = 185°C
+
+    Quality indicators: surface finish, stringing, overhangs, bridging, layer adhesion.
+    """,
+    tags=["calculators", "material"],
+)
+async def calculate_temperature_tower(
+    request: TemperatureTowerRequest,
+) -> TemperatureTowerResponse:
+    """Calculate optimal print temperature from temperature tower test."""
+    # Validate inputs
+    if request.tower_start_temp <= request.tower_end_temp:
+        raise HTTPException(
+            status_code=400,
+            detail="Start temperature must be higher than end temperature",
+        )
+
+    if request.temp_increment <= 0:
+        raise HTTPException(
+            status_code=400,
+            detail="Temperature increment must be positive",
+        )
+
+    if request.best_segment_height > request.total_tower_height:
+        raise HTTPException(
+            status_code=400,
+            detail="Best segment height cannot exceed total tower height",
+        )
+
+    # Calculate number of segments
+    temp_range = request.tower_start_temp - request.tower_end_temp
+    num_segments = int(temp_range / request.temp_increment) + 1
+    segment_height = request.total_tower_height / num_segments
+
+    # Calculate which segment the best height falls into
+    best_segment = int(request.best_segment_height / segment_height)
+
+    # Calculate optimal temperature
+    optimal_temperature = request.tower_start_temp - (best_segment * request.temp_increment)
+
+    # Create temperature range recommendation
+    temperature_range = {
+        "optimal": optimal_temperature,
+        "safe_min": optimal_temperature - 5,
+        "safe_max": optimal_temperature + 5,
+    }
+
+    # Generate quality summary from observations
+    quality_indicators = []
+    if request.observations:
+        obs_lower = request.observations.lower()
+        if "stringing" in obs_lower or "oozing" in obs_lower:
+            quality_indicators.append("Minimal stringing observed")
+        if "bridging" in obs_lower:
+            quality_indicators.append("Good bridging performance")
+        if "overhang" in obs_lower:
+            quality_indicators.append("Clean overhang quality")
+        if "surface" in obs_lower or "finish" in obs_lower:
+            quality_indicators.append("Smooth surface finish")
+        if "layer" in obs_lower or "adhesion" in obs_lower:
+            quality_indicators.append("Strong layer adhesion")
+
+    quality_summary = (
+        quality_indicators
+        if quality_indicators
+        else ["Quality assessment based on segment selection"]
+    )
+
+    # Generate adjustment notes
+    adjustment_notes = (
+        f"Tested from {request.tower_start_temp}°C to {request.tower_end_temp}°C "
+        f"in {request.temp_increment}°C increments ({num_segments} segments). "
+        f"Best quality observed at segment {best_segment} (height: {request.best_segment_height}mm). "
+        f"Recommended temperature: {optimal_temperature}°C. "
+        f"Safe operating range: {temperature_range['safe_min']}-{temperature_range['safe_max']}°C. "
+        "Fine-tune within this range based on specific print requirements."
+    )
+
+    # Generate Klipper config suggestion
+    klipper_config = (
+        f"# Temperature Tower Results\n"
+        f"# Optimal temperature for this filament: {optimal_temperature}°C\n"
+        f"# Safe range: {temperature_range['safe_min']}-{temperature_range['safe_max']}°C\n"
+        f"# Update your filament profile or slicer presets accordingly"
+    )
+
+    # Track calculator usage
+    await track_calculator_use(
+        "temperature_tower",
+        params={
+            "start_temp": request.tower_start_temp,
+            "end_temp": request.tower_end_temp,
+            "increment": request.temp_increment,
+            "optimal_temp": optimal_temperature,
+        },
+    )
+
+    return TemperatureTowerResponse(
+        optimal_temperature=optimal_temperature,
+        temperature_range=temperature_range,
+        quality_summary=quality_summary,
+        adjustment_notes=adjustment_notes,
+        klipper_config=klipper_config,
+    )
+
+
+@router.post(
+    "/retraction-tuning",
+    response_model=RetractionTuningResponse,
+    summary="Calculate Optimal Retraction Settings",
+    description="""
+    Calculate optimal retraction settings based on extruder type and stringing tests.
+
+    CSV: retraction_tuning.csv
+
+    Retraction settings prevent stringing by pulling filament back during non-print moves.
+    The optimal settings depend heavily on extruder type:
+
+    Direct Drive:
+    - Distance: 0.5-2mm (shorter path to nozzle)
+    - Speed: 25-45mm/s
+
+    Bowden:
+    - Distance: 4-8mm (longer PTFE tube)
+    - Speed: 40-70mm/s
+
+    This calculator provides starting points based on extruder type, then suggests
+    adjustments based on stringing test results. Additional settings like Z-hop,
+    wipe, and temperature adjustments can further reduce stringing.
+    """,
+    tags=["calculators", "extrusion"],
+)
+async def calculate_retraction_tuning(
+    request: RetractionTuningRequest,
+) -> RetractionTuningResponse:
+    """Calculate optimal retraction settings for stringing prevention."""
+    # Base recommendations by extruder type
+    if request.extruder_type.lower() == "direct drive":
+        base_distance_max = 2.0
+        base_speed_max = 45
+    elif request.extruder_type.lower() == "bowden":
+        base_distance_max = 8.0
+        base_speed_max = 70
+    else:
+        raise HTTPException(
+            status_code=400,
+            detail="Extruder type must be 'Direct Drive' or 'Bowden'",
+        )
+
+    # Adjust recommendations based on stringing severity
+    severity_lower = request.stringing_severity.lower()
+
+    if severity_lower == "none" or severity_lower == "slight":
+        # Current settings are good, stay conservative
+        recommended_distance = request.current_retraction_distance
+        recommended_speed = request.current_retraction_speed
+        z_hop = False
+        z_hop_height = 0.0
+        wipe = False
+
+    elif severity_lower == "moderate":
+        # Increase retraction slightly
+        recommended_distance = min(
+            request.current_retraction_distance + 0.5,
+            base_distance_max,
+        )
+        recommended_speed = min(
+            request.current_retraction_speed + 5,
+            base_speed_max,
+        )
+        z_hop = True
+        z_hop_height = 0.2
+        wipe = True
+
+    else:  # severe
+        # Use maximum safe retraction for extruder type
+        recommended_distance = base_distance_max
+        recommended_speed = base_speed_max
+        z_hop = True
+        z_hop_height = 0.4
+        wipe = True
+
+    # Temperature note
+    temperature_note = (
+        "If stringing persists after retraction tuning, consider reducing print "
+        "temperature by 5-10°C. Higher temperatures increase stringing likelihood. "
+        "Use a temperature tower to find the optimal temperature for your filament."
+    )
+
+    # OrcaSlicer settings locations
+    orcaslicer_settings = {
+        "retraction_length": f"{recommended_distance}mm (Filament Settings → Retraction)",
+        "retraction_speed": f"{recommended_speed}mm/s (Filament Settings → Retraction)",
+        "z_hop": "Enable in Filament Settings → Retraction" if z_hop else "Disabled",
+        "z_hop_height": f"{z_hop_height}mm" if z_hop else "N/A",
+        "wipe": "Enable in Filament Settings → Retraction → Wipe" if wipe else "Disabled",
+    }
+
+    # Track calculator usage
+    await track_calculator_use(
+        "retraction_tuning",
+        params={
+            "extruder_type": request.extruder_type,
+            "stringing_severity": request.stringing_severity,
+            "recommended_distance": recommended_distance,
+            "recommended_speed": recommended_speed,
+        },
+    )
+
+    return RetractionTuningResponse(
+        recommended_distance=recommended_distance,
+        recommended_speed=recommended_speed,
+        z_hop=z_hop,
+        z_hop_height=z_hop_height,
+        wipe=wipe,
+        temperature_note=temperature_note,
+        orcaslicer_settings=orcaslicer_settings,
+    )
+
+
+@router.post(
+    "/belt-tension",
+    response_model=BeltTensionResponse,
+    summary="Calculate Belt Tension from Frequency",
+    description="""
+    Calculate belt tension from frequency measurements for optimal mechanical accuracy.
+
+    CSV: belt_tension.csv
+
+    Belt tension is critical for print quality. Too loose causes ringing and dimensional
+    inaccuracy. Too tight causes premature wear and stepper strain. The optimal method
+    uses frequency measurement via accelerometer or phone app.
+
+    Physics Formula:
+    tension (N) = (4 × length² × frequency² × linear_mass) / 1000000
+
+    Where:
+    - length: belt span in mm (between idlers)
+    - frequency: measured vibration in Hz
+    - linear_mass: g/m (GT2 6mm = 3.2, GT2 9mm = 4.8)
+
+    Target frequency for GT2 belts: 110Hz ± 10Hz (100-120Hz is good range)
+
+    For CoreXY, both X and Y belts should be within 5Hz of each other to prevent skewing.
+
+    Measurement methods:
+    - ADXL345 accelerometer (most accurate, ±2Hz)
+    - Phone spectrum analyzer app (±5Hz)
+    - Manual pluck test (least accurate, ±10Hz)
+    """,
+    tags=["calculators", "mechanical"],
+)
+async def calculate_belt_tension(
+    request: BeltTensionRequest,
+) -> BeltTensionResponse:
+    """Calculate belt tension from frequency measurements."""
+    # Determine belt mass (g/m)
+    belt_type_lower = request.belt_type.lower()
+    if "gt2" in belt_type_lower:
+        if request.belt_width == 6:
+            linear_mass = 3.2  # g/m for GT2 6mm
+        elif request.belt_width == 9:
+            linear_mass = 4.8  # g/m for GT2 9mm
+        else:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Unsupported GT2 belt width: {request.belt_width}mm (use 6 or 9)",
+            )
+    elif "gt3" in belt_type_lower:
+        if request.belt_width == 9:
+            linear_mass = 5.5  # g/m for GT3 9mm
+        else:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Unsupported GT3 belt width: {request.belt_width}mm (use 9)",
+            )
+    else:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Unsupported belt type: {request.belt_type} (use GT2 or GT3)",
+        )
+
+    # Calculate tension for X axis
+    # Formula: T = (4 * L^2 * f^2 * m) / 1000000
+    # L in mm, f in Hz, m in g/m, T in Newtons
+    length_x_m = request.belt_length_x / 1000  # Convert mm to m
+    tension_x = 4 * (length_x_m**2) * (request.measured_frequency_x**2) * linear_mass
+
+    # Calculate tension for Y axis (if provided)
+    tension_y = None
+    if request.belt_length_y and request.measured_frequency_y:
+        length_y_m = request.belt_length_y / 1000
+        tension_y = 4 * (length_y_m**2) * (request.measured_frequency_y**2) * linear_mass
+
+    # Assess frequency ranges (target 110Hz for GT2, 100-120Hz good)
+    def assess_frequency(freq: float) -> str:
+        if freq < 80:
+            return "Too Loose - Increase tension significantly"
+        elif freq < 100:
+            return "Slightly Loose - Increase tension moderately"
+        elif freq <= 120:
+            return "Good - Within optimal range"
+        elif freq <= 140:
+            return "Slightly Tight - Decrease tension moderately"
+        else:
+            return "Too Tight - Decrease tension significantly"
+
+    assessment_x = assess_frequency(request.measured_frequency_x)
+    assessment_y = (
+        assess_frequency(request.measured_frequency_y) if request.measured_frequency_y else None
+    )
+
+    # Check for balance in CoreXY systems
+    adjustment_needed = False
+    turns_to_adjust = None
+    resonance_note = ""
+
+    if request.kinematics and request.kinematics.lower() == "corexy":
+        if request.measured_frequency_y:
+            freq_diff = abs(request.measured_frequency_x - request.measured_frequency_y)
+            if freq_diff > 5:
+                adjustment_needed = True
+                turns_to_adjust = f"Balance belts: adjust {'X' if request.measured_frequency_x < request.measured_frequency_y else 'Y'} axis by ~{freq_diff / 10:.1f} turns"
+                resonance_note = (
+                    f"CoreXY belt imbalance detected: {freq_diff:.1f}Hz difference. "
+                    "Unbalanced belts cause diagonal artifacts and skewed prints. "
+                    "Target: both belts within 5Hz of each other."
+                )
+    else:
+        # Single axis assessment
+        if request.measured_frequency_x < 100 or request.measured_frequency_x > 120:
+            adjustment_needed = True
+            if request.measured_frequency_x < 100:
+                turns_diff = (110 - request.measured_frequency_x) / 10
+                turns_to_adjust = f"Tighten X belt by approximately {turns_diff:.1f} turns"
+            else:
+                turns_diff = (request.measured_frequency_x - 110) / 10
+                turns_to_adjust = f"Loosen X belt by approximately {turns_diff:.1f} turns"
+
+        if request.measured_frequency_y and (
+            request.measured_frequency_y < 100 or request.measured_frequency_y > 120
+        ):
+            if not adjustment_needed:
+                adjustment_needed = True
+                turns_to_adjust = ""
+            if request.measured_frequency_y < 100:
+                turns_diff = (110 - request.measured_frequency_y) / 10
+                turns_to_adjust += f"\nTighten Y belt by approximately {turns_diff:.1f} turns"
+            else:
+                turns_diff = (request.measured_frequency_y - 110) / 10
+                turns_to_adjust += f"\nLoosen Y belt by approximately {turns_diff:.1f} turns"
+
+    if not resonance_note:
+        resonance_note = (
+            f"Target frequency: 110Hz ± 10Hz for GT2 belts. "
+            f"Current X: {request.measured_frequency_x}Hz. "
+            + (
+                f"Current Y: {request.measured_frequency_y}Hz. "
+                if request.measured_frequency_y
+                else ""
+            )
+            + "Proper belt tension reduces ringing, improves dimensional accuracy, and prevents belt wear."
+        )
+
+    # Track calculator usage
+    await track_calculator_use(
+        "belt_tension",
+        params={
+            "belt_type": request.belt_type,
+            "freq_x": request.measured_frequency_x,
+            "freq_y": request.measured_frequency_y,
+            "tension_x": tension_x,
+            "tension_y": tension_y,
+        },
+    )
+
+    return BeltTensionResponse(
+        tension_x_newtons=round(tension_x, 2),
+        tension_y_newtons=round(tension_y, 2) if tension_y else None,
+        assessment_x=assessment_x,
+        assessment_y=assessment_y,
+        adjustment_needed=adjustment_needed,
+        turns_to_adjust=turns_to_adjust,
+        resonance_note=resonance_note,
     )

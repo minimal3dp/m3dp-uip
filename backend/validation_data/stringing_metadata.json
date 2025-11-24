@@ -1,0 +1,29 @@
+{
+  "defect_type": "stringing",
+  "description": "Reference images for stringing defects - thin strands between parts",
+  "images": [
+    {
+      "filename": "stringing_example_001.jpg",
+      "ground_truth": "stringing",
+      "severity": "moderate",
+      "description": "Classic stringing between temperature tower segments",
+      "printer_context": {
+        "model": "Example Printer",
+        "filament_type": "PLA",
+        "filament_brand": "Generic",
+        "nozzle_temp": 200,
+        "bed_temp": 60,
+        "print_speed": 60,
+        "retraction_enabled": false
+      },
+      "expected_recommendations": [
+        "Enable retraction in slicer",
+        "Increase retraction distance to 5-7mm",
+        "Lower printing temperature by 5-10°C",
+        "Increase retraction speed"
+      ],
+      "notes": "Temperature too high for this PLA brand. Retraction disabled in test."
+    }
+  ],
+  "validation_notes": "Add 5-10 real images to this directory for proper validation"
+}
