@@ -446,8 +446,10 @@ class TemperatureTowerResponse(BaseModel):
     """Response with optimal temperature recommendation."""
 
     optimal_temperature: float = Field(..., description="Recommended printing temperature (°C)")
-    temperature_range: str = Field(..., description="Acceptable temperature range")
-    quality_summary: str = Field(..., description="Quality assessment at optimal temperature")
+    temperature_range: dict = Field(
+        ..., description="Acceptable temperature range with optimal, min, max"
+    )
+    quality_summary: list[str] = Field(..., description="List of quality indicators observed")
     adjustment_notes: str = Field(..., description="Specific tuning recommendations")
     klipper_config: str = Field(..., description="Suggested temperature for macros")
 
@@ -485,38 +487,48 @@ class RetractionTuningResponse(BaseModel):
     temperature_note: str | None = Field(
         None, description="Temperature adjustment suggestion if applicable"
     )
-    orcaslicer_settings: str = Field(..., description="OrcaSlicer configuration guide")
+    orcaslicer_settings: dict = Field(
+        ..., description="OrcaSlicer configuration settings dictionary"
+    )
 
 
 class BeltTensionRequest(BaseModel):
     """Request for belt tension analysis."""
 
     belt_type: str = Field(..., description="Belt type", examples=["GT2", "GT3"])
-    belt_width: float = Field(6, ge=6, le=9, description="Belt width (mm)", examples=[6, 9])
+    belt_width: int = Field(6, ge=6, le=9, description="Belt width (mm)", examples=[6, 9])
     measured_frequency_x: float = Field(
         ..., ge=30, le=150, description="Measured frequency for X axis (Hz)", examples=[110]
     )
-    measured_frequency_y: float = Field(
-        ..., ge=30, le=150, description="Measured frequency for Y axis (Hz)", examples=[108]
+    measured_frequency_y: float | None = Field(
+        None,
+        ge=30,
+        le=150,
+        description="Measured frequency for Y axis (Hz) - optional",
+        examples=[108],
     )
     belt_length_x: float = Field(
         ..., ge=100, le=2000, description="X axis belt span length (mm)", examples=[400]
     )
-    belt_length_y: float = Field(
-        ..., ge=100, le=2000, description="Y axis belt span length (mm)", examples=[400]
+    belt_length_y: float | None = Field(
+        None, ge=100, le=2000, description="Y axis belt span length (mm) - optional", examples=[400]
     )
-    kinematics: str = Field(..., description="Printer kinematics", examples=["CoreXY", "Cartesian"])
+    kinematics: str | None = Field(
+        None, description="Printer kinematics", examples=["CoreXY", "Cartesian"]
+    )
 
 
 class BeltTensionResponse(BaseModel):
     """Response with belt tension analysis."""
 
     tension_x_newtons: float = Field(..., description="Calculated X belt tension (N)")
-    tension_y_newtons: float = Field(..., description="Calculated Y belt tension (N)")
+    tension_y_newtons: float | None = Field(
+        None, description="Calculated Y belt tension (N) - optional"
+    )
     assessment_x: str = Field(
         ..., description="Assessment for X belt", examples=["Good", "Too Loose", "Too Tight"]
     )
-    assessment_y: str = Field(..., description="Assessment for Y belt")
+    assessment_y: str | None = Field(None, description="Assessment for Y belt - optional")
     adjustment_needed: bool = Field(..., description="Whether adjustment recommended")
     turns_to_adjust: str | None = Field(None, description="Estimated adjustment needed")
     resonance_note: str = Field(..., description="Impact on input shaping")

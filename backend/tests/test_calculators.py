@@ -553,3 +553,315 @@ def test_calculator_cors_headers():
         status.HTTP_200_OK,
         status.HTTP_405_METHOD_NOT_ALLOWED,
     ]
+
+
+# ============================================================================
+# Temperature Tower Calculator Tests (Phase 5)
+# ============================================================================
+
+
+def test_temperature_tower_basic():
+    """Test basic temperature tower calculation."""
+    request_data = {
+        "tower_start_temp": 220,
+        "tower_end_temp": 180,
+        "temp_increment": 5,
+        "best_segment_height": 36,
+        "total_tower_height": 60,
+        "observations": "Best surface finish at 36mm height",
+    }
+
+    response = client.post("/api/v1/calculators/temperature-tower", json=request_data)
+
+    assert response.status_code == status.HTTP_200_OK
+    data = response.json()
+
+    assert "optimal_temperature" in data
+    assert data["optimal_temperature"] == 195  # 220 - (3 * 5)
+    assert "temperature_range" in data
+    assert data["temperature_range"]["optimal"] == 195
+    assert data["temperature_range"]["safe_min"] == 190
+    assert data["temperature_range"]["safe_max"] == 200
+    assert "quality_summary" in data
+    assert "adjustment_notes" in data
+    assert "klipper_config" in data
+
+
+def test_temperature_tower_validation_inverted_temps():
+    """Test temperature tower rejects start temp <= end temp."""
+    request_data = {
+        "tower_start_temp": 180,
+        "tower_end_temp": 220,
+        "temp_increment": 5,
+        "best_segment_height": 36,
+        "total_tower_height": 60,
+    }
+
+    response = client.post("/api/v1/calculators/temperature-tower", json=request_data)
+
+    assert response.status_code == status.HTTP_400_BAD_REQUEST
+    assert "higher than end temperature" in response.json()["detail"]
+
+
+def test_temperature_tower_validation_negative_increment():
+    """Test temperature tower rejects negative increment."""
+    request_data = {
+        "tower_start_temp": 220,
+        "tower_end_temp": 180,
+        "temp_increment": -5,
+        "best_segment_height": 36,
+        "total_tower_height": 60,
+    }
+
+    response = client.post("/api/v1/calculators/temperature-tower", json=request_data)
+
+    # Pydantic validation returns 422
+    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+
+
+def test_temperature_tower_validation_height_exceeded():
+    """Test temperature tower rejects best segment height > total height."""
+    request_data = {
+        "tower_start_temp": 220,
+        "tower_end_temp": 180,
+        "temp_increment": 5,
+        "best_segment_height": 70,
+        "total_tower_height": 60,
+    }
+
+    response = client.post("/api/v1/calculators/temperature-tower", json=request_data)
+
+    assert response.status_code == status.HTTP_400_BAD_REQUEST
+    assert "cannot exceed total tower height" in response.json()["detail"]
+
+
+# ============================================================================
+# Retraction Tuning Calculator Tests (Phase 5)
+# ============================================================================
+
+
+def test_retraction_tuning_direct_drive_moderate():
+    """Test retraction tuning for direct drive with moderate stringing."""
+    request_data = {
+        "extruder_type": "Direct Drive",
+        "current_retraction_distance": 1.0,
+        "current_retraction_speed": 35,
+        "stringing_severity": "moderate",
+        "test_result": "Some stringing visible",
+    }
+
+    response = client.post("/api/v1/calculators/retraction-tuning", json=request_data)
+
+    assert response.status_code == status.HTTP_200_OK
+    data = response.json()
+
+    assert "recommended_distance" in data
+    assert data["recommended_distance"] == 1.5  # Current + 0.5
+    assert "recommended_speed" in data
+    assert data["recommended_speed"] == 40  # Current + 5
+    assert data["z_hop"] is True
+    assert data["z_hop_height"] == 0.2
+    assert data["wipe"] is True
+    assert "temperature_note" in data
+    assert "orcaslicer_settings" in data
+
+
+def test_retraction_tuning_bowden_severe():
+    """Test retraction tuning for bowden with severe stringing."""
+    request_data = {
+        "extruder_type": "Bowden",
+        "current_retraction_distance": 5.0,
+        "current_retraction_speed": 45,
+        "stringing_severity": "severe",
+        "test_result": "Heavy stringing everywhere",
+    }
+
+    response = client.post("/api/v1/calculators/retraction-tuning", json=request_data)
+
+    assert response.status_code == status.HTTP_200_OK
+    data = response.json()
+
+    assert data["recommended_distance"] == 8.0  # Max for Bowden
+    assert data["recommended_speed"] == 70  # Max for Bowden
+    assert data["z_hop"] is True
+    assert data["z_hop_height"] == 0.4
+    assert data["wipe"] is True
+
+
+def test_retraction_tuning_none_severity():
+    """Test retraction tuning with no stringing keeps current settings."""
+    request_data = {
+        "extruder_type": "Direct Drive",
+        "current_retraction_distance": 1.5,
+        "current_retraction_speed": 40,
+        "stringing_severity": "none",
+        "test_result": "No stringing observed",
+    }
+
+    response = client.post("/api/v1/calculators/retraction-tuning", json=request_data)
+
+    assert response.status_code == status.HTTP_200_OK
+    data = response.json()
+
+    assert data["recommended_distance"] == 1.5  # Unchanged
+    assert data["recommended_speed"] == 40  # Unchanged
+    assert data["z_hop"] is False
+    assert data["wipe"] is False
+
+
+def test_retraction_tuning_invalid_extruder_type():
+    """Test retraction tuning rejects invalid extruder type."""
+    request_data = {
+        "extruder_type": "Invalid Type",
+        "current_retraction_distance": 1.0,
+        "current_retraction_speed": 35,
+        "stringing_severity": "moderate",
+    }
+
+    response = client.post("/api/v1/calculators/retraction-tuning", json=request_data)
+
+    assert response.status_code == status.HTTP_400_BAD_REQUEST
+    assert "Direct Drive" in response.json()["detail"]
+    assert "Bowden" in response.json()["detail"]
+
+
+# ============================================================================
+# Belt Tension Calculator Tests (Phase 5)
+# ============================================================================
+
+
+def test_belt_tension_gt2_6mm_good_range():
+    """Test belt tension calculation for GT2 6mm belt in good range."""
+    request_data = {
+        "belt_type": "GT2",
+        "belt_width": 6,
+        "measured_frequency_x": 110.0,
+        "measured_frequency_y": 108.0,
+        "belt_length_x": 800,
+        "belt_length_y": 800,
+        "kinematics": "CoreXY",
+    }
+
+    response = client.post("/api/v1/calculators/belt-tension", json=request_data)
+
+    assert response.status_code == status.HTTP_200_OK
+    data = response.json()
+
+    assert "tension_x_newtons" in data
+    assert "tension_y_newtons" in data
+    assert data["tension_x_newtons"] > 0
+    assert data["tension_y_newtons"] > 0
+    assert "assessment_x" in data
+    assert "Good" in data["assessment_x"]
+    assert "assessment_y" in data
+    assert "Good" in data["assessment_y"]
+    assert data["adjustment_needed"] is False  # Within 5Hz tolerance
+    assert "resonance_note" in data
+
+
+def test_belt_tension_gt2_9mm():
+    """Test belt tension calculation for GT2 9mm belt."""
+    request_data = {
+        "belt_type": "GT2",
+        "belt_width": 9,
+        "measured_frequency_x": 115.0,
+        "belt_length_x": 750,
+    }
+
+    response = client.post("/api/v1/calculators/belt-tension", json=request_data)
+
+    assert response.status_code == status.HTTP_200_OK
+    data = response.json()
+
+    assert data["tension_x_newtons"] > 0
+    # 9mm belt has higher linear mass (4.8 vs 3.2)
+    assert "assessment_x" in data
+
+
+def test_belt_tension_too_loose():
+    """Test belt tension with low frequency (too loose)."""
+    request_data = {
+        "belt_type": "GT2",
+        "belt_width": 6,
+        "measured_frequency_x": 75.0,
+        "belt_length_x": 800,
+    }
+
+    response = client.post("/api/v1/calculators/belt-tension", json=request_data)
+
+    assert response.status_code == status.HTTP_200_OK
+    data = response.json()
+
+    assert "Too Loose" in data["assessment_x"]
+    assert data["adjustment_needed"] is True
+    assert "turns_to_adjust" in data
+
+
+def test_belt_tension_too_tight():
+    """Test belt tension with high frequency (too tight)."""
+    request_data = {
+        "belt_type": "GT2",
+        "belt_width": 6,
+        "measured_frequency_x": 145.0,
+        "belt_length_x": 800,
+    }
+
+    response = client.post("/api/v1/calculators/belt-tension", json=request_data)
+
+    assert response.status_code == status.HTTP_200_OK
+    data = response.json()
+
+    assert "Too Tight" in data["assessment_x"]
+    assert data["adjustment_needed"] is True
+
+
+def test_belt_tension_corexy_imbalance():
+    """Test belt tension detects CoreXY imbalance."""
+    request_data = {
+        "belt_type": "GT2",
+        "belt_width": 6,
+        "measured_frequency_x": 110.0,
+        "measured_frequency_y": 95.0,  # 15Hz difference
+        "belt_length_x": 800,
+        "belt_length_y": 800,
+        "kinematics": "CoreXY",
+    }
+
+    response = client.post("/api/v1/calculators/belt-tension", json=request_data)
+
+    assert response.status_code == status.HTTP_200_OK
+    data = response.json()
+
+    assert data["adjustment_needed"] is True
+    assert "balance" in data["turns_to_adjust"].lower() or "Balance" in data["turns_to_adjust"]
+    assert "imbalance" in data["resonance_note"].lower()
+
+
+def test_belt_tension_invalid_belt_type():
+    """Test belt tension rejects unsupported belt type."""
+    request_data = {
+        "belt_type": "InvalidType",
+        "belt_width": 6,
+        "measured_frequency_x": 110.0,
+        "belt_length_x": 800,
+    }
+
+    response = client.post("/api/v1/calculators/belt-tension", json=request_data)
+
+    assert response.status_code == status.HTTP_400_BAD_REQUEST
+    assert "belt type" in response.json()["detail"].lower()
+
+
+def test_belt_tension_invalid_belt_width():
+    """Test belt tension rejects unsupported belt width for GT2."""
+    request_data = {
+        "belt_type": "GT2",
+        "belt_width": 12,  # Only 6 and 9 supported
+        "measured_frequency_x": 110.0,
+        "belt_length_x": 800,
+    }
+
+    response = client.post("/api/v1/calculators/belt-tension", json=request_data)
+
+    # Pydantic validation returns 422
+    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
