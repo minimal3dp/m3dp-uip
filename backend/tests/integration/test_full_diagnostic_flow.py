@@ -167,10 +167,16 @@ class TestCalculatorIntegration:
         assert response.status_code == 200
         data = response.json()
 
-        # Verify pressure advance result (field is recommended_pa)
-        assert "recommended_pa" in data
+        # Verify pressure advance result
+        assert "recommended_range" in data
+        assert "start_value" in data
+        assert "increment" in data
+        assert "test_parameters" in data
         assert "klipper_config" in data
-        assert data["recommended_pa"] >= 0
+        assert "calibration_method" in data
+        assert isinstance(data["recommended_range"], list)
+        assert len(data["recommended_range"]) == 2
+        assert data["start_value"] >= 0
 
     def test_calculator_validation_errors(self, client):
         """Test calculator handles invalid input."""

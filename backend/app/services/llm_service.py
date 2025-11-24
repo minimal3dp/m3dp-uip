@@ -112,7 +112,25 @@ Keep responses focused and practical. Avoid generic advice like "check your sett
         try:
             logger.info(f"LLM diagnosis request: {query[:100]}...")
             response = self.model.generate_content(prompt)
-            result_text = response.text.strip()
+
+            try:
+                result_text = response.text.strip()
+            except Exception as e:
+                logger.error(f"Failed to access response.text: {e}")
+                logger.error(f"Full LLM response object: {response}")
+                if response and hasattr(response, "prompt_feedback"):
+                    logger.error(f"Prompt feedback: {response.prompt_feedback}")
+                if response and hasattr(response, "candidates"):
+                    for i, candidate in enumerate(response.candidates):
+                        logger.error(f"Candidate {i} finish reason: {candidate.finish_reason}")
+                        if hasattr(candidate, "safety_ratings"):
+                            logger.error(
+                                f"Candidate {i} safety ratings: {candidate.safety_ratings}"
+                            )
+                        if hasattr(candidate, "content") and hasattr(candidate.content, "parts"):
+                            for part in candidate.content.parts:
+                                logger.error(f"Candidate {i} part: {part}")
+                raise RuntimeError(f"LLM content generation failed: {e}") from e
 
             # Handle markdown code blocks
             if result_text.startswith("```json"):
