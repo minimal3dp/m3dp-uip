@@ -41,27 +41,32 @@ This installs a LaunchAgent that monitors `research/` and converts PDFs automati
 
 When you push PDFs to GitHub, they're automatically converted to markdown via GitHub Actions.
 
-## Organization
+## Current Research Files
 
-- `papers/` - Academic papers and research publications
-- `articles/` - Technical articles and blog posts
-- `references/` - Quick reference materials and cheat sheets
+- **Project Report Resource Generation Guide.md** - Comprehensive guide covering Klipper calibration, firmware architecture, and deterministic calibration philosophy
+- **EXTRACTED_FORMULAS.md** - Mathematical formulas for calibration calculators
+- **Klipper Calibrations.xlsx** - Calibration reference data and lookup tables
+- **jmmp-03-00064.md** - Systematic survey of FDM process parameters and their influence on part characteristics (useful for troubleshooting recommendations)
+- **REFERENCES.md** - Citation list and research sources
 
 ## Key Topics
 
-### Vision-Language Models for Manufacturing
-- 3D-LLMs and Vision-Language Models for defect detection
-- Computer vision applications in 3D printing
+### Calibration and Troubleshooting (Core Focus)
+- Klipper firmware calibration methods and formulas
+- FDM process parameter optimization
+- Defect detection and troubleshooting guides
+- Deterministic calculation-based calibration tools
 
-### RAG (Retrieval Augmented Generation)
-- Context window optimization
-- Structured knowledge base integration
-- Router-based classification systems
+### AI-Powered Diagnosis (Supporting)
+- Vision-based defect detection (image → diagnosis)
+- Semantic routing for query classification
+- Troubleshooting knowledge base integration
 
-### 3D Printing Calibration
-- Klipper firmware calibration methods
-- OrcaSlicer optimization techniques
-- Material-specific settings and profiles
+### Out of Scope (Separate Apps)
+- Anisotropy and material properties → filament.minimal3dp.com
+- ACO path optimization → separate tool
+- Hardware sensors and real-time monitoring
+- ML model training and predictive systems
 
 ## Adding New Research
 
