@@ -37,8 +37,11 @@ class Settings(BaseSettings):
 
     # Vision API (Gemini)
     GOOGLE_GENAI_API_KEY: str = ""
-    GEMINI_MODEL: str = "gemini-1.5-pro"
+    GEMINI_MODEL: str = "gemini-2.5-pro"
     VISION_MOCK_ENABLED: bool = False  # When true, use deterministic mock vision responses
+
+    # Semantic Router (for query classification)
+    OPENAI_API_KEY: str = ""  # Optional - will use free HuggingFace encoder if not set
 
     # Amazon Product API (PA-API) - Phase 2
     PAAPI_ACCESS_KEY: str = ""
