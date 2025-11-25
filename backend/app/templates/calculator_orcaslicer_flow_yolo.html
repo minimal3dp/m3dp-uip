@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto p-6">
+  <a href="/calculators-ui" class="inline-flex items-center text-brand-orange hover:underline mb-6">
+    ← Back to Calculators
+  </a>
+
+  <div class="glass rounded-2xl p-8 bg-zinc-900">
+    <h2 class="text-2xl font-bold mb-6 flex items-center gap-2">
+      <span class="text-3xl">⚡</span>
+      OrcaSlicer Flow YOLO (Quick)
+    </h2>
+
+    <p class="text-zinc-400 mb-8">
+      Single-pass quick flow calibration for fast adjustments. Less accurate than two-pass.
+    </p>
+
+    <div x-data="{
+      oldFlowRate: 1.0,
+      yoloSlideValue: '',
+      result: null,
+      error: null,
+      loading: false,
+      async calculate() {
+        this.loading = true;
+        this.error = null;
+        try {
+          const response = await fetch('/api/v1/calculators/orcaslicer-flow-yolo', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              old_flow_rate: this.oldFlowRate,
+              yolo_slide_value: this.yoloSlideValue
+            })
+          });
+          if (!response.ok) throw new Error('Calculation failed');
+          this.result = await response.json();
+        } catch (e) {
+          this.error = e.message;
+        } finally {
+          this.loading = false;
+        }
+      },
+      reset() {
+        this.oldFlowRate = 1.0;
+        this.yoloSlideValue = '';
+        this.result = null;
+        this.error = null;
+      },
+      copyToClipboard(text) {
+        navigator.clipboard.writeText(text);
+        alert('Copied to clipboard!');
+      }
+    }">
+      <form @submit.prevent="calculate" class="space-y-6">
+        <div>
+          <label class="block text-sm font-medium mb-2">Current Flow Rate</label>
+          <input x-model.number="oldFlowRate" type="number" step="0.01" min="0.5" max="2" required class="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-3 focus:outline-none focus:border-brand-orange transition" placeholder="1.0 = 100%" />
+          <p class="text-xs text-zinc-500 mt-1">1.0 = 100%, 0.99 = 99%</p>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium mb-2">YOLO Slide Value</label>
+          <input x-model.number="yoloSlideValue" type="number" step="0.001" min="-1" max="1" required class="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-3 focus:outline-none focus:border-brand-orange transition" placeholder="e.g., -0.035" />
+          <p class="text-xs text-zinc-500 mt-1">Slide value with smoothest surface (e.g., -0.035)</p>
+        </div>
+
+        <div x-show="error" class="bg-red-500/10 border border-red-500/50 rounded-lg p-4 text-red-400 text-sm" x-text="error"></div>
+
+        <div class="flex gap-4">
+          <button type="submit" :disabled="loading" class="flex-1 bg-brand-orange hover:bg-orange-600 disabled:bg-zinc-700 disabled:cursor-not-allowed text-white px-6 py-3 rounded-lg font-medium transition" x-text="loading ? 'Calculating...' : 'Calculate Flow'"></button>
+          <button type="button" @click="reset" class="px-6 py-3 bg-zinc-800 hover:bg-zinc-700 text-white rounded-lg font-medium transition">Reset</button>
+        </div>
+      </form>
+
+      <div x-show="result" class="mt-8 glass-dark rounded-xl p-6 border-l-4 border-brand-orange">
+        <h3 class="text-xl font-bold mb-4 flex items-center gap-2">
+          <span>✅</span> Results
+        </h3>
+
+        <div class="space-y-4">
+          <div>
+            <p class="text-sm text-zinc-400">New Flow Rate:</p>
+            <p class="text-3xl font-bold text-brand-orange" x-text="result?.new_flow"></p>
+          </div>
+
+          <div>
+            <p class="text-sm text-zinc-400">Change from Original:</p>
+            <p class="text-lg font-semibold" x-text="result?.change_from_original + '%'"></p>
+          </div>
+
+          <div class="bg-zinc-950 rounded-lg p-4 font-mono text-sm">
+            <p class="text-zinc-500 text-xs mb-2">Slicer Configuration:</p>
+            <code class="text-green-400" x-text="result?.slicer_config"></code>
+            <button @click="copyToClipboard(result?.slicer_config)" class="mt-2 text-xs text-brand-orange hover:underline">
+              📋 Copy to clipboard
+            </button>
+          </div>
+
+          <div class="bg-blue-500/10 border border-blue-500/50 rounded-lg p-4">
+            <p class="text-sm text-zinc-300" x-text="result?.recommendation"></p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

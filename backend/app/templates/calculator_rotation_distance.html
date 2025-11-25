@@ -1,0 +1,160 @@
+{% extends "base.html" %}
+
+{% block title %}Rotation Distance Calculator - M3DP-UIP{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto">
+    <!-- Header -->
+    <div class="mb-8">
+        <a href="/calculators" class="text-brand-orange hover:underline mb-4 inline-block">← Back to Calculators</a>
+        <h1 class="text-4xl font-bold mb-2">Rotation Distance Calculator</h1>
+        <p class="text-zinc-400">Calculate correct extruder rotation distance from calibration test results</p>
+    </div>
+
+    <!-- Calculator Form -->
+    <div class="glass rounded-lg p-8"
+         x-data="{
+             current: 33.5,
+             requested: 100,
+             actual: 98.5,
+             result: null,
+             calculating: false,
+             calculate() {
+                 this.calculating = true;
+                 const formData = new FormData();
+                 formData.append('current_rotation_distance', this.current);
+                 formData.append('requested_extrusion', this.requested);
+                 formData.append('actual_extrusion', this.actual);
+
+                 fetch('/api/v1/calculators/rotation-distance', {
+                     method: 'POST',
+                     headers: { 'Content-Type': 'application/json' },
+                     body: JSON.stringify({
+                         current_rotation_distance: parseFloat(this.current),
+                         requested_extrusion: parseFloat(this.requested),
+                         actual_extrusion: parseFloat(this.actual)
+                     })
+                 })
+                 .then(r => r.json())
+                 .then(data => {
+                     this.result = data;
+                     this.calculating = false;
+                 })
+                 .catch(err => {
+                     console.error(err);
+                     this.calculating = false;
+                 });
+             }
+         }">
+
+        <!-- Instructions -->
+        <div class="bg-blue-500/10 border border-blue-500/30 rounded-lg p-4 mb-6">
+            <h3 class="font-semibold mb-2 text-blue-400">📋 How to use this calculator:</h3>
+            <ol class="text-sm text-zinc-300 space-y-1 list-decimal list-inside">
+                <li>Note your current rotation_distance value from printer.cfg</li>
+                <li>Command extruder to extrude 100mm (or any known amount)</li>
+                <li>Measure how much filament actually extruded</li>
+                <li>Enter values below to calculate corrected rotation_distance</li>
+            </ol>
+        </div>
+
+        <!-- Input Fields -->
+        <div class="space-y-6">
+            <div>
+                <label class="block text-sm font-medium mb-2">Current Rotation Distance (mm)</label>
+                <input type="number"
+                       x-model="current"
+                       step="0.1"
+                       class="w-full px-4 py-3 bg-black/30 border border-white/20 rounded-lg focus:outline-none focus:border-brand-orange"
+                       placeholder="33.5">
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium mb-2">Requested Extrusion (mm)</label>
+                <input type="number"
+                       x-model="requested"
+                       step="1"
+                       class="w-full px-4 py-3 bg-black/30 border border-white/20 rounded-lg focus:outline-none focus:border-brand-orange"
+                       placeholder="100">
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium mb-2">Actual Extrusion (mm measured)</label>
+                <input type="number"
+                       x-model="actual"
+                       step="0.1"
+                       class="w-full px-4 py-3 bg-black/30 border border-white/20 rounded-lg focus:outline-none focus:border-brand-orange"
+                       placeholder="98.5">
+            </div>
+
+            <!-- Calculate Button -->
+            <button @click="calculate()"
+                    :disabled="calculating"
+                    :class="calculating ? 'opacity-50 cursor-not-allowed' : 'hover:bg-orange-600'"
+                    class="w-full px-6 py-3 bg-brand-orange text-white rounded-lg font-semibold transition-colors">
+                <span x-show="!calculating">Calculate New Rotation Distance</span>
+                <span x-show="calculating" class="flex items-center justify-center">
+                    <svg class="animate-spin h-5 w-5 mr-2" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Calculating...
+                </span>
+            </button>
+        </div>
+
+        <!-- Results -->
+        <div x-show="result" x-transition class="mt-8 space-y-4">
+            <div class="border-t border-white/10 pt-6">
+                <h3 class="text-2xl font-bold mb-4">Results</h3>
+
+                <!-- New Rotation Distance -->
+                <div class="bg-brand-orange/10 border border-brand-orange/30 rounded-lg p-6 mb-4">
+                    <div class="text-sm text-zinc-400 mb-1">New Rotation Distance</div>
+                    <div class="text-4xl font-bold text-brand-orange" x-text="result?.new_rotation_distance?.toFixed(2)"></div>
+                    <div class="text-sm text-zinc-300 mt-2">mm</div>
+                </div>
+
+                <!-- Klipper Config -->
+                <div class="bg-black/30 rounded-lg p-4 mb-4">
+                    <div class="text-sm font-medium text-zinc-400 mb-2">Add to printer.cfg:</div>
+                    <code class="text-green-400 font-mono text-sm" x-text="result?.klipper_config"></code>
+                </div>
+
+                <!-- Recommendation -->
+                <div class="glass-dark rounded-lg p-4">
+                    <div class="text-sm font-medium text-zinc-400 mb-2">Recommendation:</div>
+                    <p class="text-zinc-200" x-text="result?.recommendation"></p>
+                </div>
+
+                <!-- Tolerance Status -->
+                <div x-show="result?.within_tolerance === false"
+                     class="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-4">
+                    <div class="flex items-start">
+                        <svg class="w-5 h-5 text-yellow-500 mt-0.5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+                        </svg>
+                        <div>
+                            <div class="font-semibold text-yellow-500">Large Calibration Error</div>
+                            <div class="text-sm text-zinc-300 mt-1">Your actual extrusion differs by more than 2mm from requested. Consider checking for mechanical issues.</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Formula Explanation -->
+    <div class="glass rounded-lg p-6 mt-6">
+        <h3 class="text-xl font-semibold mb-3">📐 Formula</h3>
+        <div class="bg-black/30 rounded p-4 mb-3">
+            <code class="text-green-400 font-mono">new_rotation_distance = (current_rotation_distance × actual_extrusion) ÷ requested_extrusion</code>
+        </div>
+        <p class="text-sm text-zinc-400">
+            This formula calculates the correction factor needed to account for the difference between
+            requested and actual filament extrusion. A properly calibrated extruder should extrude
+            within ±2mm of the requested amount.
+        </p>
+    </div>
+</div>
+{% endblock %}

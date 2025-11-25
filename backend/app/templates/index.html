@@ -1,0 +1,117 @@
+{% extends "base.html" %}
+
+{% block title %}Home - M3DP-UIP{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<div class="text-center py-12">
+    <h1 class="text-5xl font-bold mb-4">
+        <span class="text-brand-orange">M3DP</span>
+        <span class="text-white">Unified Intelligence Platform</span>
+    </h1>
+    <p class="text-xl text-zinc-400 mb-8 max-w-3xl mx-auto">
+        AI-powered diagnostic platform combining Gemini 1.5 Pro vision with structured knowledge bases
+        for accurate, formula-based solutions to 3D printing issues
+    </p>
+
+    <div class="flex justify-center space-x-4">
+        <a href="/diagnosis"
+           class="px-6 py-3 bg-brand-orange text-white rounded-lg font-semibold hover:bg-orange-600 transition-colors">
+            Start Diagnosis
+        </a>
+        <a href="/calculators"
+           class="px-6 py-3 glass text-white rounded-lg font-semibold hover:bg-white/20 transition-colors">
+            Browse Calculators
+        </a>
+    </div>
+</div>
+
+<!-- Features Grid -->
+<div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mt-16">
+    <!-- Feature: Vision Detection -->
+    <div class="glass rounded-lg p-6">
+        <div class="text-3xl mb-4">📸</div>
+        <h3 class="text-xl font-semibold mb-2">Vision-based Defect Detection</h3>
+        <p class="text-zinc-400">
+            Upload print failure images analyzed by Gemini 1.5 Pro to identify issues with 8-class defect taxonomy
+        </p>
+    </div>
+
+    <!-- Feature: Formula Calculators -->
+    <div class="glass rounded-lg p-6">
+        <div class="text-3xl mb-4">🧮</div>
+        <h3 class="text-xl font-semibold mb-2">Formula-driven Calculators</h3>
+        <p class="text-zinc-400">
+            Precise calculations from Klipper calibration CSVs - not generic LLM advice
+        </p>
+    </div>
+
+    <!-- Feature: Router Architecture -->
+    <div class="glass rounded-lg p-6">
+        <div class="text-3xl mb-4">🎯</div>
+        <h3 class="text-xl font-semibold mb-2">Smart Router Architecture</h3>
+        <p class="text-zinc-400">
+            Avoids context window pollution by routing to specific knowledge bases
+        </p>
+    </div>
+
+    <!-- Feature: CSV Knowledge Base -->
+    <div class="glass rounded-lg p-6">
+        <div class="text-3xl mb-4">📊</div>
+        <h3 class="text-xl font-semibold mb-2">Structured Knowledge Base</h3>
+        <p class="text-zinc-400">
+            Curated OrcaSlicer and Klipper settings backed by real-world testing
+        </p>
+    </div>
+
+    <!-- Feature: Fast API -->
+    <div class="glass rounded-lg p-6">
+        <div class="text-3xl mb-4">🚀</div>
+        <h3 class="text-xl font-semibold mb-2">Fast API Backend</h3>
+        <p class="text-zinc-400">
+            Python 3.12+ with FastAPI for blazing-fast responses and type safety
+        </p>
+    </div>
+
+    <!-- Feature: Open Source -->
+    <div class="glass rounded-lg p-6">
+        <div class="text-3xl mb-4">💡</div>
+        <h3 class="text-xl font-semibold mb-2">Open Source</h3>
+        <p class="text-zinc-400">
+            Part of the minimal3dp.com ecosystem with 10K+ YouTube subscribers
+        </p>
+    </div>
+</div>
+
+<!-- Quick Stats -->
+<div class="glass rounded-lg p-8 mt-16" x-data="{ stats: null }" x-init="fetch('/api/v1/calculators').then(r => r.json()).then(data => stats = data)">
+    <h2 class="text-2xl font-bold mb-6 text-center">Platform Statistics</h2>
+    <div class="grid md:grid-cols-3 gap-8 text-center">
+        <div>
+            <div class="text-4xl font-bold text-brand-orange" x-text="stats ? stats.total_calculators : '...'">-</div>
+            <div class="text-zinc-400 mt-2">Active Calculators</div>
+        </div>
+        <div>
+            <div class="text-4xl font-bold text-brand-orange">8</div>
+            <div class="text-zinc-400 mt-2">Defect Classifications</div>
+        </div>
+        <div>
+            <div class="text-4xl font-bold text-brand-orange">10K+</div>
+            <div class="text-zinc-400 mt-2">Community Members</div>
+        </div>
+    </div>
+</div>
+
+<!-- CTA Section -->
+<div class="text-center mt-16 glass rounded-lg p-12">
+    <h2 class="text-3xl font-bold mb-4">Ready to diagnose your print issues?</h2>
+    <p class="text-zinc-400 mb-6 max-w-2xl mx-auto">
+        Upload an image of your failed print or describe the issue in text.
+        Our AI will analyze it and provide precise, actionable recommendations.
+    </p>
+    <a href="/diagnosis"
+       class="inline-block px-8 py-4 bg-brand-orange text-white rounded-lg font-semibold hover:bg-orange-600 transition-colors text-lg">
+        Start Free Diagnosis →
+    </a>
+</div>
+{% endblock %}

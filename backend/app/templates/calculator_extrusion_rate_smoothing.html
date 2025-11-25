@@ -1,0 +1,186 @@
+{% extends "base.html" %}
+
+{% block title %}Extrusion Rate Smoothing - M3DP-UIP{% endblock %}
+
+{% block content %}
+<div class="mb-8">
+    <h1 class="text-4xl font-bold mb-2">Extrusion Rate Smoothing (ERS)</h1>
+    <p class="text-zinc-400">Calculate ERS values for OrcaSlicer to smooth flow during acceleration</p>
+</div>
+
+<div class="glass rounded-lg p-8"
+     x-data="{
+         acceleration: '',
+         line_width: 0.6,
+         layer_height: 0.2,
+         result: null,
+         error: null,
+         loading: false,
+
+         async calculate() {
+             this.loading = true;
+             this.error = null;
+             try {
+                 const response = await fetch('/api/v1/calculators/extrusion-rate-smoothing', {
+                     method: 'POST',
+                     headers: {'Content-Type': 'application/json'},
+                     body: JSON.stringify({
+                         acceleration: parseFloat(this.acceleration),
+                         line_width: parseFloat(this.line_width),
+                         layer_height: parseFloat(this.layer_height)
+                     })
+                 });
+                 if (!response.ok) {
+                     const error = await response.json();
+                     throw new Error(error.detail || 'Calculation failed');
+                 }
+                 this.result = await response.json();
+             } catch (e) {
+                 this.error = e.message;
+             } finally {
+                 this.loading = false;
+             }
+         },
+
+         reset() {
+             this.acceleration = '';
+             this.line_width = 0.6;
+             this.layer_height = 0.2;
+             this.result = null;
+             this.error = null;
+         },
+
+         copyToClipboard(text) {
+             navigator.clipboard.writeText(text);
+             alert('Copied to clipboard!');
+         }
+     }">
+
+    <!-- Input Form -->
+    <form @submit.prevent="calculate" class="space-y-6">
+        <div>
+            <label class="block text-sm font-medium mb-2">External Perimeter Acceleration (mm/s²)</label>
+            <input
+                type="number"
+                x-model="acceleration"
+                step="100"
+                min="0"
+                max="50000"
+                required
+                placeholder="12000"
+                class="w-full bg-zinc-800 border border-zinc-700 rounded px-4 py-2 focus:outline-none focus:border-brand-orange">
+            <p class="text-sm text-zinc-500 mt-1">Your external perimeter acceleration setting</p>
+        </div>
+
+        <div class="grid md:grid-cols-2 gap-4">
+            <div>
+                <label class="block text-sm font-medium mb-2">Line Width (mm)</label>
+                <input
+                    type="number"
+                    x-model="line_width"
+                    step="0.05"
+                    min="0"
+                    max="2"
+                    required
+                    class="w-full bg-zinc-800 border border-zinc-700 rounded px-4 py-2 focus:outline-none focus:border-brand-orange">
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium mb-2">Layer Height (mm)</label>
+                <input
+                    type="number"
+                    x-model="layer_height"
+                    step="0.05"
+                    min="0"
+                    max="1"
+                    required
+                    class="w-full bg-zinc-800 border border-zinc-700 rounded px-4 py-2 focus:outline-none focus:border-brand-orange">
+            </div>
+        </div>
+
+        <div class="flex gap-4">
+            <button
+                type="submit"
+                :disabled="loading"
+                class="flex-1 bg-brand-orange hover:bg-orange-600 disabled:bg-zinc-700 text-white font-medium py-3 rounded transition-colors">
+                <span x-show="!loading">Calculate ERS</span>
+                <span x-show="loading">Calculating...</span>
+            </button>
+            <button
+                type="button"
+                @click="reset"
+                class="px-6 border border-zinc-600 hover:border-zinc-500 rounded transition-colors">
+                Reset
+            </button>
+        </div>
+    </form>
+
+    <!-- Error Message -->
+    <div x-show="error" class="mt-6 p-4 bg-red-500/10 border border-red-500 rounded">
+        <p class="text-red-400" x-text="error"></p>
+    </div>
+
+    <!-- Results -->
+    <div x-show="result" class="mt-8 space-y-6">
+        <div class="border-t border-zinc-700 pt-6">
+            <h3 class="text-2xl font-bold mb-4 text-brand-orange">Calculated ERS Values</h3>
+
+            <div class="grid md:grid-cols-3 gap-4 mb-4">
+                <div class="glass-dark rounded-lg p-6">
+                    <div class="text-3xl font-bold text-brand-orange mb-2" x-text="result?.ers_max + ' mm³/s²'"></div>
+                    <div class="text-zinc-400 text-sm">Maximum ERS</div>
+                </div>
+                <div class="glass-dark rounded-lg p-6">
+                    <div class="text-3xl font-bold text-green-400 mb-2" x-text="result?.ers_60_percent + ' mm³/s²'"></div>
+                    <div class="text-zinc-400 text-sm">60% (Conservative)</div>
+                </div>
+                <div class="glass-dark rounded-lg p-6">
+                    <div class="text-3xl font-bold text-yellow-400 mb-2" x-text="result?.ers_80_percent + ' mm³/s²'"></div>
+                    <div class="text-zinc-400 text-sm">80% (Aggressive)</div>
+                </div>
+            </div>
+
+            <!-- Recommendation -->
+            <div class="glass-dark rounded-lg p-6 mb-4">
+                <h4 class="font-semibold mb-2">💡 Recommendation</h4>
+                <p class="text-zinc-300" x-text="result?.recommended"></p>
+            </div>
+
+            <!-- OrcaSlicer Config -->
+            <div class="glass-dark rounded-lg p-6 mb-4">
+                <div class="flex items-center justify-between mb-3">
+                    <h4 class="font-semibold">OrcaSlicer Configuration</h4>
+                    <button
+                        @click="copyToClipboard(result?.orcaslicer_config)"
+                        class="text-sm text-brand-orange hover:text-orange-400 transition-colors">
+                        📋 Copy
+                    </button>
+                </div>
+                <pre class="text-sm bg-black/30 rounded p-4 overflow-x-auto"><code x-text="result?.orcaslicer_config"></code></pre>
+            </div>
+
+            <!-- Notes -->
+            <div class="glass-dark rounded-lg p-6">
+                <h4 class="font-semibold mb-2">📝 Notes</h4>
+                <p class="text-zinc-300 text-sm whitespace-pre-line" x-text="result?.notes"></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Instructions -->
+    <div class="mt-8 glass-dark rounded-lg p-6">
+        <h3 class="font-semibold mb-3">📖 What is ERS?</h3>
+        <div class="space-y-3 text-sm text-zinc-300">
+            <p><strong>Extrusion Rate Smoothing</strong> is an experimental OrcaSlicer feature that smooths extrusion rate changes during acceleration/deceleration, reducing pressure fluctuations in the nozzle.</p>
+            <p><strong>Formula:</strong> ERS Max = Acceleration × Line Width × Layer Height</p>
+            <ul class="list-disc list-inside space-y-1 ml-4">
+                <li>Start with 60% of max for conservative tuning</li>
+                <li>Use 80% of max for printers with good flow consistency</li>
+                <li>Higher values = smoother flow but may reduce detail</li>
+                <li>Lower values = preserve detail but more flow fluctuation</li>
+            </ul>
+            <p class="text-amber-400"><strong>Note:</strong> Requires OrcaSlicer 2.0+ and may not be compatible with all printers.</p>
+        </div>
+    </div>
+</div>
+{% endblock %}

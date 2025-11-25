@@ -4,7 +4,7 @@
 
 GitHub Actions workflows are failing with 404 errors when attempting to:
 - Create branches and pull requests programmatically
-- Push badge updates (coverage-badge.svg, frontend-e2e-badge.svg) to the main branch
+- Push badge updates (coverage-badge.svg) to the main branch
 
 ## Solution: Configure Personal Access Token
 
@@ -93,7 +93,7 @@ If `main` branch has protection rules:
 **Option B: Exclude badge files from protection**
 - Configure branch protection to allow commits to:
   - `coverage-badge.svg`
-  - `frontend-e2e-badge.svg`
+
 
 **Option C: Push badges to separate branch**
 - Modify workflows to push badges to `badges` branch
@@ -118,15 +118,14 @@ gh repo view minimal3dp/m3dp-uip
 Once the token is configured:
 
 1. **Retry the CI workflow fixes**:
-   - Create branch `ci/guards-and-inline-e2e-badge`
-   - Push workflow updates that guard jobs when backend/frontend directories are missing
-   - Inline the E2E badge generator to avoid missing script dependencies
+   - Create branch `ci/guards-and-badge-updates`
+   - Push workflow updates that guard jobs when backend directory is missing
    - Open a PR with these changes
 
 2. **Monitor Actions**:
    - Verify CI Pipeline passes
    - Verify Coverage Badge generates successfully
-   - Verify Frontend E2E Badge generates successfully
+   - Verify Coverage Badge generates successfully
 
 ## Security Best Practices
 

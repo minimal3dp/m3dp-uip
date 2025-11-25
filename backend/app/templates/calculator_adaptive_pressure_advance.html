@@ -1,0 +1,176 @@
+{% extends "base.html" %}
+
+{% block title %}Adaptive Pressure Advance - M3DP-UIP{% endblock %}
+
+{% block content %}
+<div class="mb-8">
+    <h1 class="text-4xl font-bold mb-2">Adaptive Pressure Advance</h1>
+    <p class="text-zinc-400">Calculate adaptive PA range from test matrix results for dynamic tuning</p>
+</div>
+
+<div class="glass rounded-lg p-8"
+     x-data="{
+         pa_values: '',
+         result: null,
+         error: null,
+         loading: false,
+
+         async calculate() {
+             this.loading = true;
+             this.error = null;
+             try {
+                 // Parse comma-separated PA values
+                 const values = this.pa_values.split(',').map(v => parseFloat(v.trim())).filter(v => !isNaN(v));
+                 if (values.length < 2) {
+                     throw new Error('Please enter at least 2 PA values');
+                 }
+
+                 const response = await fetch('/api/v1/calculators/adaptive-pressure-advance', {
+                     method: 'POST',
+                     headers: {'Content-Type': 'application/json'},
+                     body: JSON.stringify({
+                         pa_values: values
+                     })
+                 });
+                 if (!response.ok) {
+                     const error = await response.json();
+                     throw new Error(error.detail || 'Calculation failed');
+                 }
+                 this.result = await response.json();
+             } catch (e) {
+                 this.error = e.message;
+             } finally {
+                 this.loading = false;
+             }
+         },
+
+         reset() {
+             this.pa_values = '';
+             this.result = null;
+             this.error = null;
+         },
+
+         copyToClipboard(text) {
+             navigator.clipboard.writeText(text);
+             alert('Copied to clipboard!');
+         }
+     }">
+
+    <!-- Input Form -->
+    <form @submit.prevent="calculate" class="space-y-6">
+        <div>
+            <label class="block text-sm font-medium mb-2">PA Test Values (comma-separated)</label>
+            <textarea
+                x-model="pa_values"
+                rows="4"
+                required
+                placeholder="0.040, 0.045, 0.050, 0.055, 0.060, 0.065"
+                class="w-full bg-zinc-800 border border-zinc-700 rounded px-4 py-2 focus:outline-none focus:border-brand-orange"></textarea>
+            <p class="text-sm text-zinc-500 mt-1">Enter PA values from your test matrix that produced good results</p>
+        </div>
+
+        <div class="flex gap-4">
+            <button
+                type="submit"
+                :disabled="loading"
+                class="flex-1 bg-brand-orange hover:bg-orange-600 disabled:bg-zinc-700 text-white font-medium py-3 rounded transition-colors">
+                <span x-show="!loading">Calculate Adaptive Range</span>
+                <span x-show="loading">Calculating...</span>
+            </button>
+            <button
+                type="button"
+                @click="reset"
+                class="px-6 border border-zinc-600 hover:border-zinc-500 rounded transition-colors">
+                Reset
+            </button>
+        </div>
+    </form>
+
+    <!-- Error Message -->
+    <div x-show="error" class="mt-6 p-4 bg-red-500/10 border border-red-500 rounded">
+        <p class="text-red-400" x-text="error"></p>
+    </div>
+
+    <!-- Results -->
+    <div x-show="result" class="mt-8 space-y-6">
+        <div class="border-t border-zinc-700 pt-6">
+            <h3 class="text-2xl font-bold mb-4 text-brand-orange">Adaptive PA Configuration</h3>
+
+            <div class="grid md:grid-cols-3 gap-4 mb-4">
+                <div class="glass-dark rounded-lg p-6">
+                    <div class="text-3xl font-bold text-green-400 mb-2" x-text="result?.adaptive_min_pa?.toFixed(3)"></div>
+                    <div class="text-zinc-400 text-sm">Minimum PA</div>
+                </div>
+                <div class="glass-dark rounded-lg p-6">
+                    <div class="text-3xl font-bold text-brand-orange mb-2" x-text="result?.adaptive_max_pa?.toFixed(3)"></div>
+                    <div class="text-zinc-400 text-sm">Maximum PA</div>
+                </div>
+                <div class="glass-dark rounded-lg p-6">
+                    <div class="text-3xl font-bold text-blue-400 mb-2" x-text="result?.adaptive_step?.toFixed(6)"></div>
+                    <div class="text-zinc-400 text-sm">Step Size</div>
+                </div>
+            </div>
+
+            <div class="grid md:grid-cols-3 gap-4 mb-4">
+                <div class="glass-dark rounded p-4">
+                    <div class="text-sm text-zinc-400 mb-1">Min Tested</div>
+                    <div class="font-medium" x-text="result?.min_pa_tested?.toFixed(3)"></div>
+                </div>
+                <div class="glass-dark rounded p-4">
+                    <div class="text-sm text-zinc-400 mb-1">Max Tested</div>
+                    <div class="font-medium" x-text="result?.max_pa_tested?.toFixed(3)"></div>
+                </div>
+                <div class="glass-dark rounded p-4">
+                    <div class="text-sm text-zinc-400 mb-1">PA Range</div>
+                    <div class="font-medium" x-text="result?.pa_range?.toFixed(3)"></div>
+                </div>
+            </div>
+
+            <!-- OrcaSlicer Config -->
+            <div class="glass-dark rounded-lg p-6 mb-4">
+                <div class="flex items-center justify-between mb-3">
+                    <h4 class="font-semibold">OrcaSlicer Configuration</h4>
+                    <button
+                        @click="copyToClipboard(result?.orcaslicer_config)"
+                        class="text-sm text-brand-orange hover:text-orange-400 transition-colors">
+                        📋 Copy
+                    </button>
+                </div>
+                <pre class="text-sm bg-black/30 rounded p-4 overflow-x-auto"><code x-text="result?.orcaslicer_config"></code></pre>
+            </div>
+
+            <!-- Notes -->
+            <div class="glass-dark rounded-lg p-6">
+                <h4 class="font-semibold mb-2">📝 Notes</h4>
+                <p class="text-zinc-300 text-sm whitespace-pre-line" x-text="result?.notes"></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Instructions -->
+    <div class="mt-8 glass-dark rounded-lg p-6">
+        <h3 class="font-semibold mb-3">📖 How to Use Adaptive PA</h3>
+        <div class="space-y-3 text-sm text-zinc-300">
+            <p><strong>Adaptive Pressure Advance</strong> automatically adjusts PA based on print conditions (speed, flow rate, acceleration) for optimal results across different features.</p>
+
+            <p><strong>Setup Process:</strong></p>
+            <ol class="list-decimal list-inside space-y-1 ml-4">
+                <li>Run multiple PA calibration tests at different speeds/accelerations</li>
+                <li>Note which PA values produced good results in each test</li>
+                <li>Enter all successful PA values (comma-separated)</li>
+                <li>Calculator determines optimal min/max range</li>
+                <li>OrcaSlicer will interpolate between min/max based on print conditions</li>
+            </ol>
+
+            <p><strong>Benefits:</strong></p>
+            <ul class="list-disc list-inside space-y-1 ml-4">
+                <li>Better corner quality across varying speeds</li>
+                <li>Optimal PA for both fast infill and detailed perimeters</li>
+                <li>Reduces need for per-profile PA tuning</li>
+            </ul>
+
+            <p class="text-amber-400"><strong>Note:</strong> Monitor prints carefully when first using adaptive PA and adjust range if needed.</p>
+        </div>
+    </div>
+</div>
+{% endblock %}

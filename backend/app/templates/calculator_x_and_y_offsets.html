@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto p-6">
+  <a href="/calculators-ui" class="inline-flex items-center text-brand-orange hover:underline mb-6">← Back to Calculators</a>
+
+  <div class="glass rounded-2xl p-8 bg-zinc-900">
+    <h2 class="text-2xl font-bold mb-6 flex items-center gap-2"><span class="text-3xl">📐</span> X and Y Offsets</h2>
+    <p class="text-zinc-400 mb-8">Calculate BLTouch/CR Touch probe X and Y offsets for accurate bed mesh.</p>
+
+    <div x-data="{
+      toolheadXProbe: '', toolheadYProbe: '', toolheadXNozzle: '', toolheadYNozzle: '', result: null, error: null, loading: false,
+      async calculate() {
+        this.loading = true; this.error = null;
+        try {
+          const response = await fetch('/api/v1/calculators/x-and-y-offsets', {
+            method: 'POST', headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({toolhead_x_probe: this.toolheadXProbe, toolhead_y_probe: this.toolheadYProbe, toolhead_x_nozzle: this.toolheadXNozzle, toolhead_y_nozzle: this.toolheadYNozzle})
+          });
+          if (!response.ok) throw new Error('Calculation failed');
+          this.result = await response.json();
+        } catch (e) { this.error = e.message; } finally { this.loading = false; }
+      },
+      reset() { this.toolheadXProbe = ''; this.toolheadYProbe = ''; this.toolheadXNozzle = ''; this.toolheadYNozzle = ''; this.result = null; this.error = null; },
+      copyToClipboard(text) { navigator.clipboard.writeText(text); alert('Copied!'); }
+    }">
+      <form @submit.prevent="calculate" class="space-y-6">
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-medium mb-2">Probe X Position</label>
+            <input x-model.number="toolheadXProbe" type="number" step="0.1" required class="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-3 focus:outline-none focus:border-brand-orange transition" />
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-2">Probe Y Position</label>
+            <input x-model.number="toolheadYProbe" type="number" step="0.1" required class="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-3 focus:outline-none focus:border-brand-orange transition" />
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-medium mb-2">Nozzle X Position</label>
+            <input x-model.number="toolheadXNozzle" type="number" step="0.1" required class="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-3 focus:outline-none focus:border-brand-orange transition" />
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-2">Nozzle Y Position</label>
+            <input x-model.number="toolheadYNozzle" type="number" step="0.1" required class="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-3 focus:outline-none focus:border-brand-orange transition" />
+          </div>
+        </div>
+        <div x-show="error" class="bg-red-500/10 border border-red-500/50 rounded-lg p-4 text-red-400 text-sm" x-text="error"></div>
+        <div class="flex gap-4">
+          <button type="submit" :disabled="loading" class="flex-1 bg-brand-orange hover:bg-orange-600 disabled:bg-zinc-700 disabled:cursor-not-allowed text-white px-6 py-3 rounded-lg font-medium transition" x-text="loading ? 'Calculating...' : 'Calculate'"></button>
+          <button type="button" @click="reset" class="px-6 py-3 bg-zinc-800 hover:bg-zinc-700 text-white rounded-lg font-medium transition">Reset</button>
+        </div>
+      </form>
+
+      <div x-show="result" class="mt-8 glass-dark rounded-xl p-6 border-l-4 border-brand-orange">
+        <h3 class="text-xl font-bold mb-4 flex items-center gap-2"><span>✅</span> Results</h3>
+        <div class="space-y-4">
+          <div class="grid grid-cols-2 gap-4">
+            <div><p class="text-sm text-zinc-400">X Offset:</p><p class="text-2xl font-bold text-brand-orange"><span x-text="result?.x_offset"></span> mm</p></div>
+            <div><p class="text-sm text-zinc-400">Y Offset:</p><p class="text-2xl font-bold text-brand-orange"><span x-text="result?.y_offset"></span> mm</p></div>
+          </div>
+          <div class="bg-zinc-950 rounded-lg p-4 font-mono text-sm">
+            <p class="text-zinc-500 text-xs mb-2">Klipper Configuration:</p>
+            <pre class="text-green-400 whitespace-pre-wrap text-xs" x-text="result?.klipper_config"></pre>
+            <button @click="copyToClipboard(result?.klipper_config)" class="mt-2 text-xs text-brand-orange hover:underline">📋 Copy</button>
+          </div>
+          <div class="bg-blue-500/10 border border-blue-500/50 rounded-lg p-4">
+            <p class="text-sm font-semibold mb-2">Usage Guide:</p>
+            <pre class="text-sm text-zinc-300 whitespace-pre-wrap" x-text="result?.usage_guide"></pre>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

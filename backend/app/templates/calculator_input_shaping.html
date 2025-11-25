@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto p-6">
+  <a href="/calculators-ui" class="inline-flex items-center text-brand-orange hover:underline mb-6">
+    ← Back to Calculators
+  </a>
+
+  <div class="glass rounded-2xl p-8 bg-zinc-900">
+    <h2 class="text-2xl font-bold mb-6 flex items-center gap-2">
+      <span class="text-3xl">📊</span>
+      Input Shaping Calculator
+    </h2>
+
+    <p class="text-zinc-400 mb-8">
+      Get input shaper recommendations based on measured resonance frequencies to eliminate ringing/ghosting.
+    </p>
+
+    <div x-data="{
+      testType: 'ADXL345',
+      xFrequency: '',
+      yFrequency: '',
+      result: null,
+      error: null,
+      loading: false,
+      async calculate() {
+        this.loading = true;
+        this.error = null;
+        try {
+          const response = await fetch('/api/v1/calculators/input-shaping', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              test_type: this.testType,
+              x_frequency: this.xFrequency,
+              y_frequency: this.yFrequency
+            })
+          });
+          if (!response.ok) throw new Error('Calculation failed');
+          this.result = await response.json();
+        } catch (e) {
+          this.error = e.message;
+        } finally {
+          this.loading = false;
+        }
+      },
+      reset() {
+        this.testType = 'ADXL345';
+        this.xFrequency = '';
+        this.yFrequency = '';
+        this.result = null;
+        this.error = null;
+      },
+      copyToClipboard(text) {
+        navigator.clipboard.writeText(text);
+        alert('Copied to clipboard!');
+      }
+    }">
+      <form @submit.prevent="calculate" class="space-y-6">
+        <div>
+          <label class="block text-sm font-medium mb-2">Test Method</label>
+          <select x-model="testType" class="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-3 focus:outline-none focus:border-brand-orange transition">
+            <option value="ADXL345">ADXL345 Accelerometer (Recommended)</option>
+            <option value="manual">Manual Test</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium mb-2">X Axis Frequency (Hz)</label>
+          <input x-model.number="xFrequency" type="number" step="0.1" min="10" max="200" required class="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-3 focus:outline-none focus:border-brand-orange transition" placeholder="e.g., 45.2" />
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium mb-2">Y Axis Frequency (Hz)</label>
+          <input x-model.number="yFrequency" type="number" step="0.1" min="10" max="200" required class="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-3 focus:outline-none focus:border-brand-orange transition" placeholder="e.g., 37.8" />
+        </div>
+
+        <div x-show="error" class="bg-red-500/10 border border-red-500/50 rounded-lg p-4 text-red-400 text-sm" x-text="error"></div>
+
+        <div class="flex gap-4">
+          <button type="submit" :disabled="loading" class="flex-1 bg-brand-orange hover:bg-orange-600 disabled:bg-zinc-700 disabled:cursor-not-allowed text-white px-6 py-3 rounded-lg font-medium transition" x-text="loading ? 'Calculating...' : 'Get Recommendations'"></button>
+          <button type="button" @click="reset" class="px-6 py-3 bg-zinc-800 hover:bg-zinc-700 text-white rounded-lg font-medium transition">Reset</button>
+        </div>
+      </form>
+
+      <div x-show="result" class="mt-8 glass-dark rounded-xl p-6 border-l-4 border-brand-orange">
+        <h3 class="text-xl font-bold mb-4 flex items-center gap-2">
+          <span>✅</span> Recommendations
+        </h3>
+
+        <div class="space-y-4">
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <p class="text-sm text-zinc-400">X Axis Shaper:</p>
+              <p class="text-2xl font-bold text-brand-orange" x-text="result?.shaper_x"></p>
+            </div>
+            <div>
+              <p class="text-sm text-zinc-400">Y Axis Shaper:</p>
+              <p class="text-2xl font-bold text-brand-orange" x-text="result?.shaper_y"></p>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <p class="text-sm text-zinc-400">Max Acceleration:</p>
+              <p class="text-lg font-semibold" x-text="result?.max_accel + ' mm/s²'"></p>
+            </div>
+            <div>
+              <p class="text-sm text-zinc-400">Square Corner Velocity:</p>
+              <p class="text-lg font-semibold" x-text="result?.square_corner_velocity + ' mm/s'"></p>
+            </div>
+          </div>
+
+          <div class="bg-zinc-950 rounded-lg p-4 font-mono text-sm">
+            <p class="text-zinc-500 text-xs mb-2">Klipper Configuration:</p>
+            <pre class="text-green-400 whitespace-pre-wrap" x-text="result?.klipper_config"></pre>
+            <button @click="copyToClipboard(result?.klipper_config)" class="mt-2 text-xs text-brand-orange hover:underline">
+              📋 Copy to clipboard
+            </button>
+          </div>
+
+          <div class="bg-blue-500/10 border border-blue-500/50 rounded-lg p-4">
+            <p class="text-sm text-zinc-300" x-text="result?.notes"></p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

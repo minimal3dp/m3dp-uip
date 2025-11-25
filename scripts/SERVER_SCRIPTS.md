@@ -1,32 +1,30 @@
 # Development Server Scripts
 
-Scripts to manage M3DP-UIP backend and frontend servers for development and testing.
+Scripts to manage M3DP-UIP development server (Python fullstack).
 
 ## Quick Start
 
-### Start Both Servers (Recommended)
+### Start Server (Python Fullstack)
 
 ```bash
-./scripts/start_servers.sh
+./scripts/dev-python-fullstack.sh
 ```
 
-This will start:
-- **Backend** (FastAPI) on http://localhost:8000
-- **Frontend** (Nuxt) on http://localhost:3000
+This starts FastAPI with Python templates on http://localhost:8000
 
-Both servers run in the background. Press `Ctrl+C` to stop both.
+Press `Ctrl+C` to stop the server.
 
-### Stop All Servers
+### Alternative: Start/Stop Scripts
 
 ```bash
+# Start server
+./scripts/start_servers.sh
+
+# Stop server
 ./scripts/stop_servers.sh
 ```
 
-Kills all processes on ports 8000 and 3000.
-
-## Individual Server Scripts
-
-### Backend Only
+### Backend Only (API without UI)
 
 ```bash
 ./scripts/run_dev.sh
@@ -38,35 +36,23 @@ Options:
 - `--host HOST` - Bind to specific host (default: 127.0.0.1)
 - `--port PORT` - Use specific port (default: 8000)
 
-### Frontend Only
-
-```bash
-cd frontend
-npm run dev
-```
-
-Starts Nuxt dev server on http://localhost:3000
-
 ## Testing URLs
 
-Once servers are running:
+Once server is running:
 
-- **Frontend Home**: http://localhost:3000
-- **Calculators**: http://localhost:3000/calculators
-- **Diagnosis**: http://localhost:3000/diagnosis
-- **Backend API Docs**: http://localhost:8000/docs
-- **Backend Health**: http://localhost:8000/health
+- **Web UI Home**: http://localhost:8000/home
+- **Calculators**: http://localhost:8000/calculators-ui
+- **Diagnosis**: http://localhost:8000/diagnosis-ui
+- **API Docs**: http://localhost:8000/docs
+- **Health Check**: http://localhost:8000/health
 
 ## Logs
 
-Logs are written to `/tmp/`:
-- Backend: `/tmp/m3dp-backend.log`
-- Frontend: `/tmp/m3dp-frontend.log`
+Logs are written to `/tmp/m3dp-backend.log`
 
 View logs in real-time:
 ```bash
 tail -f /tmp/m3dp-backend.log
-tail -f /tmp/m3dp-frontend.log
 ```
 
 ## Troubleshooting
@@ -78,64 +64,65 @@ If you see "port already in use" errors:
 ./scripts/stop_servers.sh
 ```
 
-### Servers Won't Start
+Or manually kill the process:
+```bash
+lsof -ti:8000 | xargs kill -9
+```
+
+### Server Won't Start
 
 Check logs:
 ```bash
 cat /tmp/m3dp-backend.log
-cat /tmp/m3dp-frontend.log
 ```
 
-### Backend Dependencies Missing
+### Dependencies Missing
 
 ```bash
 cd /path/to/m3dp-uip
 uv pip install -e ".[dev]"
 ```
 
-### Frontend Dependencies Missing
-
-```bash
-cd frontend
-npm install
-```
-
 ## Development Workflow
 
-1. **Start servers**:
+1. **Start server**:
    ```bash
-   ./scripts/start_servers.sh
+   ./scripts/dev-python-fullstack.sh
    ```
 
-2. **Open browser** to http://localhost:3000
+2. **Open browser** to http://localhost:8000/home
 
-3. **Test calculators** at /calculators
+3. **Test pages**:
+   - Calculators at /calculators-ui
+   - Diagnosis at /diagnosis-ui
+   - API at /docs
 
-4. **Make changes** - servers auto-reload
+4. **Make changes** - server auto-reloads
 
-5. **Stop servers** when done:
+5. **Stop server** when done:
    ```bash
+   # Press Ctrl+C in the terminal
+   # or
    ./scripts/stop_servers.sh
-   # or press Ctrl+C in the terminal
    ```
 
 ## Environment Variables
 
-Backend uses environment variables from `.env`:
-- `GOOGLE_GENAI_API_KEY` - For diagnosis features
+Server uses environment variables from `.env`:
+- `GOOGLE_GENAI_API_KEY` - For AI diagnosis features
 - `ENVIRONMENT` - Set to "development"
 - `DEBUG` - Set to true for detailed logs
 
-Frontend uses `nuxt.config.ts`:
-- `apiBase` - Backend URL (default: http://localhost:8000)
+Override defaults:
+```bash
+BACKEND_PORT=9000 ./scripts/dev-python-fullstack.sh
+```
 
-## Phase 4 Integration Testing
+## Testing
 
-The `start_servers.sh` script is designed for Phase 4 integration testing:
-- ✅ Automatic port cleanup
-- ✅ Health check validation
-- ✅ Graceful shutdown
-- ✅ Combined log output
-- ✅ Easy manual testing
+Run automated page tests:
+```bash
+python test_pages.py
+```
 
-See `PHASE4_INTEGRATION_TESTS.md` for the full testing checklist.
+This tests all major pages and verifies they return 200 status codes.

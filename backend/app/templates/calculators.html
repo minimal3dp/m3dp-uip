@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+
+{% block title %}Calculators - M3DP-UIP{% endblock %}
+
+{% block content %}
+<div class="mb-8">
+    <h1 class="text-4xl font-bold mb-2">Klipper Calibration Calculators</h1>
+    <p class="text-zinc-400">Formula-driven calculators from CSV knowledge base</p>
+</div>
+
+<!-- Calculators Grid -->
+<div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6"
+     x-data="{ calculators: [] }"
+     x-init="fetch('/api/v1/calculators').then(r => r.json()).then(data => calculators = data.calculators)">
+
+    <template x-for="calc in calculators" :key="calc.id">
+        <a :href="'/calculators/' + calc.id + '-ui'"
+           class="glass rounded-lg p-6 hover:bg-white/20 transition-colors cursor-pointer">
+            <h3 class="text-xl font-semibold mb-2" x-text="calc.name"></h3>
+            <p class="text-zinc-400 text-sm mb-4" x-text="calc.description"></p>
+            <div class="flex items-center text-brand-orange text-sm font-medium">
+                <span>Open Calculator</span>
+                <svg class="w-4 h-4 ml-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                </svg>
+            </div>
+        </a>
+    </template>
+</div>
+
+<!-- Loading State -->
+<div x-show="calculators.length === 0" class="text-center py-12">
+    <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-orange mx-auto"></div>
+    <p class="text-zinc-400 mt-4">Loading calculators...</p>
+</div>
+{% endblock %}

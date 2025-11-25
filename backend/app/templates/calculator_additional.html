@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto p-6">
+  <a href="/calculators-ui" class="inline-flex items-center text-brand-orange hover:underline mb-6">← Back to Calculators</a>
+
+  <div class="glass rounded-2xl p-8 bg-zinc-900">
+    <h2 class="text-2xl font-bold mb-6">🔧 Additional Calculators Coming Soon</h2>
+    <p class="text-zinc-400 mb-8">The following calculators are available via API and will have web UIs soon:</p>
+
+    <div class="space-y-4">
+      <div class="glass-dark rounded-xl p-6">
+        <h3 class="text-lg font-semibold mb-2">📊 PA & OrcaSlicer</h3>
+        <p class="text-sm text-zinc-400 mb-3">Calculate pressure advance from OrcaSlicer test pattern height measurement.</p>
+        <code class="text-xs text-green-400">POST /api/v1/calculators/pa-orcaslicer</code>
+      </div>
+
+      <div class="glass-dark rounded-xl p-6">
+        <h3 class="text-lg font-semibold mb-2">🎯 Adaptive Pressure Advance</h3>
+        <p class="text-sm text-zinc-400 mb-3">Calculate adaptive PA range from test matrix results for dynamic tuning.</p>
+        <code class="text-xs text-green-400">POST /api/v1/calculators/adaptive-pressure-advance</code>
+      </div>
+
+      <div class="glass-dark rounded-xl p-6">
+        <h3 class="text-lg font-semibold mb-2">📈 Extrusion Rate Smoothing (ERS)</h3>
+        <p class="text-sm text-zinc-400 mb-3">Calculate ERS values for OrcaSlicer to smooth flow during acceleration.</p>
+        <code class="text-xs text-green-400">POST /api/v1/calculators/extrusion-rate-smoothing</code>
+      </div>
+
+      <div class="glass-dark rounded-xl p-6">
+        <h3 class="text-lg font-semibold mb-2">🌡️ Temperature Tower Analysis</h3>
+        <p class="text-sm text-zinc-400 mb-3">Determine optimal print temperature from temperature tower test results.</p>
+        <code class="text-xs text-green-400">POST /api/v1/calculators/temperature-tower</code>
+      </div>
+
+      <div class="glass-dark rounded-xl p-6">
+        <h3 class="text-lg font-semibold mb-2">🔄 Retraction Tuning</h3>
+        <p class="text-sm text-zinc-400 mb-3">Calculate optimal retraction settings based on extruder type and stringing tests.</p>
+        <code class="text-xs text-green-400">POST /api/v1/calculators/retraction-tuning</code>
+      </div>
+
+      <div class="glass-dark rounded-xl p-6">
+        <h3 class="text-lg font-semibold mb-2">⚙️ Belt Tension Calibration</h3>
+        <p class="text-sm text-zinc-400 mb-3">Calculate belt tension from frequency measurements for optimal mechanical accuracy.</p>
+        <code class="text-xs text-green-400">POST /api/v1/calculators/belt-tension</code>
+      </div>
+    </div>
+
+    <div class="mt-8 bg-blue-500/10 border border-blue-500/50 rounded-lg p-4">
+      <p class="text-sm text-blue-400">
+        💡 These calculators are fully functional via the API. Use the API documentation at <a href="/docs" class="text-brand-orange hover:underline">/docs</a> to test them now.
+      </p>
+    </div>
+  </div>
+</div>
+{% endblock %}

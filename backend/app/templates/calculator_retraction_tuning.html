@@ -1,0 +1,237 @@
+{% extends "base.html" %}
+
+{% block title %}Retraction Tuning - M3DP-UIP{% endblock %}
+
+{% block content %}
+<div class="mb-8">
+    <h1 class="text-4xl font-bold mb-2">Retraction Tuning</h1>
+    <p class="text-zinc-400">Optimize retraction settings to eliminate stringing and oozing</p>
+</div>
+
+<div class="glass rounded-lg p-8"
+     x-data="{
+         extruder_type: 'direct_drive',
+         current_retraction_distance: '',
+         current_retraction_speed: '',
+         stringing_severity: 'moderate',
+         test_result: '',
+         result: null,
+         error: null,
+         loading: false,
+
+         async calculate() {
+             this.loading = true;
+             this.error = null;
+             try {
+                 const response = await fetch('/api/v1/calculators/retraction-tuning', {
+                     method: 'POST',
+                     headers: {'Content-Type': 'application/json'},
+                     body: JSON.stringify({
+                         extruder_type: this.extruder_type,
+                         current_retraction_distance: parseFloat(this.current_retraction_distance) || null,
+                         current_retraction_speed: parseFloat(this.current_retraction_speed) || null,
+                         stringing_severity: this.stringing_severity,
+                         test_result: this.test_result || null
+                     })
+                 });
+                 if (!response.ok) {
+                     const error = await response.json();
+                     throw new Error(error.detail || 'Calculation failed');
+                 }
+                 this.result = await response.json();
+             } catch (e) {
+                 this.error = e.message;
+             } finally {
+                 this.loading = false;
+             }
+         },
+
+         reset() {
+             this.extruder_type = 'direct_drive';
+             this.current_retraction_distance = '';
+             this.current_retraction_speed = '';
+             this.stringing_severity = 'moderate';
+             this.test_result = '';
+             this.result = null;
+             this.error = null;
+         },
+
+         copyToClipboard(text) {
+             navigator.clipboard.writeText(text);
+             alert('Copied to clipboard!');
+         }
+     }">
+
+    <!-- Input Form -->
+    <form @submit.prevent="calculate" class="space-y-6">
+        <div>
+            <label class="block text-sm font-medium mb-2">Extruder Type</label>
+            <select
+                x-model="extruder_type"
+                class="w-full bg-zinc-800 border border-zinc-700 rounded px-4 py-2 focus:outline-none focus:border-brand-orange">
+                <option value="direct_drive">Direct Drive</option>
+                <option value="bowden">Bowden</option>
+            </select>
+            <p class="text-sm text-zinc-500 mt-1">Direct drive: extruder mounted on print head. Bowden: extruder on frame with PTFE tube.</p>
+        </div>
+
+        <div class="grid md:grid-cols-2 gap-4">
+            <div>
+                <label class="block text-sm font-medium mb-2">Current Retraction Distance (mm)</label>
+                <input
+                    type="number"
+                    x-model="current_retraction_distance"
+                    step="0.1"
+                    min="0"
+                    max="10"
+                    placeholder="Leave empty for baseline"
+                    class="w-full bg-zinc-800 border border-zinc-700 rounded px-4 py-2 focus:outline-none focus:border-brand-orange">
+                <p class="text-sm text-zinc-500 mt-1">Optional: your current setting</p>
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium mb-2">Current Retraction Speed (mm/s)</label>
+                <input
+                    type="number"
+                    x-model="current_retraction_speed"
+                    step="1"
+                    min="10"
+                    max="200"
+                    placeholder="Leave empty for baseline"
+                    class="w-full bg-zinc-800 border border-zinc-700 rounded px-4 py-2 focus:outline-none focus:border-brand-orange">
+                <p class="text-sm text-zinc-500 mt-1">Optional: your current setting</p>
+            </div>
+        </div>
+
+        <div>
+            <label class="block text-sm font-medium mb-2">Stringing Severity</label>
+            <select
+                x-model="stringing_severity"
+                class="w-full bg-zinc-800 border border-zinc-700 rounded px-4 py-2 focus:outline-none focus:border-brand-orange">
+                <option value="none">None - No visible stringing</option>
+                <option value="minimal">Minimal - Few thin strings</option>
+                <option value="moderate">Moderate - Noticeable strings</option>
+                <option value="severe">Severe - Heavy stringing/oozing</option>
+            </select>
+        </div>
+
+        <div>
+            <label class="block text-sm font-medium mb-2">Test Observations (optional)</label>
+            <textarea
+                x-model="test_result"
+                rows="3"
+                placeholder="Describe what you observed in retraction tower test: stringing locations, blob formation, etc."
+                class="w-full bg-zinc-800 border border-zinc-700 rounded px-4 py-2 focus:outline-none focus:border-brand-orange"></textarea>
+        </div>
+
+        <div class="flex gap-4">
+            <button
+                type="submit"
+                :disabled="loading"
+                class="flex-1 bg-brand-orange hover:bg-orange-600 disabled:bg-zinc-700 text-white font-medium py-3 rounded transition-colors">
+                <span x-show="!loading">Calculate Retraction Settings</span>
+                <span x-show="loading">Calculating...</span>
+            </button>
+            <button
+                type="button"
+                @click="reset"
+                class="px-6 border border-zinc-600 hover:border-zinc-500 rounded transition-colors">
+                Reset
+            </button>
+        </div>
+    </form>
+
+    <!-- Error Message -->
+    <div x-show="error" class="mt-6 p-4 bg-red-500/10 border border-red-500 rounded">
+        <p class="text-red-400" x-text="error"></p>
+    </div>
+
+    <!-- Results -->
+    <div x-show="result" class="mt-8 space-y-6">
+        <div class="border-t border-zinc-700 pt-6">
+            <h3 class="text-2xl font-bold mb-4 text-brand-orange">Recommended Retraction Settings</h3>
+
+            <div class="grid md:grid-cols-2 gap-4 mb-4">
+                <div class="glass-dark rounded-lg p-6">
+                    <div class="text-4xl font-bold text-brand-orange mb-2" x-text="result?.recommended_distance + ' mm'"></div>
+                    <div class="text-zinc-400">Retraction Distance</div>
+                </div>
+                <div class="glass-dark rounded-lg p-6">
+                    <div class="text-4xl font-bold text-green-400 mb-2" x-text="result?.recommended_speed + ' mm/s'"></div>
+                    <div class="text-zinc-400">Retraction Speed</div>
+                </div>
+            </div>
+
+            <div class="grid md:grid-cols-2 gap-4 mb-4">
+                <div class="glass-dark rounded p-4">
+                    <div class="text-sm text-zinc-400 mb-1">Z-Hop</div>
+                    <div class="font-medium" x-text="result?.z_hop ? 'Enabled' : 'Disabled'"></div>
+                </div>
+                <div class="glass-dark rounded p-4" x-show="result?.z_hop">
+                    <div class="text-sm text-zinc-400 mb-1">Z-Hop Height</div>
+                    <div class="font-medium" x-text="result?.z_hop_height + ' mm'"></div>
+                </div>
+            </div>
+
+            <div class="glass-dark rounded p-4 mb-4">
+                <div class="text-sm text-zinc-400 mb-1">Wipe While Retracting</div>
+                <div class="font-medium" x-text="result?.wipe ? 'Enabled' : 'Disabled'"></div>
+            </div>
+
+            <!-- Temperature Note -->
+            <div class="glass-dark rounded-lg p-6 mb-4" x-show="result?.temperature_note">
+                <h4 class="font-semibold mb-2">🌡️ Temperature Consideration</h4>
+                <p class="text-zinc-300 text-sm" x-text="result?.temperature_note"></p>
+            </div>
+
+            <!-- OrcaSlicer Settings -->
+            <div class="glass-dark rounded-lg p-6">
+                <div class="flex items-center justify-between mb-3">
+                    <h4 class="font-semibold">OrcaSlicer Configuration</h4>
+                    <button
+                        @click="copyToClipboard(result?.orcaslicer_settings)"
+                        class="text-sm text-brand-orange hover:text-orange-400 transition-colors">
+                        📋 Copy
+                    </button>
+                </div>
+                <pre class="text-sm bg-black/30 rounded p-4 overflow-x-auto"><code x-text="result?.orcaslicer_settings"></code></pre>
+            </div>
+        </div>
+    </div>
+
+    <!-- Instructions -->
+    <div class="mt-8 glass-dark rounded-lg p-6">
+        <h3 class="font-semibold mb-3">📖 Retraction Tuning Guide</h3>
+        <div class="space-y-3 text-sm text-zinc-300">
+            <p><strong>Retraction</strong> pulls filament back into the nozzle during travel moves to prevent oozing and stringing.</p>
+
+            <p><strong>Key Parameters:</strong></p>
+            <ul class="list-disc list-inside space-y-1 ml-4">
+                <li><strong>Distance:</strong> How far to retract (0.5-2mm for direct drive, 4-8mm for Bowden)</li>
+                <li><strong>Speed:</strong> How fast to retract (30-60mm/s typical)</li>
+                <li><strong>Z-Hop:</strong> Lift nozzle during travel to avoid collisions (optional)</li>
+                <li><strong>Wipe:</strong> Move nozzle before lifting to wipe excess filament</li>
+            </ul>
+
+            <p><strong>Testing Process:</strong></p>
+            <ol class="list-decimal list-inside space-y-1 ml-4">
+                <li>Print a retraction tower test (varies distance/speed)</li>
+                <li>Identify segment with least stringing</li>
+                <li>Note what worked and what didn't</li>
+                <li>Use this calculator to get refined recommendations</li>
+                <li>Fine-tune ±0.5mm distance or ±5mm/s speed as needed</li>
+            </ol>
+
+            <p><strong>Common Issues:</strong></p>
+            <ul class="list-disc list-inside space-y-1 ml-4">
+                <li><strong>Too little retraction:</strong> Stringing, oozing, blobs</li>
+                <li><strong>Too much retraction:</strong> Nozzle clogs, underextrusion after travel</li>
+                <li><strong>Speed too high:</strong> Grinding filament, skipped steps</li>
+                <li><strong>Speed too low:</strong> More oozing during slow retraction</li>
+            </ul>
+
+            <p class="text-amber-400"><strong>Pro Tip:</strong> Temperature affects stringing more than retraction. If retraction tuning doesn't solve stringing, try lowering temperature by 5-10°C.</p>
+        </div>
+    </div>
+</div>
+{% endblock %}

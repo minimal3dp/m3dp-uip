@@ -1,0 +1,255 @@
+{% extends "base.html" %}
+
+{% block title %}Temperature Tower - M3DP-UIP{% endblock %}
+
+{% block content %}
+<div class="mb-8">
+    <h1 class="text-4xl font-bold mb-2">Temperature Tower Analysis</h1>
+    <p class="text-zinc-400">Determine optimal print temperature from temperature tower test results</p>
+</div>
+
+<div class="glass rounded-lg p-8"
+     x-data="{
+         tower_start_temp: '',
+         tower_end_temp: '',
+         temp_increment: 5,
+         best_segment_height: '',
+         total_tower_height: '',
+         observations: '',
+         result: null,
+         error: null,
+         loading: false,
+
+         async calculate() {
+             this.loading = true;
+             this.error = null;
+             try {
+                 const response = await fetch('/api/v1/calculators/temperature-tower', {
+                     method: 'POST',
+                     headers: {'Content-Type': 'application/json'},
+                     body: JSON.stringify({
+                         tower_start_temp: parseFloat(this.tower_start_temp),
+                         tower_end_temp: parseFloat(this.tower_end_temp),
+                         temp_increment: parseFloat(this.temp_increment),
+                         best_segment_height: parseFloat(this.best_segment_height),
+                         total_tower_height: parseFloat(this.total_tower_height),
+                         observations: this.observations || null
+                     })
+                 });
+                 if (!response.ok) {
+                     const error = await response.json();
+                     throw new Error(error.detail || 'Calculation failed');
+                 }
+                 this.result = await response.json();
+             } catch (e) {
+                 this.error = e.message;
+             } finally {
+                 this.loading = false;
+             }
+         },
+
+         reset() {
+             this.tower_start_temp = '';
+             this.tower_end_temp = '';
+             this.temp_increment = 5;
+             this.best_segment_height = '';
+             this.total_tower_height = '';
+             this.observations = '';
+             this.result = null;
+             this.error = null;
+         },
+
+         copyToClipboard(text) {
+             navigator.clipboard.writeText(text);
+             alert('Copied to clipboard!');
+         }
+     }">
+
+    <!-- Input Form -->
+    <form @submit.prevent="calculate" class="space-y-6">
+        <div class="grid md:grid-cols-2 gap-4">
+            <div>
+                <label class="block text-sm font-medium mb-2">Start Temperature (°C)</label>
+                <input
+                    type="number"
+                    x-model="tower_start_temp"
+                    step="1"
+                    min="170"
+                    max="300"
+                    required
+                    placeholder="220"
+                    class="w-full bg-zinc-800 border border-zinc-700 rounded px-4 py-2 focus:outline-none focus:border-brand-orange">
+                <p class="text-sm text-zinc-500 mt-1">Bottom of tower (hottest)</p>
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium mb-2">End Temperature (°C)</label>
+                <input
+                    type="number"
+                    x-model="tower_end_temp"
+                    step="1"
+                    min="170"
+                    max="300"
+                    required
+                    placeholder="180"
+                    class="w-full bg-zinc-800 border border-zinc-700 rounded px-4 py-2 focus:outline-none focus:border-brand-orange">
+                <p class="text-sm text-zinc-500 mt-1">Top of tower (coolest)</p>
+            </div>
+        </div>
+
+        <div class="grid md:grid-cols-2 gap-4">
+            <div>
+                <label class="block text-sm font-medium mb-2">Temperature Increment (°C)</label>
+                <input
+                    type="number"
+                    x-model="temp_increment"
+                    step="1"
+                    min="1"
+                    max="20"
+                    required
+                    class="w-full bg-zinc-800 border border-zinc-700 rounded px-4 py-2 focus:outline-none focus:border-brand-orange">
+                <p class="text-sm text-zinc-500 mt-1">Change per segment</p>
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium mb-2">Total Tower Height (mm)</label>
+                <input
+                    type="number"
+                    x-model="total_tower_height"
+                    step="0.1"
+                    min="10"
+                    max="500"
+                    required
+                    placeholder="80"
+                    class="w-full bg-zinc-800 border border-zinc-700 rounded px-4 py-2 focus:outline-none focus:border-brand-orange">
+            </div>
+        </div>
+
+        <div>
+            <label class="block text-sm font-medium mb-2">Best Segment Height (mm)</label>
+            <input
+                type="number"
+                x-model="best_segment_height"
+                step="0.1"
+                min="0"
+                max="500"
+                required
+                placeholder="45"
+                class="w-full bg-zinc-800 border border-zinc-700 rounded px-4 py-2 focus:outline-none focus:border-brand-orange">
+            <p class="text-sm text-zinc-500 mt-1">Height where quality was best (measure with calipers)</p>
+        </div>
+
+        <div>
+            <label class="block text-sm font-medium mb-2">Observations (optional)</label>
+            <textarea
+                x-model="observations"
+                rows="3"
+                placeholder="Segment 2 had best surface finish, minimal stringing, good bridging..."
+                class="w-full bg-zinc-800 border border-zinc-700 rounded px-4 py-2 focus:outline-none focus:border-brand-orange"></textarea>
+            <p class="text-sm text-zinc-500 mt-1">Note stringing, bridging, surface quality, overhangs, etc.</p>
+        </div>
+
+        <div class="flex gap-4">
+            <button
+                type="submit"
+                :disabled="loading"
+                class="flex-1 bg-brand-orange hover:bg-orange-600 disabled:bg-zinc-700 text-white font-medium py-3 rounded transition-colors">
+                <span x-show="!loading">Calculate Optimal Temperature</span>
+                <span x-show="loading">Calculating...</span>
+            </button>
+            <button
+                type="button"
+                @click="reset"
+                class="px-6 border border-zinc-600 hover:border-zinc-500 rounded transition-colors">
+                Reset
+            </button>
+        </div>
+    </form>
+
+    <!-- Error Message -->
+    <div x-show="error" class="mt-6 p-4 bg-red-500/10 border border-red-500 rounded">
+        <p class="text-red-400" x-text="error"></p>
+    </div>
+
+    <!-- Results -->
+    <div x-show="result" class="mt-8 space-y-6">
+        <div class="border-t border-zinc-700 pt-6">
+            <h3 class="text-2xl font-bold mb-4 text-brand-orange">Recommended Temperature</h3>
+
+            <div class="glass-dark rounded-lg p-6 mb-4">
+                <div class="text-5xl font-bold text-brand-orange mb-2" x-text="result?.optimal_temperature + '°C'"></div>
+                <div class="text-zinc-400">Optimal Print Temperature</div>
+            </div>
+
+            <div class="grid md:grid-cols-3 gap-4 mb-4">
+                <div class="glass-dark rounded p-4">
+                    <div class="text-sm text-zinc-400 mb-1">Safe Minimum</div>
+                    <div class="font-medium" x-text="result?.temperature_range?.safe_min + '°C'"></div>
+                </div>
+                <div class="glass-dark rounded p-4">
+                    <div class="text-sm text-zinc-400 mb-1">Optimal</div>
+                    <div class="font-medium text-brand-orange" x-text="result?.temperature_range?.optimal + '°C'"></div>
+                </div>
+                <div class="glass-dark rounded p-4">
+                    <div class="text-sm text-zinc-400 mb-1">Safe Maximum</div>
+                    <div class="font-medium" x-text="result?.temperature_range?.safe_max + '°C'"></div>
+                </div>
+            </div>
+
+            <!-- Quality Summary -->
+            <div class="glass-dark rounded-lg p-6 mb-4" x-show="result?.quality_summary?.length">
+                <h4 class="font-semibold mb-3">✅ Quality Indicators</h4>
+                <ul class="space-y-2">
+                    <template x-for="indicator in result?.quality_summary" :key="indicator">
+                        <li class="text-zinc-300 text-sm">• <span x-text="indicator"></span></li>
+                    </template>
+                </ul>
+            </div>
+
+            <!-- Adjustment Notes -->
+            <div class="glass-dark rounded-lg p-6 mb-4">
+                <h4 class="font-semibold mb-2">📝 Analysis</h4>
+                <p class="text-zinc-300 text-sm whitespace-pre-line" x-text="result?.adjustment_notes"></p>
+            </div>
+
+            <!-- Klipper Config -->
+            <div class="glass-dark rounded-lg p-6">
+                <div class="flex items-center justify-between mb-3">
+                    <h4 class="font-semibold">Klipper Configuration</h4>
+                    <button
+                        @click="copyToClipboard(result?.klipper_config)"
+                        class="text-sm text-brand-orange hover:text-orange-400 transition-colors">
+                        📋 Copy
+                    </button>
+                </div>
+                <pre class="text-sm bg-black/30 rounded p-4 overflow-x-auto"><code x-text="result?.klipper_config"></code></pre>
+            </div>
+        </div>
+    </div>
+
+    <!-- Instructions -->
+    <div class="mt-8 glass-dark rounded-lg p-6">
+        <h3 class="font-semibold mb-3">📖 How to Use Temperature Tower</h3>
+        <div class="space-y-3 text-sm text-zinc-300">
+            <p><strong>Temperature towers</strong> test multiple temperatures in a single print to find the optimal temperature for your specific filament brand/color.</p>
+
+            <p><strong>What to look for:</strong></p>
+            <ul class="list-disc list-inside space-y-1 ml-4">
+                <li><strong>Surface finish:</strong> Smooth, glossy finish without roughness</li>
+                <li><strong>Stringing:</strong> Minimal or no strings between features</li>
+                <li><strong>Bridging:</strong> Clean bridges without sagging</li>
+                <li><strong>Overhangs:</strong> Sharp overhangs without drooping</li>
+                <li><strong>Layer adhesion:</strong> Layers bond well, no delamination</li>
+            </ul>
+
+            <p><strong>Tips:</strong></p>
+            <ul class="list-disc list-inside space-y-1 ml-4">
+                <li>Print towers in 5°C increments for good resolution</li>
+                <li>Use calipers to measure height accurately</li>
+                <li>Test both functional and aesthetic aspects</li>
+                <li>Results vary by filament brand and even color!</li>
+            </ul>
+        </div>
+    </div>
+</div>
+{% endblock %}

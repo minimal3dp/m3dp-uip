@@ -228,14 +228,6 @@ tmp/
 temp/
 *.tmp
 
-# Frontend (when added)
-node_modules/
-.next/
-.nuxt/
-out/
-playwright-report/
-playwright-report.json
-
 # OS
 .DS_Store
 Thumbs.db

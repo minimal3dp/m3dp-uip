@@ -1,0 +1,300 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto p-6">
+  <!-- Header -->
+  <div class="mb-12 text-center">
+    <h1 class="text-4xl font-bold mb-4">AI Diagnostic Assistant</h1>
+    <p class="text-zinc-400 max-w-xl mx-auto">
+      Upload a photo of your failed print or describe the issue. Our AI will analyze it using the Minimal 3DP Knowledge Base.
+    </p>
+  </div>
+
+  <div x-data="{
+    mode: 'image',
+    imageFile: null,
+    imagePreview: null,
+    textQuery: '',
+    context: {
+      printerModel: '',
+      filamentType: 'PLA',
+      slicer: 'OrcaSlicer',
+      nozzleSize: 0.4
+    },
+    result: null,
+    error: null,
+    loading: false,
+    dragover: false,
+
+    setMode(newMode) {
+      this.mode = newMode;
+      this.imageFile = null;
+      this.imagePreview = null;
+      this.textQuery = '';
+      this.result = null;
+      this.error = null;
+    },
+
+    handleFileSelect(event) {
+      const file = event.target.files[0];
+      if (file) this.processFile(file);
+    },
+
+    handleDrop(event) {
+      this.dragover = false;
+      const file = event.dataTransfer.files[0];
+      if (file && file.type.startsWith('image/')) {
+        this.processFile(file);
+      }
+    },
+
+    processFile(file) {
+      if (file.size > 10 * 1024 * 1024) {
+        this.error = 'File too large. Max 10MB.';
+        return;
+      }
+      this.imageFile = file;
+      const reader = new FileReader();
+      reader.onload = (e) => { this.imagePreview = e.target.result; };
+      reader.readAsDataURL(file);
+    },
+
+    clearImage() {
+      this.imageFile = null;
+      this.imagePreview = null;
+    },
+
+    async analyzeImage() {
+      if (!this.imageFile) return;
+      this.loading = true;
+      this.error = null;
+
+      try {
+        const formData = new FormData();
+        formData.append('file', this.imageFile);
+        formData.append('printer_model', this.context.printerModel || '');
+        formData.append('filament_type', this.context.filamentType);
+        formData.append('slicer', this.context.slicer);
+        formData.append('nozzle_size', this.context.nozzleSize);
+
+        const response = await fetch('/api/v1/diagnosis/analyze/image', {
+          method: 'POST',
+          body: formData
+        });
+
+        if (!response.ok) throw new Error('Analysis failed');
+        this.result = await response.json();
+      } catch (e) {
+        this.error = e.message;
+      } finally {
+        this.loading = false;
+      }
+    },
+
+    async analyzeText() {
+      if (!this.textQuery.trim()) return;
+      this.loading = true;
+      this.error = null;
+
+      try {
+        const response = await fetch('/api/v1/diagnosis/analyze/text', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            query: this.textQuery,
+            printer_model: this.context.printerModel || null,
+            filament_type: this.context.filamentType,
+            slicer: this.context.slicer,
+            nozzle_size: this.context.nozzleSize
+          })
+        });
+
+        if (!response.ok) throw new Error('Analysis failed');
+        this.result = await response.json();
+      } catch (e) {
+        this.error = e.message;
+      } finally {
+        this.loading = false;
+      }
+    }
+  }">
+
+    <!-- Mode Toggle -->
+    <div class="flex justify-center mb-8">
+      <div class="glass rounded-xl p-1 flex gap-1">
+        <button @click="setMode('image')" :class="['px-6 py-3 rounded-lg font-medium transition', mode === 'image' ? 'bg-brand-orange text-white' : 'text-zinc-400 hover:text-white']">
+          📸 Upload Photo
+        </button>
+        <button @click="setMode('text')" :class="['px-6 py-3 rounded-lg font-medium transition', mode === 'text' ? 'bg-brand-orange text-white' : 'text-zinc-400 hover:text-white']">
+          💬 Describe Issue
+        </button>
+      </div>
+    </div>
+
+    <!-- Image Upload Mode -->
+    <div x-show="mode === 'image'" class="glass rounded-2xl p-8 bg-zinc-900">
+      <h2 class="text-2xl font-bold mb-6 flex items-center gap-2">
+        <span class="text-3xl">📸</span> Image Upload
+      </h2>
+      <p class="text-zinc-400 mb-8">Upload a photo of your print failure. Our AI will analyze it and provide recommendations.</p>
+
+      <!-- Drag and Drop Zone -->
+      <div @drop.prevent="handleDrop" @dragover.prevent="dragover = true" @dragleave.prevent="dragover = false" :class="['border-2 border-dashed rounded-xl p-8 text-center transition-all', dragover ? 'border-brand-orange bg-brand-orange/10' : 'border-zinc-700 hover:border-zinc-600']">
+        <template x-if="!imagePreview">
+          <div>
+            <div class="mb-4 text-5xl">📷</div>
+            <p class="text-lg mb-2">Drop your image here</p>
+            <p class="text-sm text-zinc-500 mb-4">or</p>
+            <label class="inline-block">
+              <input type="file" accept="image/*" @change="handleFileSelect" class="hidden" />
+              <span class="px-6 py-3 bg-brand-orange hover:bg-orange-600 text-white rounded-lg font-medium cursor-pointer transition inline-block">Choose File</span>
+            </label>
+            <p class="text-xs text-zinc-500 mt-4">Supports: JPG, PNG, WebP (Max 10MB)</p>
+          </div>
+        </template>
+        <template x-if="imagePreview">
+          <div>
+            <img :src="imagePreview" alt="Preview" class="max-w-full max-h-64 mx-auto rounded-lg mb-4" />
+            <button @click="clearImage()" class="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-white rounded-lg text-sm transition">Remove Image</button>
+          </div>
+        </template>
+      </div>
+
+      <!-- Context Inputs -->
+      <div class="mt-6 glass-dark rounded-xl p-6">
+        <h3 class="text-lg font-semibold mb-4">Additional Context (Optional)</h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-medium mb-2">Printer Model</label>
+            <input x-model="context.printerModel" type="text" placeholder="e.g., Ender 3 V2" class="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-2 focus:outline-none focus:border-brand-orange transition text-sm" />
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-2">Filament Type</label>
+            <select x-model="context.filamentType" class="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-2 focus:outline-none focus:border-brand-orange transition text-sm">
+              <option value="PLA">PLA</option>
+              <option value="PETG">PETG</option>
+              <option value="ABS">ABS</option>
+              <option value="TPU">TPU</option>
+              <option value="ASA">ASA</option>
+              <option value="NYLON">Nylon</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-2">Slicer</label>
+            <select x-model="context.slicer" class="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-2 focus:outline-none focus:border-brand-orange transition text-sm">
+              <option value="OrcaSlicer">OrcaSlicer</option>
+              <option value="PrusaSlicer">PrusaSlicer</option>
+              <option value="Cura">Cura</option>
+              <option value="SuperSlicer">SuperSlicer</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-2">Nozzle Size (mm)</label>
+            <input x-model.number="context.nozzleSize" type="number" step="0.1" min="0.1" max="2" class="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-2 focus:outline-none focus:border-brand-orange transition text-sm" />
+          </div>
+        </div>
+      </div>
+
+      <div x-show="error" class="mt-6 bg-red-500/10 border border-red-500/50 rounded-lg p-4 text-red-400 text-sm" x-text="error"></div>
+      <button @click="analyzeImage()" :disabled="!imageFile || loading" class="w-full mt-6 bg-brand-orange hover:bg-orange-600 disabled:bg-zinc-700 disabled:cursor-not-allowed text-white px-6 py-4 rounded-lg font-medium transition text-lg" x-text="loading ? 'Analyzing...' : '✨ Analyze Image'"></button>
+    </div>
+
+    <!-- Text Input Mode -->
+    <div x-show="mode === 'text'" class="glass rounded-2xl p-8 bg-zinc-900">
+      <h2 class="text-2xl font-bold mb-6 flex items-center gap-2">
+        <span class="text-3xl">💬</span> Describe Your Issue
+      </h2>
+      <p class="text-zinc-400 mb-8">Describe what's wrong with your print. Be specific about the defect type and when it occurs.</p>
+
+      <textarea x-model="textQuery" rows="6" placeholder="Example: My prints have visible layer lines with gaps between them. The first layer looks good but issues start around layer 10. Using PLA at 200°C/60°C." class="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-3 focus:outline-none focus:border-brand-orange transition resize-none"></textarea>
+
+      <!-- Context Inputs (Same as Image Upload) -->
+      <div class="mt-6 glass-dark rounded-xl p-6">
+        <h3 class="text-lg font-semibold mb-4">Additional Context (Optional)</h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-medium mb-2">Printer Model</label>
+            <input x-model="context.printerModel" type="text" placeholder="e.g., Ender 3 V2" class="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-2 focus:outline-none focus:border-brand-orange transition text-sm" />
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-2">Filament Type</label>
+            <select x-model="context.filamentType" class="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-2 focus:outline-none focus:border-brand-orange transition text-sm">
+              <option value="PLA">PLA</option>
+              <option value="PETG">PETG</option>
+              <option value="ABS">ABS</option>
+              <option value="TPU">TPU</option>
+              <option value="ASA">ASA</option>
+              <option value="NYLON">Nylon</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-2">Slicer</label>
+            <select x-model="context.slicer" class="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-2 focus:outline-none focus:border-brand-orange transition text-sm">
+              <option value="OrcaSlicer">OrcaSlicer</option>
+              <option value="PrusaSlicer">PrusaSlicer</option>
+              <option value="Cura">Cura</option>
+              <option value="SuperSlicer">SuperSlicer</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-2">Nozzle Size (mm)</label>
+            <input x-model.number="context.nozzleSize" type="number" step="0.1" min="0.1" max="2" class="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-2 focus:outline-none focus:border-brand-orange transition text-sm" />
+          </div>
+        </div>
+      </div>
+
+      <div x-show="error" class="mt-6 bg-red-500/10 border border-red-500/50 rounded-lg p-4 text-red-400 text-sm" x-text="error"></div>
+      <button @click="analyzeText()" :disabled="!textQuery.trim() || loading" class="w-full mt-6 bg-brand-orange hover:bg-orange-600 disabled:bg-zinc-700 disabled:cursor-not-allowed text-white px-6 py-4 rounded-lg font-medium transition text-lg" x-text="loading ? 'Analyzing...' : '✨ Analyze Issue'"></button>
+    </div>
+
+    <!-- Results -->
+    <div x-show="result" class="mt-8 glass rounded-2xl p-8 bg-zinc-900">
+      <h3 class="text-2xl font-bold mb-6 flex items-center gap-2">
+        <span>✅</span> Analysis Results
+      </h3>
+
+      <div class="space-y-6">
+        <!-- Defect Detection -->
+        <div x-show="result?.defects" class="glass-dark rounded-xl p-6">
+          <h4 class="text-lg font-semibold mb-4">Detected Defects</h4>
+          <template x-for="defect in result?.defects" :key="defect.type">
+            <div class="mb-4 pb-4 border-b border-zinc-800 last:border-0">
+              <div class="flex items-center gap-2 mb-2">
+                <span class="text-2xl" x-text="defect.emoji || '🔧'"></span>
+                <h5 class="font-semibold text-lg" x-text="defect.type"></h5>
+                <span class="ml-auto text-sm px-3 py-1 rounded-full" :class="defect.confidence > 0.8 ? 'bg-green-500/20 text-green-400' : 'bg-yellow-500/20 text-yellow-400'" x-text="Math.round(defect.confidence * 100) + '% confident'"></span>
+              </div>
+              <p class="text-sm text-zinc-400" x-text="defect.description"></p>
+            </div>
+          </template>
+        </div>
+
+        <!-- Recommendations -->
+        <div x-show="result?.recommendations" class="glass-dark rounded-xl p-6">
+          <h4 class="text-lg font-semibold mb-4">Recommendations</h4>
+          <div class="space-y-3">
+            <template x-for="(rec, index) in result?.recommendations" :key="index">
+              <div class="flex items-start gap-3">
+                <span class="text-brand-orange font-bold" x-text="(index + 1) + '.'"></span>
+                <p class="text-sm text-zinc-300" x-text="rec"></p>
+              </div>
+            </template>
+          </div>
+        </div>
+
+        <!-- Router Classification -->
+        <div x-show="result?.classification" class="glass-dark rounded-xl p-6">
+          <h4 class="text-lg font-semibold mb-4">Issue Classification</h4>
+          <p class="text-sm text-zinc-400">Category: <span class="text-white font-semibold" x-text="result?.classification"></span></p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Info Box -->
+    <div x-show="!result" class="mt-8 text-center text-zinc-500 text-sm glass-dark rounded-xl p-6">
+      <p class="mb-2">💡 <strong>Pro Tip:</strong> Include printer model, filament type, and slicer settings for better results</p>
+      <p>Powered by Gemini Vision AI + Semantic Router</p>
+    </div>
+  </div>
+</div>
+{% endblock %}

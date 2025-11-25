@@ -1,0 +1,270 @@
+{% extends "base.html" %}
+
+{% block title %}Belt Tension - M3DP-UIP{% endblock %}
+
+{% block content %}
+<div class="mb-8">
+    <h1 class="text-4xl font-bold mb-2">Belt Tension Calculator</h1>
+    <p class="text-zinc-400">Calculate optimal belt tension from frequency measurements</p>
+</div>
+
+<div class="glass rounded-lg p-8"
+     x-data="{
+         belt_type: 'GT2',
+         belt_width: 6,
+         measured_frequency_x: '',
+         measured_frequency_y: '',
+         belt_length_x: '',
+         belt_length_y: '',
+         kinematics: 'corexy',
+         result: null,
+         error: null,
+         loading: false,
+
+         async calculate() {
+             this.loading = true;
+             this.error = null;
+             try {
+                 const response = await fetch('/api/v1/calculators/belt-tension', {
+                     method: 'POST',
+                     headers: {'Content-Type': 'application/json'},
+                     body: JSON.stringify({
+                         belt_type: this.belt_type,
+                         belt_width: parseFloat(this.belt_width),
+                         measured_frequency_x: parseFloat(this.measured_frequency_x),
+                         measured_frequency_y: parseFloat(this.measured_frequency_y),
+                         belt_length_x: parseFloat(this.belt_length_x),
+                         belt_length_y: parseFloat(this.belt_length_y),
+                         kinematics: this.kinematics
+                     })
+                 });
+                 if (!response.ok) {
+                     const error = await response.json();
+                     throw new Error(error.detail || 'Calculation failed');
+                 }
+                 this.result = await response.json();
+             } catch (e) {
+                 this.error = e.message;
+             } finally {
+                 this.loading = false;
+             }
+         },
+
+         reset() {
+             this.belt_type = 'GT2';
+             this.belt_width = 6;
+             this.measured_frequency_x = '';
+             this.measured_frequency_y = '';
+             this.belt_length_x = '';
+             this.belt_length_y = '';
+             this.kinematics = 'corexy';
+             this.result = null;
+             this.error = null;
+         },
+
+         getTensionColor(assessment) {
+             if (assessment.includes('Perfect') || assessment.includes('Good')) return 'text-green-400';
+             if (assessment.includes('Low')) return 'text-yellow-400';
+             if (assessment.includes('Too low') || assessment.includes('Too high')) return 'text-red-400';
+             return 'text-zinc-300';
+         }
+     }">
+
+    <!-- Input Form -->
+    <form @submit.prevent="calculate" class="space-y-6">
+        <div class="grid md:grid-cols-3 gap-4">
+            <div>
+                <label class="block text-sm font-medium mb-2">Belt Type</label>
+                <select
+                    x-model="belt_type"
+                    class="w-full bg-zinc-800 border border-zinc-700 rounded px-4 py-2 focus:outline-none focus:border-brand-orange">
+                    <option value="GT2">GT2 (2mm pitch)</option>
+                    <option value="GT3">GT3 (3mm pitch)</option>
+                </select>
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium mb-2">Belt Width (mm)</label>
+                <select
+                    x-model="belt_width"
+                    class="w-full bg-zinc-800 border border-zinc-700 rounded px-4 py-2 focus:outline-none focus:border-brand-orange">
+                    <option value="6">6mm</option>
+                    <option value="9">9mm</option>
+                </select>
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium mb-2">Kinematics</label>
+                <select
+                    x-model="kinematics"
+                    class="w-full bg-zinc-800 border border-zinc-700 rounded px-4 py-2 focus:outline-none focus:border-brand-orange">
+                    <option value="corexy">CoreXY</option>
+                    <option value="cartesian">Cartesian</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="grid md:grid-cols-2 gap-4">
+            <div>
+                <label class="block text-sm font-medium mb-2">X-Axis Frequency (Hz)</label>
+                <input
+                    type="number"
+                    x-model="measured_frequency_x"
+                    step="0.1"
+                    min="50"
+                    max="200"
+                    required
+                    placeholder="110"
+                    class="w-full bg-zinc-800 border border-zinc-700 rounded px-4 py-2 focus:outline-none focus:border-brand-orange">
+                <p class="text-sm text-zinc-500 mt-1">Pluck belt, measure frequency with phone app</p>
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium mb-2">Y-Axis Frequency (Hz)</label>
+                <input
+                    type="number"
+                    x-model="measured_frequency_y"
+                    step="0.1"
+                    min="50"
+                    max="200"
+                    required
+                    placeholder="110"
+                    class="w-full bg-zinc-800 border border-zinc-700 rounded px-4 py-2 focus:outline-none focus:border-brand-orange">
+            </div>
+        </div>
+
+        <div class="grid md:grid-cols-2 gap-4">
+            <div>
+                <label class="block text-sm font-medium mb-2">X-Belt Length (mm)</label>
+                <input
+                    type="number"
+                    x-model="belt_length_x"
+                    step="1"
+                    min="100"
+                    max="2000"
+                    required
+                    placeholder="1200"
+                    class="w-full bg-zinc-800 border border-zinc-700 rounded px-4 py-2 focus:outline-none focus:border-brand-orange">
+                <p class="text-sm text-zinc-500 mt-1">Free length between pulleys</p>
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium mb-2">Y-Belt Length (mm)</label>
+                <input
+                    type="number"
+                    x-model="belt_length_y"
+                    step="1"
+                    min="100"
+                    max="2000"
+                    required
+                    placeholder="1200"
+                    class="w-full bg-zinc-800 border border-zinc-700 rounded px-4 py-2 focus:outline-none focus:border-brand-orange">
+            </div>
+        </div>
+
+        <div class="flex gap-4">
+            <button
+                type="submit"
+                :disabled="loading"
+                class="flex-1 bg-brand-orange hover:bg-orange-600 disabled:bg-zinc-700 text-white font-medium py-3 rounded transition-colors">
+                <span x-show="!loading">Calculate Belt Tension</span>
+                <span x-show="loading">Calculating...</span>
+            </button>
+            <button
+                type="button"
+                @click="reset"
+                class="px-6 border border-zinc-600 hover:border-zinc-500 rounded transition-colors">
+                Reset
+            </button>
+        </div>
+    </form>
+
+    <!-- Error Message -->
+    <div x-show="error" class="mt-6 p-4 bg-red-500/10 border border-red-500 rounded">
+        <p class="text-red-400" x-text="error"></p>
+    </div>
+
+    <!-- Results -->
+    <div x-show="result" class="mt-8 space-y-6">
+        <div class="border-t border-zinc-700 pt-6">
+            <h3 class="text-2xl font-bold mb-4 text-brand-orange">Belt Tension Analysis</h3>
+
+            <div class="grid md:grid-cols-2 gap-4 mb-6">
+                <!-- X-Axis Results -->
+                <div class="glass-dark rounded-lg p-6">
+                    <h4 class="font-semibold mb-3 text-blue-400">X-Axis</h4>
+                    <div class="text-4xl font-bold text-brand-orange mb-2" x-text="result?.tension_x_newtons?.toFixed(1) + ' N'"></div>
+                    <div
+                        class="text-lg font-medium mb-2"
+                        :class="getTensionColor(result?.assessment_x)"
+                        x-text="result?.assessment_x"></div>
+                    <div class="text-sm text-zinc-400">Measured Tension</div>
+                </div>
+
+                <!-- Y-Axis Results -->
+                <div class="glass-dark rounded-lg p-6">
+                    <h4 class="font-semibold mb-3 text-purple-400">Y-Axis</h4>
+                    <div class="text-4xl font-bold text-brand-orange mb-2" x-text="result?.tension_y_newtons?.toFixed(1) + ' N'"></div>
+                    <div
+                        class="text-lg font-medium mb-2"
+                        :class="getTensionColor(result?.assessment_y)"
+                        x-text="result?.assessment_y"></div>
+                    <div class="text-sm text-zinc-400">Measured Tension</div>
+                </div>
+            </div>
+
+            <!-- Adjustment Needed -->
+            <div class="glass-dark rounded-lg p-6 mb-4" x-show="result?.adjustment_needed">
+                <h4 class="font-semibold mb-3 text-amber-400">⚙️ Adjustment Required</h4>
+                <p class="text-zinc-300 text-sm mb-3" x-text="result?.adjustment_needed"></p>
+                <div class="bg-black/30 rounded p-4">
+                    <div class="font-medium mb-1">Recommended Pulley Turns:</div>
+                    <div class="text-2xl text-brand-orange" x-text="result?.turns_to_adjust"></div>
+                </div>
+            </div>
+
+            <!-- Resonance Note -->
+            <div class="glass-dark rounded-lg p-6" x-show="result?.resonance_note">
+                <h4 class="font-semibold mb-2">📊 Input Shaping Note</h4>
+                <p class="text-zinc-300 text-sm" x-text="result?.resonance_note"></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Instructions -->
+    <div class="mt-8 glass-dark rounded-lg p-6">
+        <h3 class="font-semibold mb-3">📖 Belt Tension Measurement Guide</h3>
+        <div class="space-y-3 text-sm text-zinc-300">
+            <p><strong>Proper belt tension</strong> is critical for print quality. Too loose causes ringing/ghosting, too tight causes binding and bearing wear.</p>
+
+            <p><strong>Measurement Method:</strong></p>
+            <ol class="list-decimal list-inside space-y-1 ml-4">
+                <li>Download frequency analyzer app (e.g., "Spectroid" on Android, "Sonic Tools" on iOS)</li>
+                <li>Move print head to center of axis</li>
+                <li>Pluck belt like a guitar string (perpendicular to belt)</li>
+                <li>Note the fundamental frequency (lowest peak in app)</li>
+                <li>Measure free belt length between pulleys with calipers</li>
+                <li>Repeat for both X and Y axes</li>
+            </ol>
+
+            <p><strong>Target Frequencies (GT2 belts):</strong></p>
+            <ul class="list-disc list-inside space-y-1 ml-4">
+                <li><strong>110 Hz:</strong> Ideal for most CoreXY printers</li>
+                <li><strong>100-120 Hz:</strong> Safe range for good performance</li>
+                <li><strong>&lt;90 Hz:</strong> Too loose, will cause ringing</li>
+                <li><strong>&gt;140 Hz:</strong> Too tight, increases bearing wear</li>
+            </ul>
+
+            <p><strong>Adjustment Tips:</strong></p>
+            <ul class="list-disc list-inside space-y-1 ml-4">
+                <li>Make small adjustments (1/4 turn at a time)</li>
+                <li>Both belts should have similar tension</li>
+                <li>Re-run input shaping calibration after adjusting</li>
+                <li>Check tension monthly as belts stretch over time</li>
+            </ul>
+
+            <p class="text-amber-400"><strong>Physics:</strong> Tension = (4 × L² × f² × m) / 1000000, where L=length, f=frequency, m=linear mass density</p>
+        </div>
+    </div>
+</div>
+{% endblock %}

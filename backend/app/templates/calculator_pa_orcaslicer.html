@@ -1,0 +1,162 @@
+{% extends "base.html" %}
+
+{% block title %}PA & OrcaSlicer - M3DP-UIP{% endblock %}
+
+{% block content %}
+<div class="mb-8">
+    <h1 class="text-4xl font-bold mb-2">PA & OrcaSlicer Calculator</h1>
+    <p class="text-zinc-400">Calculate pressure advance from OrcaSlicer test pattern height measurement</p>
+</div>
+
+<div class="glass rounded-lg p-8"
+     x-data="{
+         measured_height: '',
+         extruder_type: 'direct_drive',
+         result: null,
+         error: null,
+         loading: false,
+
+         async calculate() {
+             this.loading = true;
+             this.error = null;
+             try {
+                 const response = await fetch('/api/v1/calculators/pa-orcaslicer', {
+                     method: 'POST',
+                     headers: {'Content-Type': 'application/json'},
+                     body: JSON.stringify({
+                         measured_height: parseFloat(this.measured_height),
+                         extruder_type: this.extruder_type
+                     })
+                 });
+                 if (!response.ok) {
+                     const error = await response.json();
+                     throw new Error(error.detail || 'Calculation failed');
+                 }
+                 this.result = await response.json();
+             } catch (e) {
+                 this.error = e.message;
+             } finally {
+                 this.loading = false;
+             }
+         },
+
+         reset() {
+             this.measured_height = '';
+             this.extruder_type = 'direct_drive';
+             this.result = null;
+             this.error = null;
+         },
+
+         copyToClipboard(text) {
+             navigator.clipboard.writeText(text);
+             alert('Copied to clipboard!');
+         }
+     }">
+
+    <!-- Input Form -->
+    <form @submit.prevent="calculate" class="space-y-6">
+        <div>
+            <label class="block text-sm font-medium mb-2">Measured Height (mm)</label>
+            <input
+                type="number"
+                x-model="measured_height"
+                step="0.1"
+                min="0"
+                max="100"
+                required
+                placeholder="30.3"
+                class="w-full bg-zinc-800 border border-zinc-700 rounded px-4 py-2 focus:outline-none focus:border-brand-orange">
+            <p class="text-sm text-zinc-500 mt-1">Height on test print where corners look best</p>
+        </div>
+
+        <div>
+            <label class="block text-sm font-medium mb-2">Extruder Type</label>
+            <select
+                x-model="extruder_type"
+                class="w-full bg-zinc-800 border border-zinc-700 rounded px-4 py-2 focus:outline-none focus:border-brand-orange">
+                <option value="direct_drive">Direct Drive</option>
+                <option value="bowden">Bowden</option>
+            </select>
+            <p class="text-sm text-zinc-500 mt-1">
+                Direct Drive: 0.002 PA/mm step | Bowden: 0.02 PA/mm step
+            </p>
+        </div>
+
+        <div class="flex gap-4">
+            <button
+                type="submit"
+                :disabled="loading"
+                class="flex-1 bg-brand-orange hover:bg-orange-600 disabled:bg-zinc-700 text-white font-medium py-3 rounded transition-colors">
+                <span x-show="!loading">Calculate PA</span>
+                <span x-show="loading">Calculating...</span>
+            </button>
+            <button
+                type="button"
+                @click="reset"
+                class="px-6 border border-zinc-600 hover:border-zinc-500 rounded transition-colors">
+                Reset
+            </button>
+        </div>
+    </form>
+
+    <!-- Error Message -->
+    <div x-show="error" class="mt-6 p-4 bg-red-500/10 border border-red-500 rounded">
+        <p class="text-red-400" x-text="error"></p>
+    </div>
+
+    <!-- Results -->
+    <div x-show="result" class="mt-8 space-y-6">
+        <div class="border-t border-zinc-700 pt-6">
+            <h3 class="text-2xl font-bold mb-4 text-brand-orange">Calculated PA Value</h3>
+
+            <div class="glass-dark rounded-lg p-6 mb-4">
+                <div class="text-4xl font-bold text-brand-orange mb-2" x-text="result?.calculated_pa?.toFixed(3)"></div>
+                <div class="text-zinc-400">Pressure Advance</div>
+            </div>
+
+            <div class="grid md:grid-cols-2 gap-4 mb-4">
+                <div class="glass-dark rounded p-4">
+                    <div class="text-sm text-zinc-400 mb-1">Extruder Type</div>
+                    <div class="font-medium" x-text="result?.extruder_type?.replace('_', ' ')"></div>
+                </div>
+                <div class="glass-dark rounded p-4">
+                    <div class="text-sm text-zinc-400 mb-1">Step Used</div>
+                    <div class="font-medium" x-text="result?.step_used + ' PA/mm'"></div>
+                </div>
+            </div>
+
+            <!-- Klipper Config -->
+            <div class="glass-dark rounded-lg p-6 mb-4">
+                <div class="flex items-center justify-between mb-3">
+                    <h4 class="font-semibold">Klipper Configuration</h4>
+                    <button
+                        @click="copyToClipboard(result?.klipper_config)"
+                        class="text-sm text-brand-orange hover:text-orange-400 transition-colors">
+                        📋 Copy
+                    </button>
+                </div>
+                <pre class="text-sm bg-black/30 rounded p-4 overflow-x-auto"><code x-text="result?.klipper_config"></code></pre>
+            </div>
+
+            <!-- Notes -->
+            <div class="glass-dark rounded-lg p-6">
+                <h4 class="font-semibold mb-2">📝 Notes</h4>
+                <p class="text-zinc-300 text-sm whitespace-pre-line" x-text="result?.notes"></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Instructions -->
+    <div class="mt-8 glass-dark rounded-lg p-6">
+        <h3 class="font-semibold mb-3">📖 How to Use</h3>
+        <ol class="list-decimal list-inside space-y-2 text-sm text-zinc-300">
+            <li>Print OrcaSlicer PA test pattern (linear ramp)</li>
+            <li>Visually inspect where corners look sharpest (no bulging or gaps)</li>
+            <li>Measure the Z height where quality is best</li>
+            <li>Enter the height and your extruder type</li>
+            <li>Copy the calculated PA value to your printer.cfg</li>
+            <li>Test with actual prints and adjust ±0.005 if needed</li>
+        </ol>
+    </div>
+</div>
+{% endblock %}

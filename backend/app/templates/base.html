@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en" class="bg-zinc-900">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}M3DP-UIP - AI-Powered 3D Printing Diagnostics{% endblock %}</title>
+
+    <!-- Tailwind CSS CDN (Production: consider self-hosting) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            orange: '#F97316',
+                        },
+                    },
+                }
+            }
+        }
+    </script>
+
+    <!-- HTMX for seamless server interactions -->
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+
+    <!-- Alpine.js for reactive UI components -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.5/dist/cdn.min.js"></script>
+
+    <!-- Custom styles -->
+    <style>
+        .glass {
+            @apply bg-white/10 backdrop-blur-md border border-white/20;
+        }
+        .glass-dark {
+            @apply bg-black/30 backdrop-blur-md border border-white/10;
+        }
+    </style>
+
+    {% block extra_head %}{% endblock %}
+</head>
+<body class="bg-zinc-900 text-white min-h-screen">
+    <!-- Navigation -->
+    <nav class="glass-dark border-b border-white/10">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center space-x-8">
+                    <!-- Logo -->
+                    <a href="/" class="flex items-center space-x-2">
+                        <span class="text-2xl font-bold text-brand-orange">M3DP</span>
+                        <span class="text-sm text-zinc-400">Unified Intelligence Platform</span>
+                    </a>
+
+                    <!-- Nav Links -->
+                    <div class="hidden md:flex space-x-4">
+                        <a href="/home" class="px-3 py-2 rounded-md text-sm font-medium hover:bg-white/10 transition-colors
+                            {% if request.url.path == '/home' %}bg-white/10{% endif %}">
+                            Home
+                        </a>
+                        <a href="/diagnosis-ui" class="px-3 py-2 rounded-md text-sm font-medium hover:bg-white/10 transition-colors
+                            {% if request.url.path == '/diagnosis-ui' %}bg-white/10{% endif %}">
+                            Diagnosis
+                        </a>
+                        <a href="/calculators-ui" class="px-3 py-2 rounded-md text-sm font-medium hover:bg-white/10 transition-colors
+                            {% if request.url.path == '/calculators-ui' %}bg-white/10{% endif %}">
+                            Calculators
+                        </a>
+                        <a href="/docs" class="px-3 py-2 rounded-md text-sm font-medium hover:bg-white/10 transition-colors">
+                            API Docs
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Mobile menu button -->
+                <div class="md:hidden flex items-center">
+                    <button type="button"
+                            x-data
+                            @click="$dispatch('toggle-mobile-menu')"
+                            class="inline-flex items-center justify-center p-2 rounded-md text-zinc-400 hover:text-white hover:bg-white/10">
+                        <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mobile menu -->
+        <div x-data="{ open: false }"
+             @toggle-mobile-menu.window="open = !open"
+             x-show="open"
+             x-transition
+             class="md:hidden border-t border-white/10">
+            <div class="px-2 pt-2 pb-3 space-y-1">
+                <a href="/home" class="block px-3 py-2 rounded-md text-base font-medium hover:bg-white/10">Home</a>
+                <a href="/diagnosis-ui" class="block px-3 py-2 rounded-md text-base font-medium hover:bg-white/10">Diagnosis</a>
+                <a href="/calculators-ui" class="block px-3 py-2 rounded-md text-base font-medium hover:bg-white/10">Calculators</a>
+                <a href="/docs" class="block px-3 py-2 rounded-md text-base font-medium hover:bg-white/10">API Docs</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Footer -->
+    <footer class="glass-dark mt-16 border-t border-white/10">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+            <div class="text-center text-zinc-400 text-sm">
+                <p>Part of the <a href="https://minimal3dp.com" class="text-brand-orange hover:underline">minimal3dp.com</a> ecosystem</p>
+                <p class="mt-2">AI-powered diagnostic platform for 3D printing</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- HTMX Config -->
+    <script>
+        // Global HTMX configuration
+        document.body.addEventListener('htmx:configRequest', (event) => {
+            event.detail.headers['X-Requested-With'] = 'XMLHttpRequest';
+        });
+
+        // Show loading indicator
+        document.body.addEventListener('htmx:beforeRequest', (event) => {
+            const target = event.target;
+            if (target.classList.contains('loading-btn')) {
+                target.classList.add('opacity-50', 'cursor-not-allowed');
+                target.disabled = true;
+            }
+        });
+
+        document.body.addEventListener('htmx:afterRequest', (event) => {
+            const target = event.target;
+            if (target.classList.contains('loading-btn')) {
+                target.classList.remove('opacity-50', 'cursor-not-allowed');
+                target.disabled = false;
+            }
+        });
+    </script>
+
+    {% block extra_scripts %}{% endblock %}
+</body>
+</html>

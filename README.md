@@ -3,7 +3,6 @@
 [![Python 3.12+](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
 [![CI Matrix](https://github.com/minimal3dp/m3dp-uip/actions/workflows/ci-matrix.yml/badge.svg)](https://github.com/minimal3dp/m3dp-uip/actions/workflows/ci-matrix.yml)
 [![Coverage](https://raw.githubusercontent.com/minimal3dp/m3dp-uip/main/coverage-badge.svg)](#-testing)
-[![Frontend E2E](https://raw.githubusercontent.com/minimal3dp/m3dp-uip/main/frontend-e2e-badge.svg)](#-testing)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.115+-009688.svg)](https://fastapi.tiangolo.com/)
 [![Code style: ruff](https://img.shields.io/badge/code%20style-ruff-000000.svg)](https://github.com/astral-sh/ruff)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
@@ -20,7 +19,11 @@ M3DP-UIP combines computer vision (Gemini 1.5 Pro) with a structured CSV knowled
 - 🎯 **Router architecture** to avoid context window pollution
 - 📊 **Structured knowledge base** of OrcaSlicer and Klipper settings
 - 🚀 **Fast API backend** with Python 3.12+ and FastAPI
-- 🎨 **Interactive frontend** (prototype in vanilla JS, migrating to React)
+- 🎨 **Python fullstack frontend** using Jinja2 + HTMX + Alpine.js (~29KB JS vs ~2MB)
+- 🔧 **Single server, single language** - no Node.js build step required
+
+**NEW: Python Frontend**
+The project now includes a complete Python-only frontend using server-side templates with HTMX and Alpine.js. This eliminates Node.js dependencies, build steps, and provides a faster, simpler development experience.
 
 Part of the [minimal3dp.com](https://minimal3dp.com) ecosystem (10K+ YouTube subscribers).
 
@@ -53,27 +56,26 @@ cp .env.example .env
 pre-commit install
 ```
 
-### Run Development Servers (Full Stack)
+### Run Development Server
 
-Use the combined runner to start both backend (FastAPI) and frontend (Nuxt) with one command:
+Use the Python-only fullstack server (no Node.js required):
 
 ```bash
-chmod +x scripts/dev-all.sh   # first time only
-./scripts/dev-all.sh
+chmod +x scripts/dev-python-fullstack.sh   # first time only
+./scripts/dev-python-fullstack.sh
 ```
 
 Environment overrides:
 ```bash
-BACKEND_PORT=9000 FRONTEND_PORT=3100 ./scripts/dev-all.sh
-```
-Frontend will automatically use `NUXT_PUBLIC_API_BASE` pointing at the backend port (override if needed):
-```bash
-NUXT_PUBLIC_API_BASE=https://api.dev.local ./scripts/dev-all.sh
+BACKEND_PORT=9000 ./scripts/dev-python-fullstack.sh
 ```
 
 Access:
-- Backend API: http://localhost:${BACKEND_PORT:-8000}
-- Frontend:    http://localhost:${FRONTEND_PORT:-3000}
+- **Web UI**: http://localhost:8000/home
+- **API**: http://localhost:8000
+- **Swagger Docs**: http://localhost:8000/docs
+- **Calculators**: http://localhost:8000/calculators-ui
+- **Diagnosis**: http://localhost:8000/diagnosis-ui
 
 ### Run Backend Only
 
@@ -146,11 +148,26 @@ graph LR
 
 ### Tech Stack
 
-- **Backend**: FastAPI (Python 3.12+), pandas, Pydantic
-- **Vision**: Google Gemini 1.5 Pro
-- **Frontend**: React + Vite + Tailwind CSS (planned)
-- **Deployment**: Vercel
-- **Tooling**: Ruff (linter/formatter), pytest, pre-commit
+**Backend:**
+- FastAPI (Python 3.12+)
+- pandas, Pydantic
+- Google Gemini 1.5 Pro (Vision AI)
+
+**Frontend:**
+- Jinja2 Templates (server-side rendering)
+- Tailwind CSS 3.4 (CDN)
+- HTMX 1.9.10 (~14KB) - seamless AJAX
+- Alpine.js 3.13.5 (~15KB) - reactive components
+- Total JS: ~29KB gzipped
+
+**Deployment:**
+- Vercel (planned)
+- Single Python server (port 8000)
+
+**Tooling:**
+- Ruff (linter/formatter)
+- pytest (testing)
+- pre-commit (hooks)
 
 ## 🔌 API Endpoints
 
