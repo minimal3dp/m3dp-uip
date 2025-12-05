@@ -5,8 +5,16 @@
   <a href="/calculators-ui" class="inline-flex items-center text-brand-orange hover:underline mb-6">← Back to Calculators</a>
 
   <div class="glass rounded-2xl p-8 bg-zinc-900">
-    <h2 class="text-2xl font-bold mb-6 flex items-center gap-2"><span class="text-3xl">📊</span> Skew Correction</h2>
-    <p class="text-zinc-400 mb-8">Calculate frame skew correction from calibration print measurements.</p>
+    <h2 class="text-2xl font-bold mb-2 flex items-center gap-2"><span class="text-3xl">📊</span> Skew Correction</h2>
+    <p class="text-zinc-400 mb-6">Calculate frame skew correction from calibration print measurements.</p>
+    
+    <div class="bg-blue-500/10 border border-blue-500/50 rounded-lg p-4 mb-8">
+      <p class="text-sm text-zinc-300">
+        <strong>📥 Calibration Model Required:</strong> 
+        Download the skew correction test print from 
+        <a href="https://www.thingiverse.com/thing:2972743/" target="_blank" rel="noopener noreferrer" class="text-brand-orange hover:underline">Thingiverse (thing:2972743)</a>
+      </p>
+    </div>
 
     <div x-data="{
       xyAc: '', xyBd: '', xyAd: '', xzAc: null, xzBd: null, xzAd: null, yzAc: null, yzBd: null, yzAd: null,
