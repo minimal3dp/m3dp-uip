@@ -1,5 +1,5 @@
 """API Endpoints Package"""
 
-from . import calculators  # , diagnosis  # TODO: Re-enable after refactor
+from . import calculators
 
-__all__ = ["calculators", "diagnosis"]
+__all__ = ["calculators"]

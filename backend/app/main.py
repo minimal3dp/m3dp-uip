@@ -14,7 +14,7 @@ from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
-from app.api.endpoints import calculators  # , diagnosis  # TODO: Re-enable after refactor
+from app.api.endpoints import calculators
 from app.core.config import settings
 from app.services.csv_loader import get_csv_loader
 
@@ -47,7 +47,7 @@ async def lifespan(_app: FastAPI):
 # Initialize FastAPI application
 app = FastAPI(
     title="M3DP-UIP API",
-    description="Minimal 3DP Unified Intelligence Platform - AI-powered 3D printing diagnostics",
+    description="Minimal 3DP Unified Intelligence Platform - Stateless Klipper Calibration Utilities",
     version="0.1.0",
     docs_url="/docs",
     redoc_url="/redoc",
