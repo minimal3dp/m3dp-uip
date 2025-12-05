@@ -92,7 +92,9 @@ DATASETS = {
 class DatasetDownloader:
     """Handles downloading and organizing defect datasets."""
 
-    def __init__(self, output_dir: Path, skip_existing: bool = False, max_samples: int | None = None):
+    def __init__(
+        self, output_dir: Path, skip_existing: bool = False, max_samples: int | None = None
+    ):
         """Initialize downloader.
 
         Args:
@@ -206,9 +208,7 @@ class DatasetDownloader:
                 from roboflow import Roboflow
             except ImportError:
                 logger.error("Roboflow API not installed. Install with: pip install roboflow")
-                logger.info(
-                    "Get API key from: https://app.roboflow.com/settings/api"
-                )
+                logger.info("Get API key from: https://app.roboflow.com/settings/api")
                 return False
 
             # Check for API key
@@ -272,7 +272,9 @@ class DatasetDownloader:
                             if filename:
                                 source_path = download_path / "train" / filename
                                 if source_path.exists():
-                                    target_path = target_dir / f"roboflow_{config['project']}_{filename}"
+                                    target_path = (
+                                        target_dir / f"roboflow_{config['project']}_{filename}"
+                                    )
                                     shutil.copy2(source_path, target_path)
                                     copied += 1
 

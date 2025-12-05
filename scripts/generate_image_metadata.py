@@ -186,18 +186,18 @@ def generate_metadata_for_defect(
         return 0, 0
 
     # Get template for this defect type
-    template = METADATA_TEMPLATES.get(defect_type, {
-        "severity": "moderate",
-        "visual_markers": [],
-        "description_template": f"{defect_type} defect",
-    })
+    template = METADATA_TEMPLATES.get(
+        defect_type,
+        {
+            "severity": "moderate",
+            "visual_markers": [],
+            "description_template": f"{defect_type} defect",
+        },
+    )
 
     # Find all images
     image_extensions = {".jpg", ".jpeg", ".png", ".webp"}
-    images = [
-        img for img in images_dir.iterdir()
-        if img.suffix.lower() in image_extensions
-    ]
+    images = [img for img in images_dir.iterdir() if img.suffix.lower() in image_extensions]
 
     if not images:
         logger.warning(f"No images found in {images_dir}")

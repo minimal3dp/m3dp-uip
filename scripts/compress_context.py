@@ -1,6 +1,6 @@
-import sys
 import os
 import re
+import sys
 
 # Configuration: Files and folders to ignore to prevent context pollution
 IGNORE_DIRS = {".git", "__pycache__", "node_modules", "venv", "env", ".idea", ".vscode"}
@@ -69,15 +69,15 @@ def compress_text(text):
 def process_file(filepath):
     """Reads a single file, compresses it, and prints the block."""
     try:
-        with open(filepath, "r", encoding="utf-8", errors="ignore") as f:
+        with open(filepath, encoding="utf-8", errors="ignore") as f:
             content = f.read()
             compressed = compress_text(content)
             # We add XML-style tags so the LLM knows where file boundaries are
             print(f"<file path='{filepath}'>")
             print(compressed)
-            print(f"</file>")
-    except Exception as e:
-        print(f"")
+            print("</file>")
+    except Exception:
+        print("")
 
 
 def process_path(path):

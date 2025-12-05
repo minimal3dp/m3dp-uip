@@ -6,12 +6,11 @@ Focus:
 - Malformed input_shaping.csv handling (insufficient rows)
 """
 
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 
 import pytest
-from fastapi.testclient import TestClient
-
 from app.main import app
+from fastapi.testclient import TestClient
 
 client = TestClient(app)
 
@@ -60,10 +59,12 @@ def test_input_shaping_malformed_csv_raises():
     import pandas as pd
 
     # Provide only two rows so iloc[3] triggers exception
-    df = pd.DataFrame([
-        {"Parameter": "Test Type", "Notes": "Options: MZV"},
-        {"Parameter": "X Freq", "Notes": "Options: EI"},
-    ])
+    df = pd.DataFrame(
+        [
+            {"Parameter": "Test Type", "Notes": "Options: MZV"},
+            {"Parameter": "X Freq", "Notes": "Options: EI"},
+        ]
+    )
 
     with patch("app.services.csv_loader.CSVLoader.get_input_shaping_data", return_value=df):
         resp = client.post(

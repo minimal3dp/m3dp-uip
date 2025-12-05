@@ -58,10 +58,14 @@ def monitor():
                 # Show update if progress changed
                 if current_count != last_count:
                     last_update_time = time.time()
-                    print(f"\r⏳ Progress: {current_count}/{TOTAL_IMAGES} ({progress_pct:.1f}%) | "
-                          f"✓ Correct: {correct} ({accuracy:.1f}%) | "
-                          f"⚡ Rate: {rate:.1f} img/s | "
-                          f"⏱️  ETA: {format_time(eta_seconds)}", end="", flush=True)
+                    print(
+                        f"\r⏳ Progress: {current_count}/{TOTAL_IMAGES} ({progress_pct:.1f}%) | "
+                        f"✓ Correct: {correct} ({accuracy:.1f}%) | "
+                        f"⚡ Rate: {rate:.1f} img/s | "
+                        f"⏱️  ETA: {format_time(eta_seconds)}",
+                        end="",
+                        flush=True,
+                    )
                     last_count = current_count
 
                 # Check if complete
@@ -81,7 +85,9 @@ def monitor():
                         defect_total = stats.get("total", 0)
                         defect_correct = stats.get("correct", 0)
                         status = "✅" if defect_acc >= 70 else "⚠️"
-                        print(f"  {status} {defect:20s}: {defect_correct}/{defect_total} ({defect_acc:.1f}%)")
+                        print(
+                            f"  {status} {defect:20s}: {defect_correct}/{defect_total} ({defect_acc:.1f}%)"
+                        )
 
                     print(f"\n📄 Full report: {REPORT_PATH}")
                     break

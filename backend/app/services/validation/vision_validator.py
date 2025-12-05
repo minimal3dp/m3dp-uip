@@ -146,14 +146,17 @@ class VisionValidator:
 
             except Exception as e:
                 error_msg = str(e)
-                if "429" in error_msg or "quota" in error_msg.lower():
+                if (
+                    "429" in error_msg or "quota" in error_msg.lower()
+                ) and attempt < max_retries - 1:
                     # Rate limit hit, wait longer before retry
-                    if attempt < max_retries - 1:
-                        wait_time = retry_delay * (attempt + 2)  # Exponential backoff
-                        logger.warning(f"Rate limit hit, waiting {wait_time}s before retry {attempt + 1}/{max_retries}")
-                        await asyncio.sleep(wait_time)
-                        continue
-                
+                    wait_time = retry_delay * (attempt + 2)  # Exponential backoff
+                    logger.warning(
+                        f"Rate limit hit, waiting {wait_time}s before retry {attempt + 1}/{max_retries}"
+                    )
+                    await asyncio.sleep(wait_time)
+                    continue
+
                 logger.error(f"Error validating {image_path}: {e}")
                 return ValidationResult(
                     image_path=str(image_path),
@@ -163,6 +166,17 @@ class VisionValidator:
                     correct=False,
                     notes=f"Validation error: {str(e)}",
                 )
+
+        # All retries exhausted
+        logger.error(f"Failed to validate {image_path} after {max_retries} attempts")
+        return ValidationResult(
+            image_path=str(image_path),
+            expected_defect=metadata.expected_classification,
+            predicted_defect="ERROR",
+            confidence=None,
+            correct=False,
+            notes="Validation failed: max retries exceeded",
+        )
 
     async def validate_dataset(self, defect_type: str | None = None) -> ValidationReport:
         """Run validation on entire dataset or specific defect type.

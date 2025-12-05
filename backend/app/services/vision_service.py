@@ -153,30 +153,30 @@ Return ONLY valid JSON (no markdown formatting):
         """Initialize vision service with Gemini Vision API."""
         self.api_key = settings.GOOGLE_GENAI_API_KEY
         self.model_name = settings.GEMINI_MODEL
-        
+
         if self.is_configured():
             genai.configure(api_key=self.api_key)
-            
+
             generation_config = {
                 "temperature": 0.4,
                 "top_p": 0.95,
                 "top_k": 40,
                 "max_output_tokens": 2048,
             }
-            
+
             safety_settings = {
                 HarmCategory.HARM_CATEGORY_HARASSMENT: HarmBlockThreshold.BLOCK_NONE,
                 HarmCategory.HARM_CATEGORY_HATE_SPEECH: HarmBlockThreshold.BLOCK_NONE,
                 HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT: HarmBlockThreshold.BLOCK_NONE,
                 HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT: HarmBlockThreshold.BLOCK_NONE,
             }
-            
+
             self.model = genai.GenerativeModel(
                 model_name=self.model_name,
                 generation_config=generation_config,
                 safety_settings=safety_settings,
             )
-            
+
             logger.info(f"Initialized Gemini Vision API with model: {self.model_name}")
         else:
             logger.warning("Vision API not configured - missing GOOGLE_GENAI_API_KEY")

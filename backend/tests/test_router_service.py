@@ -137,7 +137,10 @@ class TestTextDiagnosis:
 
     @pytest.mark.asyncio
     async def test_diagnose_from_text_troubleshooting(
-        self, router_service, mock_semantic_router, mock_csv_loader
+        self,
+        router_service,
+        mock_semantic_router,
+        mock_csv_loader,  # noqa: ARG002
     ):
         """Test text diagnosis for troubleshooting query."""
         mock_semantic_router.classify_query.return_value = {
@@ -154,7 +157,11 @@ class TestTextDiagnosis:
         mock_semantic_router.classify_query.assert_called_once()
 
     @pytest.mark.asyncio
-    async def test_diagnose_from_text_with_context(self, router_service, mock_semantic_router):
+    async def test_diagnose_from_text_with_context(
+        self,
+        router_service,
+        mock_semantic_router,  # noqa: ARG002
+    ):
         """Test text diagnosis with context."""
         context = {"printer_model": "Prusa MK4", "filament_type": "PLA"}
 
@@ -252,7 +259,10 @@ class TestCSVLookupHandling:
 
     @pytest.mark.asyncio
     async def test_handle_csv_lookup_troubleshooting(
-        self, router_service, mock_semantic_router, mock_csv_loader
+        self,
+        router_service,
+        mock_semantic_router,
+        mock_csv_loader,  # noqa: ARG002
     ):
         """Test CSV lookup for troubleshooting route."""
         mock_semantic_router.classify_query.return_value = {
@@ -269,7 +279,10 @@ class TestCSVLookupHandling:
 
     @pytest.mark.asyncio
     async def test_handle_csv_lookup_material(
-        self, router_service, mock_semantic_router, mock_csv_loader
+        self,
+        router_service,
+        mock_semantic_router,
+        mock_csv_loader,  # noqa: ARG002
     ):
         """Test CSV lookup for material route."""
         mock_semantic_router.classify_query.return_value = {
@@ -392,7 +405,10 @@ class TestLogging:
 
     @pytest.mark.asyncio
     async def test_text_diagnosis_logs_classification(
-        self, router_service, mock_semantic_router, caplog
+        self,
+        router_service,
+        mock_semantic_router,  # noqa: ARG002
+        caplog,
     ):
         """Test text diagnosis logs classification result."""
         caplog.set_level(logging.INFO)
@@ -413,7 +429,10 @@ class TestLogging:
 
     @pytest.mark.asyncio
     async def test_image_diagnosis_logs_classification(
-        self, router_service, mock_vision_service, caplog
+        self,
+        router_service,
+        mock_vision_service,  # noqa: ARG002
+        caplog,
     ):
         """Test image diagnosis logs classification result."""
         caplog.set_level(logging.INFO)
@@ -431,7 +450,9 @@ class TestResponseStructure:
     """Test response structure and format."""
 
     @pytest.mark.asyncio
-    async def test_text_diagnosis_response_structure(self, router_service, mock_semantic_router):
+    async def test_text_diagnosis_response_structure(
+        self, router_service, mock_semantic_router  # noqa: ARG002
+    ):
         """Test text diagnosis returns well-structured response."""
         result = await router_service.diagnose_from_text("test query")
 
