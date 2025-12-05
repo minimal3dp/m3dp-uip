@@ -1,7 +1,7 @@
 calculator_name,Skew Correction
 category,Mechanical Alignment
 formula,"Skew correction uses three measurements per plane (AC, BD, AD) to calculate frame skew. Klipper command: SET_SKEW XY=AC,BD,AD XZ=AC,BD,AD YZ=AC,BD,AD. Measurements taken from calibration cube print."
-description,Calculate and correct printer frame skew using calibration print measurements for XY (bed), XZ (left side), and YZ (right side) planes
+description,"Calculate and correct printer frame skew using calibration print measurements for XY (bed), XZ (left side), and YZ (right side) planes"
 inputs,"xy_ac (float, mm): XY plane AC diagonal; xy_bd (float, mm): XY plane BD diagonal; xy_ad (float, mm): XY plane AD orthogonal; xz_ac (float, mm): XZ plane AC diagonal; xz_bd (float, mm): XZ plane BD diagonal; xz_ad (float, mm): XZ plane AD orthogonal; yz_ac (float, mm): YZ plane AC diagonal; yz_bd (float, mm): YZ plane BD diagonal; yz_ad (float, mm): YZ plane AD orthogonal"
 outputs,"set_skew_command (string): Complete SET_SKEW command to paste into printer.cfg; calc_measured_skew_commands (dict): Individual CALC_MEASURED_SKEW commands for testing; skew_profile (dict): Calculated skew values in radians and degrees for each plane"
 usage_notes,"Print skew correction calibration model from Thingiverse (thing:2972743). Measure AC and BD diagonals, plus AD orthogonal distance for each plane (XY, XZ, YZ). Enter measurements in calculator. Copy SET_SKEW command to START_PRINT macro in printer.cfg. Use CALC_MEASURED_SKEW commands to verify corrections. Run GET_CURRENT_SKEW to see active skew profile. Typical skew values: <0.1 degrees is good, >0.3 degrees needs correction."
