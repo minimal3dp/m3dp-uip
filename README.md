@@ -1,403 +1,335 @@
-# Minimal 3DP Unified Intelligence Platform (M3DP-UIP)
+# M3DP-UIP - Klipper Calibration Utility
 
-[![Python 3.12+](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
-[![CI Matrix](https://github.com/minimal3dp/m3dp-uip/actions/workflows/ci-matrix.yml/badge.svg)](https://github.com/minimal3dp/m3dp-uip/actions/workflows/ci-matrix.yml)
-[![Coverage](https://raw.githubusercontent.com/minimal3dp/m3dp-uip/main/coverage-badge.svg)](#-testing)
+[![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.115+-009688.svg)](https://fastapi.tiangolo.com/)
-[![Code style: ruff](https://img.shields.io/badge/code%20style-ruff-000000.svg)](https://github.com/astral-sh/ruff)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![License: Proprietary](https://img.shields.io/badge/License-Proprietary-red.svg)](#license)
 
-AI-powered diagnostic platform for 3D printing that uses vision models and structured knowledge bases to troubleshoot print failures.
+**Stateless web application providing 16 formula-driven calculators for Klipper 3D printer calibration.**
+
+Built for speed, accuracy, and zero AI dependencies. Part of the [minimal3dp.com](https://minimal3dp.com) ecosystem (10K+ YouTube subscribers).
+
+---
 
 ## 🎯 Overview
 
-M3DP-UIP combines computer vision (Gemini 1.5 Pro) with a structured CSV knowledge base to provide accurate, formula-based solutions for 3D printing issues - not generic LLM advice.
+M3DP-UIP is a **lean, server-side rendered web application** that transforms complex Klipper calibration formulas into simple, interactive calculators.
 
-**Key Features:**
-- 📸 **Vision-based defect detection** using Gemini 1.5 Pro
-- 🧮 **Formula-driven calculators** from Klipper calibration CSVs
-- 🎯 **Router architecture** to avoid context window pollution
-- 📊 **Structured knowledge base** of OrcaSlicer and Klipper settings
-- 🚀 **Fast API backend** with Python 3.12+ and FastAPI
-- 🎨 **Python fullstack frontend** using Jinja2 + HTMX + Alpine.js (~29KB JS vs ~2MB)
-- 🔧 **Single server, single language** - no Node.js build step required
+**Core Philosophy:**
+- ✅ Formula-driven calculations (no AI, no guessing)
+- ✅ Server-side rendering (Jinja2 templates)
+- ✅ Minimal JavaScript footprint (HTMX + Alpine.js = ~29KB)
+- ✅ Stateless architecture (no sessions, no cookies)
+- ✅ Railway deployment ready (Docker)
 
-**NEW: Python Frontend**
-The project now includes a complete Python-only frontend using server-side templates with HTMX and Alpine.js. This eliminates Node.js dependencies, build steps, and provides a faster, simpler development experience.
+**Design System:**
+- Background: `slate-900` (#0f172a)
+- Accent: `amber-500` (#f59e0b)
+- Typography: System font stack
+- From: `m3dp-design-system`
 
-Part of the [minimal3dp.com](https://minimal3dp.com) ecosystem (10K+ YouTube subscribers).
+---
+
+## 🧮 Calculators
+
+### Implemented (10/16)
+
+1. **Extruder Rotation Distance** - E-steps and rotation distance
+2. **OrcaSlicer Flow Calibration** - Two-pass flow tuning
+3. **OrcaSlicer Flow YOLO** - Single-pass flow method
+4. **Run Current (TMC2208/2209)** - Stepper motor current
+5. **Pressure Advance** - Direct drive & Bowden PA values
+6. **Input Shaping** - Resonance compensation frequencies
+7. **X and Y Offsets** - Probe offset calculations
+8. **Max Volumetric Speed** - Safe flow rate limits
+9. **Lead Screw Rotation Distance** - Z-axis rotation values
+10. **Line Widths (OrcaSlicer)** - Nozzle diameter-based widths
+
+### Remaining (6/16)
+
+11. **Skew Correction** - XY/XZ/YZ skew commands (partial)
+12. **Flow Calibration (Traditional)** - Wall thickness method
+13. **PA & OrcaSlicer** - Alternative pressure advance
+14. **Ellis Max Volumetric Speed** - Manual extrusion method
+15. **Extrusion Rate Smoothing (ERS)** - Advanced OrcaSlicer feature
+16. **Adaptive Pressure Advance** - Matrix-based PA tuning
+
+**Source:** All formulas extracted from `research/EXTRACTED_FORMULAS.md` (derived from `Klipper Calibrations.xlsx`)
+
+---
 
 ## 🚀 Quick Start
 
 ### Prerequisites
 
-- Python 3.12+
-- UV (Python package manager)
-- Git
+- Python 3.11+ (3.12 recommended)
+- uv (recommended) or pip
 
 ### Installation
 
 ```bash
 # Clone repository
-git clone https://github.com/minimal3dp/m3dp-uip.git
+git clone <repo_url>
 cd m3dp-uip
 
-# Run setup script (recommended)
-chmod +x scripts/setup.sh
-./scripts/setup.sh
+# Create virtual environment
+uv venv
+source .venv/bin/activate  # On Windows: .venv\Scripts\activate
 
-# Or manual setup:
-python -m venv .venv
-source .venv/bin/activate
-pip install uv
-uv pip install -e ".[dev]"
-cp .env.example .env
-# Edit .env with your API keys
-pre-commit install
+# Install dependencies
+uv pip install -e .
+
+# Install Jinja2 (required for templates)
+uv pip install jinja2
 ```
 
 ### Run Development Server
 
-Use the Python-only fullstack server (no Node.js required):
-
 ```bash
-chmod +x scripts/dev-python-fullstack.sh   # first time only
-./scripts/dev-python-fullstack.sh
-```
-
-Environment overrides:
-```bash
-BACKEND_PORT=9000 ./scripts/dev-python-fullstack.sh
-```
-
-Access:
-- **Web UI**: http://localhost:8000/home
-- **API**: http://localhost:8000
-- **Swagger Docs**: http://localhost:8000/docs
-- **Calculators**: http://localhost:8000/calculators-ui
-- **Diagnosis**: http://localhost:8000/diagnosis-ui
-
-### Run Backend Only
-
-```bash
-# Using script
-./scripts/run_dev.sh
-
-# Or manually
-source .venv/bin/activate
 cd backend
 uvicorn app.main:app --reload
 ```
 
-Access the API:
-- **API**: http://localhost:8000
-- **Swagger Docs**: http://localhost:8000/docs
-- **ReDoc**: http://localhost:8000/redoc
+**Server URL:** `http://localhost:8000`
 
-### Run Frontend Prototype (Legacy Static)
+### Key Endpoints
 
-```bash
-# Open index.html in browser or use local server:
-python -m http.server 8080
-# Access: http://localhost:8080
-```
+- `/` - Home page
+- `/home` - Main dashboard
+- `/calculators-ui` - Calculator index
+- `/api/v1/calculators` - Calculator list (JSON)
+- `/docs` - OpenAPI documentation
+
+**Individual Calculators:**
+- `/rotation-distance` - Extruder rotation distance
+- `/flow-calibration` - OrcaSlicer flow (two-pass)
+- `/flow-yolo` - OrcaSlicer flow (single-pass)
+- `/run-current` - TMC2208/2209 stepper current
+- `/pressure-advance` - Pressure advance values
+- `/input-shaping` - Input shaping frequencies
+- `/xy-offsets` - Probe offset calculations
+- `/max-volumetric-speed` - Flow rate limits
+- `/lead-screw` - Z-axis rotation distance
+- `/line-widths` - OrcaSlicer line width recommendations
+
+---
 
 ## 📁 Project Structure
 
 ```
 m3dp-uip/
-├── .github/
-│   └── copilot-instructions.md    # AI assistant guidelines
 ├── backend/
 │   ├── app/
-│   │   ├── api/endpoints/         # FastAPI routes (diagnosis, calculators)
-│   │   ├── core/                  # Settings / environment config
-│   │   ├── data/                  # CSV knowledge base (placeholders)
-│   │   ├── services/              # Router/classification, future calculators
-│   │   └── main.py                # FastAPI app entry point
-│   └── tests/                     # Test suite (root & health)
-├── docs/                          # Documentation
-├── research/                      # Research papers
-├── scripts/                       # Utility scripts
-├── index.html                     # Frontend prototype
-└── pyproject.toml                # Project config
+│   │   ├── api/endpoints/
+│   │   │   └── calculators.py       # Calculator API endpoints
+│   │   ├── templates/               # Jinja2 templates
+│   │   │   ├── base.html           # Base template
+│   │   │   ├── home.html           # Dashboard
+│   │   │   └── calculators/        # Calculator templates
+│   │   ├── static/                  # CSS/JS assets
+│   │   ├── data/                    # Calculator CSV files
+│   │   │   └── klipper_calibrations/
+│   │   └── main.py                  # FastAPI application
+│   └── tests/                       # Backend tests
+├── research/
+│   ├── EXTRACTED_FORMULAS.md        # 16 calculator formulas
+│   ├── FDM 3D Printer Calibration and Slicer Report.md
+│   └── Klipper Calibrations.xlsx    # Source spreadsheet
+├── docs/
+│   ├── development/                 # Setup guides
+│   ├── deployment/                  # Railway deployment
+│   └── archived/                    # Historical docs (Vision AI)
+├── strategy/                        # Business planning
+├── README.md                        # This file
+├── TODO.md                          # Current tasks
+├── CONTRIBUTING.md                  # Development guide
+└── pyproject.toml                   # Dependencies
 ```
 
-## 🏗️ Architecture
+---
 
-### The "Router" Pattern
+## 🛠️ Tech Stack
 
-The core innovation is **avoiding context window pollution**:
+### Backend
 
-1. **Router classifies** issue type: `Mechanical` | `Slicer` | `Material`
-2. **Retrieval fetches** only relevant CSV data
-3. **Calculator renders** precise formula-based solutions
+- **Python 3.11+** - Core language
+- **FastAPI 0.115+** - Web framework
+- **Jinja2 3.1+** - Server-side templates
+- **Pandas 2.2+** - CSV data processing
+- **Pydantic 2.9+** - Type safety and validation
+- **Uvicorn** - ASGI server
 
-```mermaid
-graph LR
-    A[User Input] --> B[Router/Classifier]
-    B --> C[Mechanical/Klipper]
-    B --> D[Slicer/OrcaSlicer]
-    B --> E[Material/Filament]
-    C --> F[CSV Loader]
-    D --> F
-    E --> F
-    F --> G[Calculator]
-    G --> H[Config Output]
-```
+### Frontend
 
-### Tech Stack
+- **HTML5** - Semantic markup
+- **Jinja2** - Server-side rendering
+- **HTMX 1.9.10** (~14KB) - AJAX without JavaScript
+- **Alpine.js 3.13.5** (~15KB) - Lightweight reactivity
+- **TailwindCSS v3+** (CDN) - Utility-first CSS
 
-**Backend:**
-- FastAPI (Python 3.12+)
-- pandas, Pydantic
-- Google Gemini 1.5 Pro (Vision AI)
+**Total JS footprint: ~29KB** (vs. ~2MB for Vue/React)
 
-**Frontend:**
-- Jinja2 Templates (server-side rendering)
-- Tailwind CSS 3.4 (CDN)
-- HTMX 1.9.10 (~14KB) - seamless AJAX
-- Alpine.js 3.13.5 (~15KB) - reactive components
-- Total JS: ~29KB gzipped
+### Deployment
 
-**Deployment:**
-- Vercel (planned)
-- Single Python server (port 8000)
+- **Railway** - Primary deployment target
+- **Docker** - Containerization
+- **Smart Links** - `/go/{product_id}` redirects
 
-**Tooling:**
-- Ruff (linter/formatter)
-- pytest (testing)
-- pre-commit (hooks)
+### Development
 
-## 🔌 API Endpoints
+- **Pytest** - Testing framework
+- **Ruff** - Linting and formatting (recommended)
+- **Type hints** - Required for all functions
 
-Core backend endpoints (current Phase 1 / early Phase 2):
+---
 
-| Endpoint | Method | Purpose | Notes |
-|----------|--------|---------|-------|
-| `/` | GET | Root health + CSV/calculator metadata | Returns loaded CSV list and calculators summary |
-| `/health` | GET | Lightweight health probe | Suitable for container orchestration |
-| `/api/v1/calculators/rotation-distance` | POST | Extruder rotation distance calculator | Formula: `(current * actual) / requested` |
-| `/api/v1/calculators/pressure-advance` | POST | Pressure advance heuristic (placeholder) | Will integrate precise CSV data Phase 2 |
-| `/api/v1/calculators/input-shaping` | POST | Resonance data extraction (placeholder) | Future: integrate real resonance capture |
-| `/api/v1/diagnosis/analyze/text` | POST | Full text diagnostic routing | Uses RouterService; falls back to keyword + CSV search |
-| `/api/v1/diagnosis/analyze/image` | POST | Vision-based defect analysis | Gemini 1.5 Pro integration (planned) |
-| `/api/v1/diagnosis/classify` | POST | Low-cost keyword classification | Fast prefetch path for UI |
+## 📖 Formula Sources
 
-Deprecated/Removed:
-| Endpoint | Change |
-|----------|--------|
-| `/api/v1/diagnosis/calculators` | Removed (duplicate of calculators listing) |
+All calculators are formula-driven, not AI-generated:
 
-Example (Rotation Distance):
+1. **Primary Source:** `research/EXTRACTED_FORMULAS.md`
+   - 16 calculator specifications
+   - Input requirements
+   - Output formats
+   - Implementation priority
+
+2. **Original Data:** `research/Klipper Calibrations.xlsx`
+   - Source spreadsheet with Excel formulas
+   - Test cases and validation data
+
+3. **Technical Foundation:** `research/FDM 3D Printer Calibration and Slicer Report.md`
+   - Calibration methodology
+   - Best practices
+   - STL file references
+
+---
+
+## 🎨 Design System
+
+**Colors (from m3dp-design-system):**
+- Primary Background: `slate-900` (#0f172a)
+- Secondary Background: `slate-800` (#1e293b)
+- Accent: `amber-500` (#f59e0b)
+- Accent Hover: `amber-600` (#d97706)
+- Text: `slate-100` (#f1f5f9)
+- Muted Text: `slate-400` (#94a3b8)
+
+**Typography:**
+- System font stack (native performance)
+- Clear hierarchy for technical data
+- Monospace for code/values
+
+**Layout:**
+- Responsive grid system
+- Mobile-first approach
+- Accessible form controls
+
+---
+
+## 🧪 Development
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed guidelines:
+
+- **Code Style:** Type hints required, Ruff formatting recommended
+- **Testing:** Pytest with 80%+ coverage target
+- **Commit Conventions:** Conventional Commits (feat, fix, docs, etc.)
+- **PR Workflow:** Feature branches, squash merges
+
+### Running Tests
+
 ```bash
-curl -X POST http://localhost:8000/api/v1/calculators/rotation-distance \
-    -H 'Content-Type: application/json' \
-    -d '{"current_rotation_distance":33.5, "requested_extrusion":100, "actual_extrusion":98.5}'
+# Backend tests
+cd backend
+pytest
+
+# With coverage
+pytest --cov=app --cov-report=html
 ```
 
-Example response (truncated):
-```json
-{
-    "new_rotation_distance": 33.0,
-    "klipper_config": "rotation_distance: 33.0",
-    "within_tolerance": true,
-    "recommendation": "✅ Within ±2mm tolerance. Update value and re-test."
-}
-```
-
-Failure resilience: `/api/v1/diagnosis/analyze/text` downgrades to `handler: "fallback_csv_router"` (keyword + CSV search) if RouterService fails—maintaining low cost and availability.
-
-## 🧪 Testing
+### Code Quality
 
 ```bash
-# Activate environment
-source .venv/bin/activate
-
-# Run all tests
-./scripts/run_tests.sh
-
-# Run with coverage (HTML + terminal summary)
-pytest --cov=app --cov-report=html:backend/htmlcov
-
-# Run specific test
-pytest backend/tests/test_root.py::test_health
-```
-
-Coverage badge updates only when a valid backend Python project exists.
-
-## 🎨 Code Quality
-
-```bash
-# Format and lint
-./scripts/format_code.sh
-
-# Or manually:
+# Lint and format (if using Ruff)
+ruff check .
 ruff format .
-ruff check . --fix
 ```
 
-Pre-commit hooks run automatically on commit.
+---
 
 ## 📚 Documentation
 
-- **[Development Guide](docs/DEVELOPMENT.md)** - Complete setup and workflow
-- **[Scripts Guide](docs/SCRIPTS.md)** - Using utility scripts
-- **[TODO.md](TODO.md)** - Development roadmap and tasks
-- **[API Docs](http://localhost:8000/docs)** - Interactive API documentation (when server running)
+### User Guides
+- [Setup Guide](docs/development/SETUP_SUMMARY.md) - Environment setup
+- [Deployment Options](docs/deployment/DEPLOYMENT_OPTIONS.md) - Railway deployment
 
-## 🗺️ Development Roadmap
+### Developer Resources
+- [TODO.md](TODO.md) - Current sprint tasks and calculator backlog
+- [CONTRIBUTING.md](CONTRIBUTING.md) - Development workflow
+- [GitHub Token Setup](docs/development/GITHUB_TOKEN_SETUP.md) - CI/CD setup
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for contribution guidelines. A future `TODO.md` will track granular tasks.
+### Archived Documentation
+- `docs/archived/` - Vision AI features (removed in v2-lean refactor)
+- Phase-specific documentation (consolidated into TODO.md)
 
-**Current Phase:** Phase 1 - Foundation
-- ✅ Backend scaffold (FastAPI, health endpoints)
-- ✅ Basic tests & coverage wiring
-- ✅ Code quality tooling (Ruff, pre-commit)
-- 🔄 CSV knowledge base ingestion (pending)
-- 🔄 Vision API integration (pending)
-- 🔄 Calculator implementations (pending)
+---
 
-## 🤝 Contributing
+## 🚀 Deployment
 
-1. Create feature branch: `git checkout -b feature/your-feature`
-2. Make changes and test: `./scripts/run_tests.sh`
-3. Format code: `./scripts/format_code.sh`
-4. Commit: `git commit -m "feat: your feature"`
-5. Push and create PR to `develop`
+### Railway (Recommended)
 
-Follow [Conventional Commits](https://www.conventionalcommits.org/) for commit messages.
+1. Create new Railway project
+2. Connect GitHub repository
+3. Add environment variables (if needed)
+4. Deploy from `refactor/v2-lean` branch
 
-## 📖 Background & Research
+See [Deployment Options](docs/deployment/DEPLOYMENT_OPTIONS.md) for detailed Railway setup.
 
-### Feasibility Analysis
+### Docker
 
-Overall Viability: High
+```bash
+# Build image
+docker build -t m3dp-uip .
 
-The project identified in 2407.04180v1 (likely referencing recent advancements in 3D-LLMs or Vision-Language Models for manufacturing) supports the core premise: AI can now "see" manufacturing defects.
+# Run container
+docker run -p 8000:8000 m3dp-uip
+```
 
-However, the "Minimal 3DP" advantage is the Structured Knowledge Base.
+---
 
-Pure AI Approach (Low Accuracy): Asking an LLM "Fix my print." Result: Generic, often wrong advice.
+## 🗺️ Roadmap
 
-The Minimal 3DP Approach (High Accuracy): Using AI to map a user's visual symptom to a specific row in your OrcaSlicer Recommendations.csv or Klipper Calibrations.csv.
+See [TODO.md](TODO.md) for current priorities:
 
-Core Challenge:
-The main challenge is Context Window Pollution. If you feed an LLM all your CSVs at once, it gets confused.
-Solution: Use a "Router" architecture.
+### Phase 1: Core Calculators
+- Implement remaining 6 calculators
+- Fix skew correction CSV parsing
+- Add unit tests for all calculators
 
-Input: User Image/Text.
+### Phase 2: UI Polish
+- Improve calculator form layouts
+- Add result visualization
+- Mobile responsiveness
 
-Router: Classifies issue as "Mechanical" (Klipper), "Slicer" (Orca), or "Material" (Filament Data).
+### Phase 3: Deployment
+- Railway production deployment
+- Custom domain setup
+- Smart link redirects
 
-Retrieval: Fetches only the relevant CSV data (e.g., Klipper Calibrations - Pressure Advance.csv).
+---
 
-Output: Precise instructions + Interactive Calculator.
+## 📄 License
 
-2. Recommended Tech Stack
+**Proprietary** - © 2025 Minimal 3DP
 
-Backend: Python (FastAPI)
+All rights reserved. This software is proprietary and may not be copied, modified, or distributed without explicit permission from Minimal 3DP.
 
-Reasoning: Python is the industry standard for RAG (Retrieval Augmented Generation). You can use the pandas library to read your CSVs natively.
+---
 
-Libraries: fastapi, pandas (for CSV math), pydantic (data validation), google-generativeai (Vision).
+## 🔗 Links
 
-Frontend: React (Vite + Tailwind CSS)
+- **Website:** [minimal3dp.com](https://minimal3dp.com)
+- **YouTube:** 10K+ subscribers
+- **Support:** Contact through minimal3dp.com
 
-Reasoning: You need a highly interactive UI for the calculators (updating "Steps per mm" in real-time).
+---
 
-Libraries: lucide-react (icons), recharts (if you want to graph Input Shaping later).
-
-Database: Google Firestore
-
-Reasoning: You need to store User Sessions (History of diagnosis).
-
-Structure:
-
-users/{uid}/printers/{printer_id} (Store printer profiles: Nozzle size, MCU type).
-
-artifacts/public/knowledge_base (Where your digested CSV data lives).
-
-3. Proposed Scaffold
-
-minimal-3dp-platform/
-├── backend/
-│   ├── app/
-│   │   ├── main.py              # API Entry point
-│   │   ├── core/
-│   │   │   ├── config.py        # Env variables
-│   │   │   └── security.py      # Auth logic
-│   │   ├── api/
-│   │   │   ├── endpoints/
-│   │   │   │   ├── diagnosis.py # Handles Image/Text upload
-│   │   │   │   └── calc.py      # Pure python functions mirroring your CSV formulas
-│   │   ├── services/
-│   │   │   ├── llm_service.py   # Interface with Gemini/OpenAI
-│   │   │   └── csv_loader.py    # Loads your Reference CSVs into memory
-│   │   └── data/                # Your raw CSV files go here
-│   │       ├── klipper_calibrations/
-│   │       └── orca_recommendations/
-├── frontend/
-│   ├── src/
-│   │   ├── components/
-│   │   │   ├── DiagnosticWizard.tsx
-│   │   │   ├── calculators/     # Reusable components for specific CSVs
-│   │   │   │   ├── RotationDistanceCalc.tsx
-│   │   │   │   └── FlowRateCalc.tsx
-│   │   ├── hooks/               # Custom hooks for API calls
-│   │   └── types/               # TypeScript interfaces matching your CSV columns
-
-
-4. TODO.md
-
-Phase 1: Data Digestion (The Foundation)
-
-[ ] Audit CSVs: Standardize headers in Klipper Calibrations and OrcaSlicer Recommendations. Ensure numerical columns are actually numbers (remove "mm" or "%" symbols inside the cells).
-
-[ ] Python Ingestion Script: Write a script to parse your CSVs into JSON dictionaries.
-
-Example: Convert Klipper Calibrations - Extruder Rotation Distance.csv into a Python Class RotationDistanceCalculator.
-
-[ ] Vector Embeddings: Create embeddings for the "Description" or "Notes" columns in your CSVs. This allows the user to search "blobs on corner" and matches it to your "Seam Position" or "Pressure Advance" rows.
-
-Phase 2: The Core Engine (Backend)
-
-[ ] Setup FastAPI: Initialize project with Python 3.10+.
-
-[ ] Vision Endpoint: Create an endpoint /analyze that accepts an image.
-
-Use Gemini 1.5 Pro with a System Prompt: "You are an expert 3D printing diagnostician. Analyze this image for defects. Return a JSON object classifying the error type (e.g., VFA, Under-extrusion, Layer Shift)."
-
-[ ] Calculator Logic: Port the formulas from your spreadsheets into Python functions.
-
-Task: Implement Rotation Distance = Full Steps * Micro Steps / E Steps.
-
-Task: Implement Flow Value = start + (height-measured * step) (from Max Volumetric Speed CSV).
-
-Phase 3: The User Interface (Frontend)
-
-[ ] Scaffold React: Setup Vite + Tailwind.
-
-[ ] Wizard Component: Create a step-by-step flow:
-
-Context: (User inputs Printer Name, Filament Type).
-
-Input: (Upload Image OR Describe Issue).
-
-Result: (Display AI Analysis).
-
-Action: (Render the specific Calculator Component required to fix it).
-
-[ ] Calculator Components: Build React components that mirror the "User Input" cells in your spreadsheets.
-
-Phase 4: Deployment & Polish
-
-[ ] Auth: Implement Firebase Auth (or simple email login).
-
-[ ] State Persistence: Save the user's "Printer Profile" (so they don't have to re-enter '0.4mm nozzle' every time).
-
-[ ] Deploy: Vercel (Frontend) + Render/Fly.io (Backend).
-
-Future Manufacturing / Grant Goals (Alignment)
-
-[ ] Data Collection: Anonymize uploaded images to build a proprietary dataset of "Failed Prints vs. Corrected Settings" to train a custom model (fitting the "Data-Driven Content Strategy").
+**Built with ❤️ for the 3D printing community**

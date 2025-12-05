@@ -14,7 +14,7 @@ from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
-from app.api.endpoints import calculators, diagnosis
+from app.api.endpoints import calculators  # , diagnosis  # TODO: Re-enable after refactor
 from app.core.config import settings
 from app.services.csv_loader import get_csv_loader
 
@@ -209,10 +209,10 @@ async def belt_tension_page(request: Request):
     return templates.TemplateResponse("calculator_belt_tension.html", {"request": request})
 
 
-@app.get("/diagnosis-ui", response_class=HTMLResponse, include_in_schema=False)
-async def diagnosis_page(request: Request):
-    """Render AI diagnosis page"""
-    return templates.TemplateResponse("diagnosis.html", {"request": request})
+# @app.get("/diagnosis-ui", response_class=HTMLResponse, include_in_schema=False)
+# async def diagnosis_page(request: Request):
+#     """Render AI diagnosis page"""
+#     return templates.TemplateResponse("diagnosis.html", {"request": request})
 
 
 # API Root Endpoint
@@ -265,7 +265,7 @@ async def health_check():
 
 
 # Include routers
-app.include_router(diagnosis.router, prefix="/api/v1/diagnosis", tags=["diagnosis"])
+# app.include_router(diagnosis.router, prefix="/api/v1/diagnosis", tags=["diagnosis"])  # TODO: Re-enable after refactor
 app.include_router(calculators.router, prefix="/api/v1/calculators", tags=["calculators"])
 
 
