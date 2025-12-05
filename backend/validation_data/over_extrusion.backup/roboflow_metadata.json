@@ -1,0 +1,12 @@
+{
+  "defect_type": "Over_Extrusion",
+  "description": "Over_Extrusion defect images from Roboflow",
+  "source": {
+    "name": "3D Error Monitoring (588 images)",
+    "provider": "Roboflow",
+    "license": "CC BY 4.0",
+    "url": "3d-defects/3d-error-monitoring2"
+  },
+  "image_count": 114,
+  "validation_notes": "Downloaded from Roboflow - ready for validation"
+}

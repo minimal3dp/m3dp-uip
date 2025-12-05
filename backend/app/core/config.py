@@ -37,7 +37,7 @@ class Settings(BaseSettings):
 
     # Vision API (Gemini)
     GOOGLE_GENAI_API_KEY: str = ""
-    GEMINI_MODEL: str = "gemini-2.5-pro"
+    GEMINI_MODEL: str = "gemini-2.0-flash"  # Stable model with higher Tier 1 limits
     VISION_MOCK_ENABLED: bool = False  # When true, use deterministic mock vision responses
 
     # Semantic Router (for query classification)

@@ -216,6 +216,15 @@ guide/
 # Add user-uploaded or temporary CSVs here if needed
 backend/app/data/**/.gitkeep
 
+# Validation dataset images (too large for git)
+backend/validation_data/*/images/
+backend/validation_data/temp_*/
+backend/tests/fixtures/defect_images/*/images/
+# Track metadata and README files
+!backend/validation_data/**/*.json
+!backend/validation_data/**/*.md
+!backend/validation_data/README.md
+
 # Research materials (PDFs can be large - markdown versions are tracked)
 research/**/*.pdf
 research/*.pdf

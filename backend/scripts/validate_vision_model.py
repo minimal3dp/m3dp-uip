@@ -45,7 +45,7 @@ async def main() -> int:
     parser.add_argument(
         "--dataset",
         type=str,
-        default="backend/tests/fixtures/defect_images",
+        default="backend/validation_data",
         help="Path to defect image dataset",
     )
     parser.add_argument(

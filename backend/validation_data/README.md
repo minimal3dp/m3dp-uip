@@ -2,11 +2,20 @@
 
 This directory contains reference images for validating the vision AI's defect detection accuracy.
 
+## Quick Start
+
+**See [DATASET_SETUP.md](DATASET_SETUP.md) for complete setup instructions including:**
+- Dataset download scripts
+- API key configuration
+- Metadata generation
+- Validation workflow
+
 ## Structure
 
 Each defect type has its own subdirectory containing:
-- **images/**: Reference images (5-10 per defect type)
-- **metadata.json**: Ground truth labels and context for each image
+- **images/**: Reference images (not tracked in git - too large)
+- **{source}_metadata.json**: Dataset-level metadata (tracked in git)
+- **{image_name}_metadata.json**: Per-image metadata (tracked in git)
 
 ## Defect Types
 

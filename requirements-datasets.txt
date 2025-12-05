@@ -1,0 +1,12 @@
+# Dataset Download Dependencies
+# Install with: pip install -r requirements-datasets.txt
+
+# Kaggle API for downloading Kaggle datasets
+kaggle>=1.6.0
+
+# Roboflow API for downloading Roboflow datasets
+roboflow>=1.1.0
+
+# Additional utilities
+tqdm>=4.66.0  # Progress bars
+Pillow>=10.0.0  # Image verification

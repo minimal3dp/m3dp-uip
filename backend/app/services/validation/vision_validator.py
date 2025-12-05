@@ -4,6 +4,7 @@ This module provides tools for validating and benchmarking the vision API
 against reference defect images with known classifications.
 """
 
+import asyncio
 import json
 import logging
 from pathlib import Path
@@ -59,7 +60,7 @@ class VisionValidator:
     def __init__(
         self,
         vision_service: VisionService,
-        dataset_path: Path | str = "backend/tests/fixtures/defect_images",
+        dataset_path: Path | str = "backend/validation_data",
     ):
         """Initialize validator.
 
@@ -94,59 +95,74 @@ class VisionValidator:
             return None
 
     async def validate_image(
-        self, image_path: Path, metadata: ValidationMetadata
+        self, image_path: Path, metadata: ValidationMetadata, retry_delay: float = 6.5
     ) -> ValidationResult:
         """Validate vision API prediction for a single image.
 
         Args:
             image_path: Path to defect image
             metadata: Expected classification metadata
+            retry_delay: Delay between API calls to respect rate limits (seconds)
 
         Returns:
             ValidationResult with comparison
         """
-        try:
-            # Read image
-            with open(image_path, "rb") as f:
-                image_data = f.read()
+        max_retries = 3
+        for attempt in range(max_retries):
+            try:
+                # Read image
+                with open(image_path, "rb") as f:
+                    image_data = f.read()
 
-            # Get prediction from vision service
-            # Note: Using context from metadata
-            context = {
-                "printer_model": metadata.printer_type,
-                "filament_type": metadata.material,
-            }
-            response = await self.vision_service.analyze_image(
-                image_data=image_data,
-                context=context,
-            )
+                # Get prediction from vision service
+                # Note: Using context from metadata
+                context = {
+                    "printer_model": metadata.printer_type,
+                    "filament_type": metadata.material,
+                }
+                response = await self.vision_service.analyze_image(
+                    image_data=image_data,
+                    context=context,
+                )
 
-            # Extract primary defect from response
-            predicted_defect = response.get("defect_type", "Unknown")
+                # Extract primary defect from response
+                predicted_defect = response.get("classification", "Unknown")
 
-            # Check if prediction matches expected
-            correct = predicted_defect.lower() == metadata.expected_classification.lower()
+                # Check if prediction matches expected
+                correct = predicted_defect.lower() == metadata.expected_classification.lower()
 
-            return ValidationResult(
-                image_path=str(image_path),
-                expected_defect=metadata.expected_classification,
-                predicted_defect=predicted_defect,
-                confidence=response.get("confidence"),
-                correct=correct,
-                visual_markers_matched=response.get("visual_markers"),
-                notes=None,
-            )
+                # Rate limiting: wait before next request
+                await asyncio.sleep(retry_delay)
 
-        except Exception as e:
-            logger.error(f"Error validating {image_path}: {e}")
-            return ValidationResult(
-                image_path=str(image_path),
-                expected_defect=metadata.expected_classification,
-                predicted_defect="ERROR",
-                confidence=None,
-                correct=False,
-                notes=f"Validation error: {str(e)}",
-            )
+                return ValidationResult(
+                    image_path=str(image_path),
+                    expected_defect=metadata.expected_classification,
+                    predicted_defect=predicted_defect,
+                    confidence=response.get("confidence"),
+                    correct=correct,
+                    visual_markers_matched=response.get("visual_markers"),
+                    notes=None,
+                )
+
+            except Exception as e:
+                error_msg = str(e)
+                if "429" in error_msg or "quota" in error_msg.lower():
+                    # Rate limit hit, wait longer before retry
+                    if attempt < max_retries - 1:
+                        wait_time = retry_delay * (attempt + 2)  # Exponential backoff
+                        logger.warning(f"Rate limit hit, waiting {wait_time}s before retry {attempt + 1}/{max_retries}")
+                        await asyncio.sleep(wait_time)
+                        continue
+                
+                logger.error(f"Error validating {image_path}: {e}")
+                return ValidationResult(
+                    image_path=str(image_path),
+                    expected_defect=metadata.expected_classification,
+                    predicted_defect="ERROR",
+                    confidence=None,
+                    correct=False,
+                    notes=f"Validation error: {str(e)}",
+                )
 
     async def validate_dataset(self, defect_type: str | None = None) -> ValidationReport:
         """Run validation on entire dataset or specific defect type.
@@ -170,6 +186,15 @@ class VisionValidator:
         for image_path in image_paths:
             metadata = self.load_metadata(image_path)
             if metadata is None:
+                continue
+
+            # Skip legacy or out-of-taxonomy classes (e.g., Over_Extrusion, Under_Extrusion)
+            if metadata.expected_classification not in self.vision_service.DEFECT_CLASSES:
+                logger.debug(
+                    "Skipping image %s with legacy classification '%s' (not in current taxonomy)",
+                    image_path,
+                    metadata.expected_classification,
+                )
                 continue
 
             result = await self.validate_image(image_path, metadata)

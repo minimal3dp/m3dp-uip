@@ -590,14 +590,87 @@ These refinements were completed after the initial Phase 2 stabilization to impr
 ## Phase 4: Integration & Testing 🚀
 
 **Branch**: `feature/phase-4-integration-testing` (Current)
-**Status**: IN PROGRESS
+**Status**: IN PROGRESS - Vision Model Validation Running
 **Priority**: HIGH
 **Dependencies**: ✅ Phases 2 & 3
 **Goal**: End-to-end testing, backend/frontend integration, and production readiness validation
 
-### Tasks
+### ✅ Completed Tasks
 
-#### Integration Tests
+#### Vision Model Validation Infrastructure ✅
+- [x] Created validation service (`VisionValidator`)
+- [x] Implemented validation models (ValidationMetadata, ValidationResult, ValidationReport)
+- [x] Added CLI script (`validate_vision_model.py`)
+- [x] Created test suite (23 tests passing)
+- [x] Added monitoring script (`monitor_validation.py`)
+- [x] Implemented rate limiting with exponential backoff (10 RPM quota)
+- [x] Fixed critical field name bug (defect_type → classification)
+- [x] Set up background validation workflow
+
+#### Vision Validation Status 🔄
+- **Dataset**: 6,237 images across 5 defect types
+  - Spaghetti: 3,797 images
+  - Over_Extrusion: 1,089 images
+  - Stringing: 798 images
+  - Under_Extrusion: 260 images
+  - Warping: 293 images
+- **Model**: Gemini 2.0 Flash Experimental (gemini-2.0-flash-exp)
+- **Rate Limit**: 10 requests per minute (6.5s delay between calls)
+- **Progress**: Running in background (~10.4 hours estimated)
+- **Started**: November 24, 2025 ~9:47 PM
+- **Expected Completion**: ~8:00 AM November 25, 2025
+- **Monitoring**: `uv run python scripts/monitor_validation.py`
+- **Log File**: `validation.log`
+- **Report Output**: `backend/reports/vision_validation_report.json`
+
+#### Research Integration ✅
+- [x] Reviewed FDM 3D Printer Calibration and Slicer Report (74,762 tokens)
+- [x] Extracted 9-class defect taxonomy with visual descriptions
+- [x] Documented material-specific parameters (PLA, PETG, ABS, ASA, TPU)
+- [x] Cataloged calibration tool URLs (Teaching Tech, Prusa, TH3D, FullControl)
+- [x] Analyzed decision tree logic for root cause disambiguation
+- [x] Prepared recommendations for post-validation prompt enhancement
+
+### 🚀 Active Tasks (Post-Validation - HIGH PRIORITY)
+
+#### Immediate (After validation completes ~8 AM) ⏳
+1. **Analyze Validation Results** (30-60 minutes)
+   - [ ] Review `backend/reports/vision_validation_report.json`
+   - [ ] Identify defect types with accuracy < 70% target
+   - [ ] Analyze confusion matrix (which defects get misclassified)
+   - [ ] Create ranked list of defects needing improvement
+   - [ ] Document baseline accuracy metrics
+
+2. **Enhance System Prompt with Research Insights** (1-2 hours)
+   - [ ] Add specific visual descriptions from research document:
+     - "Ringing: Faint, decaying ripples specifically after sharp corners"
+     - "Z-Wobble: Periodic horizontal bands at fixed intervals (e.g., every 8mm)"
+     - "Under-Extrusion: Gaps between lines; sponge-like texture; weak parts"
+     - "Stringing: Fine hairs or cobwebs between non-printing travel moves"
+   - [ ] Add disambiguation logic:
+     - "Vertical lines near corners → Ringing (resonance)"
+     - "Vertical lines periodic → Z-Wobble (lead screw)"
+     - "Vertical lines irregular → Extrusion consistency"
+   - [ ] Add material context rules:
+     - "PLA prone to heat creep/stringing; expect 100% cooling"
+     - "ABS prone to warping; expect 0% cooling + enclosure"
+   - [ ] Add multi-factor recognition patterns
+   - [ ] Test improvements with `test_vision_sample.py`
+
+3. **Implement Confusion Matrix Analysis** (1-2 hours)
+   - [ ] Build confusion matrix from validation report
+   - [ ] Identify systematic misclassification patterns
+   - [ ] Create targeted prompt refinements for confused pairs
+   - [ ] Document improvement strategy per defect type
+
+4. **Re-validate with Enhanced Prompt** (10-12 hours runtime)
+   - [ ] Apply prompt improvements from research document
+   - [ ] Run full validation again on 6,237 images
+   - [ ] Compare accuracy improvement (baseline vs enhanced)
+   - [ ] Document prompt engineering decisions
+   - [ ] Iterate if accuracy still < 80% overall target
+
+#### Integration Tests (Parallel with Validation)
 - [ ] Backend + CSV loader integration
 - [ ] Backend + Vision API integration
 - [ ] Frontend + Backend API integration
@@ -630,13 +703,27 @@ These refinements were completed after the initial Phase 2 stabilization to impr
 
 ### Acceptance Criteria
 
-- All integration points work correctly
-- Performance meets targets (<2s response time)
-- Error handling is comprehensive
-- Documentation is complete
+- ✅ Vision validation infrastructure complete
+- ⏳ Vision model accuracy ≥80% overall, ≥70% per defect (awaiting results)
+- [ ] All integration points work correctly
+- [ ] Performance meets targets (<2s response time)
+- [ ] Error handling is comprehensive
+- [ ] Documentation is complete
 
 ### Related Files
 
+**Vision Validation (NEW):**
+- `backend/app/services/validation/vision_validator.py` - Validation service with rate limiting
+- `backend/scripts/validate_vision_model.py` - CLI validation script
+- `scripts/test_vision_sample.py` - Quick 10-image test script
+- `scripts/monitor_validation.py` - Real-time progress monitoring
+- `validation.log` - Background validation output
+- `backend/reports/vision_validation_report.json` - Final results (in progress)
+
+**Research Documents:**
+- `research/FDM 3D Printer Calibration and Slicer Report.md` - Comprehensive technical foundation
+
+**Testing (TODO):**
 - `backend/tests/integration/` (new)
 - `frontend/tests/e2e/` (new)
 - `docs/USER_GUIDE.md` (new)
@@ -644,28 +731,100 @@ These refinements were completed after the initial Phase 2 stabilization to impr
 
 ---
 
-## Phase 5: Deployment & Polish ⏳
+## Phase 5: Deployment & Polish 🚀
 
 **Branch**: `feature/deployment`
-**Status**: READY TO START
-**Priority**: LOW
+**Status**: READY TO START - Deployment Strategy Documented
+**Priority**: MEDIUM (After Phase 4 validation completes)
 **Dependencies**: Phases 2, 3, 4
-**Goal**: Deploy to Vercel and polish for production
+**Goal**: Choose hosting platform and deploy to production
+
+### 📋 Deployment Strategy Decision
+
+**Current Hosting**: Vercel Hobby (Free)
+**Recommendation**: Railway.app ($5/month) or OVHcloud VPS-2 ($5/month)
+**See**: `DEPLOYMENT_OPTIONS.md` for comprehensive analysis
+
+#### Hosting Options Evaluated:
+1. ✅ **Railway.app** ($5/month) - RECOMMENDED for MVP
+   - Persistent storage for validation images (100GB)
+   - No cold starts (always-on containers)
+   - Push-to-deploy simplicity (like Vercel)
+   - Built-in SSL/HTTPS
+   - Perfect for long-running validation tasks
+
+2. ✅ **OVHcloud VPS-2** ($5/month) - RECOMMENDED for full control
+   - 2GB RAM, 20GB SSD, 1 vCore
+   - Full control over server environment
+   - Can run background processes (validation)
+   - Manual setup required (Nginx, Certbot, systemd)
+   - Best for DevOps learning
+
+3. ⚠️ **Vercel Hobby** (Current - Free)
+   - Great for static/serverless
+   - NOT suitable for long-running tasks (10s timeout)
+   - No persistent storage (validation images need S3)
+   - Cold starts hurt UX
+
+4. ✅ **Fly.io** (Free tier available)
+   - 3x 256MB VMs free
+   - Good for testing deployment
+   - No cold starts
+   - Can upgrade easily
+
+5. ⚠️ **Render.com** (Free with spin-down)
+   - Free tier has 15-min inactivity timeout
+   - Paid tier $7/month (more expensive than Railway/OVH)
+
+**Decision Criteria**:
+- Must support long-running processes (validation takes 10+ hours)
+- Must have persistent storage (6,237 validation images)
+- Must avoid cold starts (better UX for calculators)
+- Budget: $0-10/month for MVP stage
+
+**Recommendation**: Start with **Railway.app** for MVP (easiest migration from Vercel, all features needed)
 
 ### Tasks
 
-#### Deployment Setup
-- [ ] Configure Vercel project
-- [ ] Set up environment variables
-- [ ] Configure custom domain
-- [ ] Set up SSL/HTTPS
-- [ ] Configure CI/CD pipeline
+#### Pre-Deployment Planning ✅ COMPLETED
+- [x] Research hosting options
+- [x] Compare pricing and features
+- [x] Evaluate technical requirements
+- [x] Create deployment recommendations document
+
+#### Deployment Setup - Railway.app (RECOMMENDED)
+- [ ] Install Railway CLI (`npm i -g @railway/cli`)
+- [ ] Login and initialize project (`railway login && railway init`)
+- [ ] Set environment variables:
+  - [ ] `GOOGLE_GENAI_API_KEY` (Gemini API)
+  - [ ] `ENVIRONMENT=production`
+  - [ ] Any other config from `.env`
+- [ ] Deploy application (`railway up`)
+- [ ] Configure custom domain (optional)
+- [ ] Test deployment with health endpoint
+
+#### Alternative: OVHcloud VPS Setup (If full control needed)
+- [ ] Provision VPS-2 or VPS-3
+- [ ] SSH setup and security hardening
+- [ ] Install dependencies (Python 3.12, Nginx, Certbot)
+- [ ] Clone repository and install packages
+- [ ] Create systemd service for FastAPI
+- [ ] Configure Nginx reverse proxy
+- [ ] Set up SSL with Let's Encrypt
+- [ ] Test deployment
+
+#### Hybrid Approach (Optional)
+- [ ] Keep Vercel for static hosting (HTML/CSS/JS)
+- [ ] Deploy backend to Railway/VPS
+- [ ] Configure CORS for cross-origin API calls
+- [ ] Update frontend API base URL
 
 #### Monitoring & Analytics
 - [ ] Set up Google Analytics 4
 - [ ] Add error tracking (Sentry)
 - [ ] Add performance monitoring
 - [ ] Create monitoring dashboard
+- [ ] Set up uptime monitoring (UptimeRobot)
 
 #### SEO & Marketing
 - [ ] Add meta tags and OG images
@@ -693,19 +852,43 @@ These refinements were completed after the initial Phase 2 stabilization to impr
 - [ ] Cross-browser testing
 - [ ] Mobile device testing
 - [ ] Performance testing on production
+- [ ] Load testing (simulate validation workload)
 
 ### Acceptance Criteria
 
-- Application deployed to production
-- All monitoring in place
-- SEO optimized
-- Branding consistent with minimal3dp.com
+- ✅ Deployment strategy documented with pricing comparison
+- [ ] Application deployed to production (Railway or VPS)
+- [ ] Background validation can run for 10+ hours
+- [ ] Validation images stored persistently
+- [ ] No cold starts for calculator endpoints
+- [ ] All monitoring in place
+- [ ] SEO optimized
+- [ ] Branding consistent with minimal3dp.com
+- [ ] Production cost ≤ $10/month
 
 ### Related Files
 
-- `vercel.json` (new)
+**Deployment Documentation:**
+- `DEPLOYMENT_OPTIONS.md` - Comprehensive hosting comparison and setup guides ✅ NEW
+
+**Configuration (TODO):**
+- `vercel.json` (if keeping Vercel for frontend)
+- `railway.json` or `Dockerfile` (for Railway)
+- `deploy/setup_vps.sh` (for OVHcloud VPS automation)
 - `frontend/public/` (assets)
 - `.github/workflows/` (CI/CD)
+
+### Deployment Timeline
+
+**Week 1**: Complete Phase 4 vision validation and accuracy improvements
+**Week 2**: Deploy to Railway.app (3-5 hours setup + testing)
+**Week 3**: Monitor production, optimize performance
+**Week 4**: Add monitoring, analytics, SEO
+
+**Estimated Total Setup Time**:
+- Railway: 15-30 minutes (easiest)
+- OVHcloud VPS: 2-3 hours (first-time setup)
+- Hybrid (Vercel + Railway): 30-60 minutes
 
 ---
 
@@ -731,15 +914,105 @@ These refinements were completed after the initial Phase 2 stabilization to impr
 
 ### Phase 7: Vision Model Enhancement
 **Branch**: `feature/vision-enhancement`
-**Priority**: HIGH (Core diagnosis improvement)
-**Goal**: Improve AI accuracy for defect detection
+**Priority**: HIGH (Core diagnosis improvement) - ACTIVE
+**Status**: Infrastructure complete, validation running
+**Goal**: Achieve 80%+ overall accuracy, 70%+ per defect type
 
-- [ ] **Vision Validation Dataset** (In Progress)
-  - Collect 40-80 reference images (5-10 per defect type)
-  - Create metadata JSON files for each image
-  - Run baseline accuracy validation
-  - Iteratively improve system prompt
-  - Target: 80%+ overall accuracy
+#### ✅ Completed (Infrastructure)
+- [x] Created validation service with rate limiting
+- [x] Implemented validation models and CLI script
+- [x] Built monitoring tools for progress tracking
+- [x] Set up background validation workflow
+- [x] Fixed critical field name bug (classification)
+- [x] Configured Gemini 2.0 Flash Experimental with 10 RPM rate limiting
+- [x] Reviewed comprehensive FDM research document (74,762 tokens)
+- [x] Extracted visual descriptions and decision trees from research
+
+#### 🔄 In Progress (Active Validation)
+- **Current Dataset**: 6,237 images (5 defect types)
+  - Spaghetti: 3,797 images
+  - Over_Extrusion: 1,089 images
+  - Stringing: 798 images
+  - Under_Extrusion: 260 images
+  - Warping: 293 images
+- **Status**: Running in background (~10.4 hours)
+- **Expected Completion**: ~8:00 AM November 25, 2025
+- **Monitoring**: `uv run python scripts/monitor_validation.py`
+
+#### 🚀 Next Steps (Post-Validation - HIGH PRIORITY)
+
+**1. Analyze Baseline Results** (30-60 minutes after completion)
+- [ ] Review validation report JSON
+- [ ] Calculate overall accuracy vs 80% target
+- [ ] Calculate per-defect accuracy vs 70% target
+- [ ] Build confusion matrix (which defects get confused)
+- [ ] Rank defects by accuracy (identify weakest areas)
+- [ ] Document baseline metrics for comparison
+
+**2. Enhance System Prompt with Research** (1-2 hours)
+- [ ] Add specific visual descriptions from research:
+  - "Ringing: Faint, decaying ripples specifically after sharp corners or text"
+  - "Z-Wobble: Periodic horizontal bands at fixed intervals (e.g., every 8mm)"
+  - "Under-Extrusion: Gaps between adjacent lines; sponge-like texture; weak parts"
+  - "Over-Extrusion: Rough solid layers; nozzle drags creating plowed lines"
+  - "Stringing: Fine hairs or cobwebs between non-printing travel moves"
+  - "Warping: Corners lift off build plate, curling upward"
+- [ ] Add disambiguation decision trees:
+  - "Vertical Lines" → Check if near corners (Ringing) vs periodic (Z-Wobble) vs irregular (Extrusion)
+  - "Top Surface Issues" → Check if bumps revealing infill (Pillowing) vs gaps (Under-Extrusion)
+- [ ] Add material-specific context:
+  - "PLA: Prone to heat creep/stringing; expect 100% cooling"
+  - "ABS/ASA: Prone to warping/delamination; expect 0% cooling + enclosure required"
+  - "PETG: Prone to stringing/blobbing; expect 20-50% cooling"
+- [ ] Add multi-factor recognition:
+  - "Warping = Thermal (bed temp 95-110°C) + Mechanical (adhesion prep)"
+  - "Poor Bridging = Thermal (cooling) + Speed + Geometry (anchor points)"
+
+**3. Implement Material Parameter Logic** (2-3 hours)
+- [ ] Create material parameter lookup table from research:
+  ```python
+  MATERIAL_PARAMS = {
+      "PLA": {"temp": (190, 220), "bed": (45, 60), "cooling": 100, "enclosure": False},
+      "PETG": {"temp": (230, 250), "bed": (70, 85), "cooling": (20, 50), "enclosure": False},
+      "ABS": {"temp": (240, 260), "bed": (95, 110), "cooling": 0, "enclosure": True},
+      "ASA": {"temp": (240, 260), "bed": (95, 110), "cooling": 0, "enclosure": True},
+      "TPU": {"temp": (220, 240), "bed": (40, 60), "cooling": (50, 100), "enclosure": False},
+  }
+  ```
+- [ ] Integrate into recommendation logic
+- [ ] Adjust suggestions based on material context
+- [ ] Test with material-specific validation samples
+
+**4. Add Calibration Tool URLs** (1 hour)
+- [ ] Integrate URLs from research Section 7:
+  - Teaching Tech: https://teachingtechyt.github.io/calibration.html
+  - Prusa Calculator: https://blog.prusa3d.com/calculator_3416/
+  - TH3D E-Steps: https://www.th3dstudio.com/estep-calculator/
+  - FullControl GCode: https://fullcontrolgcode.com
+- [ ] Add "calibration_resources" field to API response
+- [ ] Map defect types to relevant calibration tools
+- [ ] Link to specific calibration guides per issue
+
+**5. Re-validate with Improvements** (10-12 hours runtime)
+- [ ] Apply all prompt enhancements
+- [ ] Run full validation again on 6,237 images
+- [ ] Compare accuracy: baseline vs enhanced
+- [ ] Calculate improvement percentage
+- [ ] Document what worked / what didn't
+- [ ] Iterate if still < 80% overall target
+
+**6. Source Missing Defect Images** (ONGOING)
+- [ ] Find datasets for Ringing, Poor_Bridging, Layer_Separation
+- [ ] Target: 200+ images per missing defect type
+- [ ] Sources:
+  - RepRap Pictorial Guide (open license)
+  - All3DP gallery (40+ defects)
+  - Prusa Knowledge Base (photo-documented)
+  - Simplify3D before/after examples
+- [ ] Create metadata JSON for new images
+- [ ] Expand validation to 8/9 defect classes
+
+#### Future Enhancements
 - [ ] **Enhanced Diagnosis Response**
   - Add confidence levels to recommendations
   - Link diagnosis to relevant calculators
@@ -749,6 +1022,21 @@ These refinements were completed after the initial Phase 2 stabilization to impr
   - Accept 3-5 images per diagnosis
   - Cross-validate defect across angles
   - Higher confidence from multiple views
+- [ ] **Decision Tree Implementation**
+  - Create `decision_trees.py` module
+  - Implement multi-level root cause disambiguation
+  - Integrate with vision service
+
+#### Success Criteria
+- ✅ Infrastructure complete and tested
+- ⏳ Baseline validation in progress (~8 AM completion)
+- [ ] Overall accuracy ≥80% (current: TBD after validation)
+- [ ] Per-defect accuracy ≥70% for all 5 types
+- [ ] Confusion matrix shows <10% systematic misclassifications
+- [ ] Research-backed visual descriptions integrated
+- [ ] Material-specific recommendations implemented
+- [ ] Calibration tool URLs linked per defect type
+- [ ] Improvement process documented for future iterations
 
 ### Phase 8: Calculator Expansion
 **Branch**: `feature/additional-calculators`
