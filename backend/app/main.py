@@ -157,6 +157,18 @@ async def line_widths_page(request: Request):
     return templates.TemplateResponse("calculator_line_widths.html", {"request": request})
 
 
+@app.get(
+    "/calculators/flow-calibration-traditional-ui",
+    response_class=HTMLResponse,
+    include_in_schema=False,
+)
+async def flow_calibration_traditional_page(request: Request):
+    """Render Flow Calibration (Traditional) calculator page"""
+    return templates.TemplateResponse(
+        "calculators/flow_calibration_traditional.html", {"request": request}
+    )
+
+
 @app.get("/calculators/additional-ui", response_class=HTMLResponse, include_in_schema=False)
 async def additional_calculators_page(request: Request):
     """Render additional calculators page (coming soon)"""

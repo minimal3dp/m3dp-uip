@@ -1,0 +1,14 @@
+# Klipper Calibrations - Flow Calibration (Traditional)
+# Source: Community best practices (Ellis & AndrewEllis93)
+# Purpose: Calculate flow rate multiplier by measuring wall thickness of a printed hollow cube
+
+Name,Description,Formula,Units,Expected_Range,Notes
+Average Wall Thickness,Average of 4 wall measurements,(m1 + m2 + m3 + m4) / 4,mm,0.3-0.8,"Measure the top 5-10 layers only"
+Flow Percentage,Calculated flow multiplier,(perimeters * line_width) / average_wall * 100,%,85-115,"New extrusion multiplier / flow ratio"
+Perimeters,Number of wall loops,N/A,count,1-3,"Standard is 2 perimeters for this test"
+Line Width,Slicer line width setting,N/A,mm,0.4-0.8,"Usually matches nozzle size or 120% of nozzle"
+Layer Height,Print layer height,N/A,mm,0.2,"Standard calibration height is 0.2mm"
+Measurement 1,Wall 1 thickness,N/A,mm,0.3-0.8,"Use calipers with moderate pressure"
+Measurement 2,Wall 2 thickness,N/A,mm,0.3-0.8,"Use calipers with moderate pressure"
+Measurement 3,Wall 3 thickness,N/A,mm,0.3-0.8,"Use calipers with moderate pressure"
+Measurement 4,Wall 4 thickness,N/A,mm,0.3-0.8,"Use calipers with moderate pressure"

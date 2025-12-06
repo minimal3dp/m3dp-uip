@@ -539,6 +539,159 @@ class BeltTensionResponse(BaseModel):
 # ============================================================================
 
 
+@router.get("/search-index", response_model=dict)
+async def get_search_index():
+    """
+    Get aggregated search index for client-side search.
+    
+    Combines:
+    1. Calculator registry (tools)
+    2. Troubleshooting data (problems)
+    """
+    # 1. Calculators (Tools)
+    calculators = [
+        {
+            "title": "Extruder Rotation Distance",
+            "description": "Calculate correct rotation distance for extruder stepper motor",
+            "url": "/calculators/rotation-distance-ui",
+            "category": "Tool",
+            "keywords": "extruder, e-steps, calibration, flow"
+        },
+        {
+            "title": "OrcaSlicer Flow Rate",
+            "description": "Two-pass flow calibration using OrcaSlicer's built-in tool",
+            "url": "/calculators/orcaslicer-flow-ui",
+            "category": "Tool",
+            "keywords": "flow, extrusion, multiplier, orca, slicer"
+        },
+        {
+            "title": "OrcaSlicer Flow YOLO",
+            "description": "Single-pass quick flow calibration for fast adjustments",
+            "url": "/calculators/orcaslicer-flow-yolo-ui",
+            "category": "Tool",
+            "keywords": "flow, quick, yolo, extrusion, orca"
+        },
+        {
+            "title": "Pressure Advance",
+            "description": "Optimize pressure advance for better corner quality",
+            "url": "/calculators/pressure-advance-ui",
+            "category": "Tool",
+            "keywords": "pa, pressure advance, corners, bulge, klipper"
+        },
+        {
+            "title": "Input Shaping",
+            "description": "Recommend input shaper types based on resonance frequencies",
+            "url": "/calculators/input-shaping-ui",
+            "category": "Tool",
+            "keywords": "ringing, ghosting, resonance, adxl345, shaper"
+        },
+        {
+            "title": "Max Volumetric Speed",
+            "description": "Calculate maximum flow rate your hotend can handle",
+            "url": "/calculators/max-volumetric-speed-ui",
+            "category": "Tool",
+            "keywords": "flow rate, hotend, speed, volumetric, mm3/s"
+        },
+        {
+            "title": "Run Current (TMC Drivers)",
+            "description": "Calculate proper run_current for TMC stepper drivers from peak current",
+            "url": "/calculators/run-current-ui",
+            "category": "Tool",
+            "keywords": "current, vref, tmc2209, stepper, motor, heat"
+        },
+        {
+            "title": "Lead Screw Rotation Distance",
+            "description": "Calculate rotation_distance for Z-axis lead screws",
+            "url": "/calculators/lead-screw-rotation-distance-ui",
+            "category": "Tool",
+            "keywords": "z-axis, lead screw, rotation distance, steps"
+        },
+        {
+            "title": "X and Y Offsets",
+            "description": "Calculate BLTouch/CR Touch probe X and Y offsets",
+            "url": "/calculators/x-and-y-offsets-ui",
+            "category": "Tool",
+            "keywords": "bltouch, crtouch, probe, offset, mesh, bed"
+        },
+        {
+            "title": "Skew Correction",
+            "description": "Calculate frame skew correction from calibration print",
+            "url": "/calculators/skew-correction-ui",
+            "category": "Tool",
+            "keywords": "skew, geometry, square, frame, accuracy"
+        },
+        {
+            "title": "Line Width Recommendations",
+            "description": "Recommend line width ranges per feature type",
+            "url": "/calculators/line-widths-ui",
+            "category": "Tool",
+            "keywords": "line width, arachne, perimeter, infill, nozzle"
+        },
+        {
+            "title": "PA & OrcaSlicer",
+            "description": "Calculate pressure advance from OrcaSlicer test pattern",
+            "url": "/calculators/pa-orcaslicer-ui",
+            "category": "Tool",
+            "keywords": "pa, pressure advance, orca, pattern, test"
+        },
+        {
+            "title": "Extrusion Rate Smoothing (ERS)",
+            "description": "Calculate ERS values for OrcaSlicer to smooth flow",
+            "url": "/calculators/extrusion-rate-smoothing-ui",
+            "category": "Tool",
+            "keywords": "ers, smoothing, extrusion, acceleration, quality"
+        },
+        {
+            "title": "Adaptive Pressure Advance",
+            "description": "Calculate adaptive PA range from test matrix results",
+            "url": "/calculators/adaptive-pressure-advance-ui",
+            "category": "Tool",
+            "keywords": "apa, adaptive, dynamic, pressure advance, matrix"
+        },
+        {
+            "title": "Temperature Tower Analysis",
+            "description": "Determine optimal print temperature from test results",
+            "url": "/calculators/temperature-tower-ui",
+            "category": "Tool",
+            "keywords": "temp, tower, heat, stringing, bridging, overhang"
+        },
+        {
+            "title": "Retraction Tuning",
+            "description": "Calculate optimal retraction settings",
+            "url": "/calculators/retraction-tuning-ui",
+            "category": "Tool",
+            "keywords": "retraction, stringing, ooze, wipe, z-hop"
+        },
+        {
+            "title": "Belt Tension Calibration",
+            "description": "Calculate belt tension from frequency measurements",
+            "url": "/calculators/belt-tension-ui",
+            "category": "Tool",
+            "keywords": "belt, tension, hz, frequency, resonance, ghosting"
+        }
+    ]
+
+    # 2. Troubleshooting Data (Problems)
+    loader = get_csv_loader()
+    troubleshooting_df = loader.get_troubleshooting_data()
+    
+    troubleshooting_items = []
+    if troubleshooting_df is not None:
+        # Convert DataFrame to list of dicts for search index
+        # Expect columns: Issue_Type, Symptom, Likely_Cause, Klipper_Setting, etc.
+        for _, row in troubleshooting_df.iterrows():
+            item = {
+                "title": f"Fix: {row.get('Issue_Type', 'Unknown Issue')}",
+                "description": f"{row.get('Symptom', '')} - {row.get('Likely_Cause', '')}",
+                "url": "/diagnosis-ui",  # Placeholder until specific diagnosis pages exist
+                "category": "Problem",
+                "keywords": f"{row.get('Likely_Cause', '')} {row.get('Symptom', '')} {row.get('Visual_Markers', '')}"
+            }
+            troubleshooting_items.append(item)
+
+    return {"items": calculators + troubleshooting_items}
+
+
 @router.get("", response_model=CalculatorListResponse)
 async def list_calculators():
     """
@@ -599,6 +752,7 @@ async def list_calculators():
                 "category": "Performance",
                 "csv_source": "klipper_calibrations/max_volumetric_speed.csv",
                 "description": "Calculate maximum flow rate your hotend can handle",
+                "hardware_bridge": "High Flow Hotend: https://amzn.to/example (Affiliate)",
                 "endpoint": "/api/v1/calculators/max-volumetric-speed",
                 "method": "POST",
             },
@@ -608,6 +762,7 @@ async def list_calculators():
                 "category": "Mechanical",
                 "csv_source": "klipper_calibrations/run_current.csv",
                 "description": "Calculate proper run_current for TMC stepper drivers from peak current",
+                "hardware_bridge": "Multimeter: https://amzn.to/example (Affiliate)",
                 "endpoint": "/api/v1/calculators/run-current",
                 "method": "POST",
             },
@@ -635,6 +790,7 @@ async def list_calculators():
                 "category": "Mechanical Alignment",
                 "csv_source": "klipper_calibrations/skew_correction.csv",
                 "description": "Calculate frame skew correction from calibration print measurements (XY, XZ, YZ planes)",
+                "hardware_bridge": "Digital Calipers: https://amzn.to/example (Affiliate)",
                 "endpoint": "/api/v1/calculators/skew-correction",
                 "method": "POST",
             },
@@ -645,6 +801,16 @@ async def list_calculators():
                 "csv_source": "klipper_calibrations/line_widths.csv",
                 "description": "Recommend line width ranges per feature type based on nozzle diameter",
                 "endpoint": "/api/v1/calculators/line-widths",
+                "method": "POST",
+            },
+            {
+                "id": "flow-calibration-traditional",
+                "name": "Flow Calibration (Traditional)",
+                "category": "Extrusion",
+                "csv_source": "klipper_calibrations/flow_calibration_traditional.csv",
+                "description": "Calculate flow rate using the traditional hollow cube wall thickness method",
+                "hardware_bridge": "Digital Calipers: https://amzn.to/example (Affiliate)",
+                "endpoint": "/api/v1/calculators/flow-calibration-traditional",
                 "method": "POST",
             },
             {
@@ -1959,10 +2125,8 @@ async def calculate_skew_correction(
         "skew_correction",
         params={
             "max_skew_degrees": max_skew_deg,
-            "planes_measured": len(skew_profile),
         },
     )
-
     return SkewCorrectionResponse(
         set_skew_command=set_skew_command,
         calc_measured_skew_commands=calc_commands,
@@ -1971,6 +2135,111 @@ async def calculate_skew_correction(
         usage_guide=usage_guide,
         calibration_model=calibration_model,
         reference=reference,
+    )
+
+
+# ========== Traditional Flow Calibration Calculator ==========
+
+
+class FlowCalibrationTraditionalRequest(BaseModel):
+    """Request for traditional flow calibration."""
+    measured_wall_1: float = Field(
+        ..., gt=0, description="Measured wall thickness 1 (mm)", examples=[0.81]
+    )
+    measured_wall_2: float = Field(
+        ..., gt=0, description="Measured wall thickness 2 (mm)", examples=[0.80]
+    )
+    measured_wall_3: float = Field(
+        ..., gt=0, description="Measured wall thickness 3 (mm)", examples=[0.82]
+    )
+    measured_wall_4: float = Field(
+        ..., gt=0, description="Measured wall thickness 4 (mm)", examples=[0.81]
+    )
+    perimeters: int = Field(
+        ..., gt=0, description="Number of perimeters used in test print", examples=[2]
+    )
+    line_width: float = Field(
+        ..., gt=0, description="Line width set in slicer for test print (mm)", examples=[0.4]
+    )
+    current_flow: float = Field(
+        ..., gt=0, description="Current flow multiplier set in slicer (e.g., 1.0 for 100%)", examples=[1.0]
+    )
+
+
+class FlowCalibrationTraditionalResponse(BaseModel):
+    """Response with calculated flow multiplier and recommendation."""
+    average_wall_thickness: float = Field(..., description="Average of measured wall thicknesses (mm)")
+    target_wall_thickness: float = Field(..., description="Calculated target wall thickness (mm)")
+    suggested_flow_multiplier: float = Field(..., description="Suggested new flow multiplier (e.g., 0.98)")
+    flow_percentage: float = Field(..., description="Suggested new flow as a percentage (e.g., 98.0%)")
+    recommendation: str = Field(..., description="Recommendation based on calibration results")
+
+
+@router.post(
+    "/flow-calibration-traditional",
+    response_model=FlowCalibrationTraditionalResponse,
+    summary="Calculate Flow (Traditional)",
+    description="""
+    Calculate flow rate multiplier by measuring the wall thickness of a hollow cube.
+    
+    **Formula:**
+    Flow = (Target Thickness / Measured Thickness) * Current Flow
+    Target Thickness = Perimeters * Line Width
+    
+    **Process:**
+    1. Print a hollow cube with specific settings (2 perimeters, 0% infill, 0 top layers).
+    2. Measure the wall thickness on all 4 sides near the top.
+    3. Input the measurements to get the corrected flow multiplier.
+    """,
+    tags=["calculators", "slicer", "extrusion"],
+)
+async def calculate_flow_traditional(
+    request: FlowCalibrationTraditionalRequest,
+) -> FlowCalibrationTraditionalResponse:
+    """Calculate traditional flow calibration."""
+    # 1. Calculate Average Wall Thickness
+    measurements = [
+        request.measured_wall_1,
+        request.measured_wall_2,
+        request.measured_wall_3,
+        request.measured_wall_4,
+    ]
+    average_wall = sum(measurements) / 4
+
+    # 2. Calculate Target Thickness
+    target_thickness = request.perimeters * request.line_width
+
+    # 3. Calculate Flow Multiplier
+    # If average wall is 0 (impossible due to Pydantic gt=0), prevent div/0 just in case
+    if average_wall == 0:
+        raise HTTPException(status_code=400, detail="Measured wall thickness cannot be zero.")
+
+    flow_ratio = target_thickness / average_wall
+    new_flow_multiplier = flow_ratio * request.current_flow
+    flow_percentage = new_flow_multiplier * 100
+
+    # 4. Generate Recommendation
+    diff = abs(target_thickness - average_wall)
+    if diff < 0.02:
+        recommendation = "Flow is calibrated correctly. No changes needed."
+    elif average_wall > target_thickness:
+        recommendation = f"Over-extrusion detected. Reduce flow to {flow_percentage:.1f}%."
+    else:
+        recommendation = f"Under-extrusion detected. Increase flow to {flow_percentage:.1f}%."
+
+    # Assuming get_tracker and track_event are defined elsewhere
+    # tracker = get_tracker()
+    # await tracker.track_event(
+    #     "calculate_flow_traditional", 
+    #     params={"avg_wall": average_wall, "result_flow": new_flow_multiplier}
+    # )
+
+    return FlowCalibrationTraditionalResponse(
+        average_wall_thickness=round(average_wall, 3),
+        target_wall_thickness=round(target_thickness, 3),
+        suggested_flow_multiplier=round(new_flow_multiplier, 3),
+        flow_percentage=round(flow_percentage, 1),
+        recommendation=recommendation,
     )
 
 

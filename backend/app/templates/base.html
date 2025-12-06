@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en" class="bg-zinc-900">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -33,6 +34,7 @@
         .glass {
             @apply bg-white/10 backdrop-blur-md border border-white/20;
         }
+
         .glass-dark {
             @apply bg-black/30 backdrop-blur-md border border-white/10;
         }
@@ -40,6 +42,7 @@
 
     {% block extra_head %}{% endblock %}
 </head>
+
 <body class="bg-zinc-900 text-white min-h-screen">
     <!-- Navigation -->
     <nav class="glass-dark border-b border-white/10">
@@ -62,20 +65,32 @@
                             {% if request.url.path == '/calculators-ui' %}bg-white/10{% endif %}">
                             Calculators
                         </a>
-                        <a href="/docs" class="px-3 py-2 rounded-md text-sm font-medium hover:bg-white/10 transition-colors">
+                        <a href="/docs"
+                            class="px-3 py-2 rounded-md text-sm font-medium hover:bg-white/10 transition-colors">
                             API Docs
                         </a>
+                        <!-- Search Trigger -->
+                        <button @click="$dispatch('keydown', { key: 'k', metaKey: true })"
+                            class="group flex items-center px-3 py-2 text-sm font-medium text-zinc-400 hover:text-white transition-colors">
+                            <svg class="h-5 w-5 mr-2 text-zinc-500 group-hover:text-white" fill="none"
+                                viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                            </svg>
+                            <span class="hidden lg:inline">Search</span>
+                            <kbd
+                                class="ml-2 hidden lg:inline-flex h-5 items-center rounded border border-zinc-700 bg-zinc-800 px-1 font-sans text-xs font-medium text-zinc-400">⌘K</kbd>
+                        </button>
                     </div>
                 </div>
 
                 <!-- Mobile menu button -->
                 <div class="md:hidden flex items-center">
-                    <button type="button"
-                            x-data
-                            @click="$dispatch('toggle-mobile-menu')"
-                            class="inline-flex items-center justify-center p-2 rounded-md text-zinc-400 hover:text-white hover:bg-white/10">
+                    <button type="button" x-data @click="$dispatch('toggle-mobile-menu')"
+                        class="inline-flex items-center justify-center p-2 rounded-md text-zinc-400 hover:text-white hover:bg-white/10">
                         <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M4 6h16M4 12h16M4 18h16" />
                         </svg>
                     </button>
                 </div>
@@ -83,14 +98,12 @@
         </div>
 
         <!-- Mobile menu -->
-        <div x-data="{ open: false }"
-             @toggle-mobile-menu.window="open = !open"
-             x-show="open"
-             x-transition
-             class="md:hidden border-t border-white/10">
+        <div x-data="{ open: false }" @toggle-mobile-menu.window="open = !open" x-show="open" x-transition
+            class="md:hidden border-t border-white/10">
             <div class="px-2 pt-2 pb-3 space-y-1">
                 <a href="/home" class="block px-3 py-2 rounded-md text-base font-medium hover:bg-white/10">Home</a>
-                <a href="/calculators-ui" class="block px-3 py-2 rounded-md text-base font-medium hover:bg-white/10">Calculators</a>
+                <a href="/calculators-ui"
+                    class="block px-3 py-2 rounded-md text-base font-medium hover:bg-white/10">Calculators</a>
                 <a href="/docs" class="block px-3 py-2 rounded-md text-base font-medium hover:bg-white/10">API Docs</a>
             </div>
         </div>
@@ -105,7 +118,8 @@
     <footer class="glass-dark mt-16 border-t border-white/10">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
             <div class="text-center text-zinc-400 text-sm">
-                <p>Part of the <a href="https://minimal3dp.com" class="text-brand-orange hover:underline">minimal3dp.com</a> ecosystem</p>
+                <p>Part of the <a href="https://minimal3dp.com"
+                        class="text-brand-orange hover:underline">minimal3dp.com</a> ecosystem</p>
                 <p class="mt-2">AI-powered diagnostic platform for 3D printing</p>
             </div>
         </div>
@@ -136,6 +150,8 @@
         });
     </script>
 
+    {% include "components/search_modal.html" %}
     {% block extra_scripts %}{% endblock %}
 </body>
+
 </html>

@@ -43,10 +43,10 @@ M3DP-UIP is a **lean, server-side rendered web application** that transforms com
 8. **Max Volumetric Speed** - Safe flow rate limits
 9. **Lead Screw Rotation Distance** - Z-axis rotation values
 10. **Line Widths (OrcaSlicer)** - Nozzle diameter-based widths
+11. **Skew Correction** - XY/XZ/YZ skew commands
 
-### Remaining (6/16)
+### Remaining (5/16)
 
-11. **Skew Correction** - XY/XZ/YZ skew commands (partial)
 12. **Flow Calibration (Traditional)** - Wall thickness method
 13. **PA & OrcaSlicer** - Alternative pressure advance
 14. **Ellis Max Volumetric Speed** - Manual extrusion method

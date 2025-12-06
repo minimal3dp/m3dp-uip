@@ -1,3 +1,4 @@
+Key,Value
 calculator_name,Skew Correction
 category,Mechanical Alignment
 formula,"Skew correction uses three measurements per plane (AC, BD, AD) to calculate frame skew. Klipper command: SET_SKEW XY=AC,BD,AD XZ=AC,BD,AD YZ=AC,BD,AD. Measurements taken from calibration cube print."

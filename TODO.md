@@ -7,15 +7,15 @@
 
 ## 🚨 Critical Issues
 
-### 1. Fix Skew Correction CSV Parsing ❌
+### 1. Fix Skew Correction CSV Parsing ✅
 **Priority:** HIGH  
 **Error:** `Expected 2 fields in line 4, saw 4` in `skew_correction.csv`
 
 **Action Items:**
-- Inspect `/backend/app/data/klipper_calibrations/skew_correction.csv`
-- Fix CSV format (likely missing quotes or delimiter issues)
-- Verify calculator loads without errors
-- Test skew correction calculation with valid inputs
+- [x] Inspect `/backend/app/data/klipper_calibrations/skew_correction.csv`
+- [x] Fix CSV format (likely missing quotes or delimiter issues)
+- [x] Verify calculator loads without errors
+- [x] Test skew correction calculation with valid inputs
 
 ---
 
@@ -177,6 +177,169 @@ Matrix of test results with varying:
 
 ---
 
+### Phase 4: Physics & Engineering Engine (New Strategy)
+
+#### 7. Belt Resonance Calculator (Mersenne) ❌
+**Strategy:** Domain I - Kinematic Resonance & Tension Physics
+
+**Formulas:**
+- `Tension = 4 * Density * Length^2 * Frequency^2`
+- `Frequency = sqrt(Tension / (4 * Density * Length^2))`
+
+**Inputs:**
+- Span Length (mm)
+- Measured Frequency (Hz) or Target Tension (N)
+- Belt Type (GT2 6mm/9mm/12mm)
+
+**Outputs:**
+- Calculated Tension (N) or Target Frequency (Hz)
+- Warning if tension exceeds motor radial load limits
+
+**Tasks:**
+- [ ] Create CSV file: `belt_resonance.csv`
+- [ ] Implement Pydantic model: `BeltResonanceRequest`
+- [ ] Add endpoint: `/belt-resonance`
+- [ ] Create Jinja2 template: `calculators/belt_resonance.html`
+- [ ] Add to calculator index (and update existing belt tension tool if needed)
+
+#### 8. Stepper Motor Max Velocity (Back EMF) ❌
+**Strategy:** Domain II - Electromechanical Limits
+
+**Formulas:**
+- `V_max_safe = (Voltage / (2 * Inductance * Current * Steps * 3.14159)) * (Pitch * Teeth) * 0.7`
+
+**Inputs:**
+- Supply Voltage (V)
+- Inductance (mH)
+- Peak Current (A)
+- Steps per Revolution (200/400)
+- Pulley Teeth (16/20)
+
+**Outputs:**
+- Theoretical Max Velocity (mm/s)
+- "Safe" Velocity recommendation
+
+**Tasks:**
+- [ ] Create CSV file: `stepper_max_velocity.csv`
+- [ ] Implement Pydantic model: `StepperMaxVelocityRequest`
+- [ ] Add endpoint: `/stepper-max-velocity`
+- [ ] Create Jinja2 template: `calculators/stepper_max_velocity.html`
+- [ ] Add to calculator index
+
+#### 9. Screws Tilt Adjust Visualizer ❌
+**Strategy:** Domain IV - Geometric & Thermal Topology
+
+**Formulas:**
+- `Turns = Minutes / 60`
+- `Degrees = Minutes * 6`
+- `Z_Change = (Minutes / 60) * Pitch`
+
+**Inputs:**
+- Klipper Output String (e.g., "CW 01:15")
+- Screw Type (M3/M4/M5)
+
+**Outputs:**
+- Rotations (Turns + Degrees)
+- Vertical Movement (mm)
+- Visual aid (clock face representation?)
+
+**Tasks:**
+- [ ] Create CSV file: `screws_tilt_adjust.csv`
+- [ ] Implement Pydantic model: `ScrewsTiltRequest`
+- [ ] Add endpoint: `/screws-tilt-adjust`
+- [ ] Create Jinja2 template: `calculators/screws_tilt_adjust.html`
+- [ ] Add to calculator index
+
+#### 10. Frame Thermal Expansion (Z-Drift) ❌
+**Strategy:** Domain IV - Geometric & Thermal Topology
+
+**Formulas:**
+- `Delta_Z = Frame_Height * 23.4e-6 * (Chamber_Temp - Ambient_Temp)`
+
+**Inputs:**
+- Frame Height (mm)
+- Ambient Temp (°C)
+- Chamber Temp (°C)
+
+**Outputs:**
+- Predicted Z-Drift (mm)
+- Warning/Recommendation
+
+**Tasks:**
+- [ ] Create CSV file: `frame_thermal_expansion.csv`
+- [ ] Implement Pydantic model: `FrameThermalExpansionRequest`
+- [ ] Add endpoint: `/frame-thermal-expansion`
+- [ ] Create Jinja2 template: `calculators/frame_thermal_expansion.html`
+- [ ] Add to calculator index
+
+#### 11. VFA Speed Avoidance ❌
+**Strategy:** Domain I - Kinematic Resonance
+
+**Formulas:**
+- `f_observed = V_print / P_vfa`
+- `RPM = (V * 60) / (Pitch * Teeth)`
+
+**Inputs:**
+- Print Speed (mm/s)
+- Measured Ripple Distance (mm)
+- Pulley Teeth
+
+**Outputs:**
+- Identified Frequency (Hz)
+- Probable Cause (Belt vs Motor)
+
+**Tasks:**
+- [ ] Create CSV file: `vfa_speed_avoidance.csv`
+- [ ] Implement Pydantic model: `VFASpeedAvoidanceRequest`
+- [ ] Add endpoint: `/vfa-speed-avoidance`
+- [ ] Create Jinja2 template: `calculators/vfa_speed_avoidance.html`
+- [ ] Add to calculator index
+
+#### 12. Input Shaper Acceleration Limit ❌
+**Strategy:** Domain I - Kinematic Resonance
+
+**Formulas:**
+- `a_max_mzv = 3500 * (f_n / 34)^2`
+- `a_max_zv = 67 * f_n^2 * tolerance`
+
+**Inputs:**
+- Resonance Freq X/Y (Hz)
+- Shaper Type X/Y
+
+**Outputs:**
+- Recommended Max Acceleration (mm/s²)
+- Limiting Axis note
+
+**Tasks:**
+- [ ] Create CSV file: `input_shaper_limits.csv`
+- [ ] Implement Pydantic model: `InputShaperLimitRequest`
+- [ ] Add endpoint: `/input-shaper-limits`
+- [ ] Create Jinja2 template: `calculators/input_shaper_limits.html`
+- [ ] Add to calculator index
+
+#### 13. Filament Spool Remainder ❌
+**Strategy:** Domain V - Material Management
+
+**Formulas:**
+- `Length = (Mass_Total - Mass_Spool) / (Density * pi * radius^2)`
+
+**Inputs:**
+- Total Weight (g)
+- Empty Spool Weight (g)
+- Filament Type (Density lookup)
+- Filament Diameter (mm)
+
+**Outputs:**
+- Creating CSV file: `filament_spool_remainder.csv`
+- Remaining Length (m)
+
+**Tasks:**
+- [ ] Create CSV file: `filament_spool_remainder.csv`
+- [ ] Implement Pydantic model: `FilamentSpoolRemainderRequest`
+- [ ] Add endpoint: `/filament-spool-remainder`
+- [ ] Create Jinja2 template: `calculators/filament_spool_remainder.html`
+- [ ] Add to calculator index
+
 ## 🎨 UI Improvements
 
 ### Calculator Index Page
@@ -327,13 +490,13 @@ Matrix of test results with varying:
 
 ## 🎯 Future Enhancements
 
-### Phase 4: Community Features
+### Phase 5: Community Features
 - [ ] User-submitted calibration results (optional database)
 - [ ] Export results as PDF
 - [ ] Share results via URL (query parameters?)
 - [ ] Multi-language support (i18n)
 
-### Phase 5: Advanced Features
+### Phase 6: Advanced Features
 - [ ] Batch calculator mode (run multiple calculators in sequence)
 - [ ] Calibration workflow wizard
 - [ ] Integration with Klipper API (query live printer data?)
@@ -384,7 +547,7 @@ Matrix of test results with varying:
 **Last Updated:** 2025-01-XX
 
 **Next Session Focus:**
-1. Fix skew correction CSV parsing error
+1. Fix skew correction CSV parsing error (Done)
 2. Implement Flow Calibration (Traditional) - highest priority
 3. Implement ERS calculator - second priority
 4. Test all 12 calculators end-to-end
