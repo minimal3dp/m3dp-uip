@@ -543,7 +543,7 @@ class BeltTensionResponse(BaseModel):
 async def get_search_index():
     """
     Get aggregated search index for client-side search.
-    
+
     Combines:
     1. Calculator registry (tools)
     2. Troubleshooting data (problems)
@@ -674,7 +674,7 @@ async def get_search_index():
     # 2. Troubleshooting Data (Problems)
     loader = get_csv_loader()
     troubleshooting_df = loader.get_troubleshooting_data()
-    
+
     troubleshooting_items = []
     if troubleshooting_df is not None:
         # Convert DataFrame to list of dicts for search index
@@ -2181,11 +2181,11 @@ class FlowCalibrationTraditionalResponse(BaseModel):
     summary="Calculate Flow (Traditional)",
     description="""
     Calculate flow rate multiplier by measuring the wall thickness of a hollow cube.
-    
+
     **Formula:**
     Flow = (Target Thickness / Measured Thickness) * Current Flow
     Target Thickness = Perimeters * Line Width
-    
+
     **Process:**
     1. Print a hollow cube with specific settings (2 perimeters, 0% infill, 0 top layers).
     2. Measure the wall thickness on all 4 sides near the top.
@@ -2230,7 +2230,7 @@ async def calculate_flow_traditional(
     # Assuming get_tracker and track_event are defined elsewhere
     # tracker = get_tracker()
     # await tracker.track_event(
-    #     "calculate_flow_traditional", 
+    #     "calculate_flow_traditional",
     #     params={"avg_wall": average_wall, "result_flow": new_flow_multiplier}
     # )
 
