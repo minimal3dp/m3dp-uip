@@ -2,17 +2,19 @@
 
 {% block content %}
 <div class="max-w-4xl mx-auto p-6">
-  <a href="/calculators-ui" class="inline-flex items-center text-brand-orange hover:underline mb-6">← Back to Calculators</a>
+  <a href="/calculators-ui" class="inline-flex items-center text-brand-orange hover:underline mb-6">← Back to
+    Calculators</a>
 
   <div class="glass rounded-2xl p-8 bg-zinc-900">
     <h2 class="text-2xl font-bold mb-2 flex items-center gap-2"><span class="text-3xl">📊</span> Skew Correction</h2>
     <p class="text-zinc-400 mb-6">Calculate frame skew correction from calibration print measurements.</p>
-    
+
     <div class="bg-blue-500/10 border border-blue-500/50 rounded-lg p-4 mb-8">
       <p class="text-sm text-zinc-300">
-        <strong>📥 Calibration Model Required:</strong> 
-        Download the skew correction test print from 
-        <a href="https://www.thingiverse.com/thing:2972743/" target="_blank" rel="noopener noreferrer" class="text-brand-orange hover:underline">Thingiverse (thing:2972743)</a>
+        <strong>📥 Calibration Model Required:</strong>
+        Download the skew correction test print from
+        <a href="https://www.thingiverse.com/thing:2972743/" target="_blank" rel="noopener noreferrer"
+          class="text-brand-orange hover:underline">Thingiverse (thing:2972743)</a>
       </p>
     </div>
 
@@ -39,15 +41,18 @@
           <div class="grid grid-cols-3 gap-4">
             <div>
               <label class="block text-sm font-medium mb-2">AC Diagonal (mm)</label>
-              <input x-model.number="xyAc" type="number" step="0.01" required class="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-3 focus:outline-none focus:border-brand-orange transition" />
+              <input x-model.number="xyAc" type="number" step="0.01" required
+                class="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-3 focus:outline-none focus:border-brand-orange transition" />
             </div>
             <div>
               <label class="block text-sm font-medium mb-2">BD Diagonal (mm)</label>
-              <input x-model.number="xyBd" type="number" step="0.01" required class="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-3 focus:outline-none focus:border-brand-orange transition" />
+              <input x-model.number="xyBd" type="number" step="0.01" required
+                class="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-3 focus:outline-none focus:border-brand-orange transition" />
             </div>
             <div>
               <label class="block text-sm font-medium mb-2">AD Orthogonal (mm)</label>
-              <input x-model.number="xyAd" type="number" step="0.01" required class="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-3 focus:outline-none focus:border-brand-orange transition" />
+              <input x-model.number="xyAd" type="number" step="0.01" required
+                class="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-3 focus:outline-none focus:border-brand-orange transition" />
             </div>
           </div>
         </div>
@@ -57,15 +62,18 @@
           <div class="grid grid-cols-3 gap-4">
             <div>
               <label class="block text-sm font-medium mb-2">AC Diagonal (mm)</label>
-              <input x-model.number="xzAc" type="number" step="0.01" class="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-3 focus:outline-none focus:border-brand-orange transition" />
+              <input x-model.number="xzAc" type="number" step="0.01"
+                class="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-3 focus:outline-none focus:border-brand-orange transition" />
             </div>
             <div>
               <label class="block text-sm font-medium mb-2">BD Diagonal (mm)</label>
-              <input x-model.number="xzBd" type="number" step="0.01" class="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-3 focus:outline-none focus:border-brand-orange transition" />
+              <input x-model.number="xzBd" type="number" step="0.01"
+                class="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-3 focus:outline-none focus:border-brand-orange transition" />
             </div>
             <div>
               <label class="block text-sm font-medium mb-2">AD Orthogonal (mm)</label>
-              <input x-model.number="xzAd" type="number" step="0.01" class="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-3 focus:outline-none focus:border-brand-orange transition" />
+              <input x-model.number="xzAd" type="number" step="0.01"
+                class="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-3 focus:outline-none focus:border-brand-orange transition" />
             </div>
           </div>
         </div>
@@ -75,23 +83,30 @@
           <div class="grid grid-cols-3 gap-4">
             <div>
               <label class="block text-sm font-medium mb-2">AC Diagonal (mm)</label>
-              <input x-model.number="yzAc" type="number" step="0.01" class="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-3 focus:outline-none focus:border-brand-orange transition" />
+              <input x-model.number="yzAc" type="number" step="0.01"
+                class="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-3 focus:outline-none focus:border-brand-orange transition" />
             </div>
             <div>
               <label class="block text-sm font-medium mb-2">BD Diagonal (mm)</label>
-              <input x-model.number="yzBd" type="number" step="0.01" class="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-3 focus:outline-none focus:border-brand-orange transition" />
+              <input x-model.number="yzBd" type="number" step="0.01"
+                class="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-3 focus:outline-none focus:border-brand-orange transition" />
             </div>
             <div>
               <label class="block text-sm font-medium mb-2">AD Orthogonal (mm)</label>
-              <input x-model.number="yzAd" type="number" step="0.01" class="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-3 focus:outline-none focus:border-brand-orange transition" />
+              <input x-model.number="yzAd" type="number" step="0.01"
+                class="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-3 focus:outline-none focus:border-brand-orange transition" />
             </div>
           </div>
         </div>
 
-        <div x-show="error" class="bg-red-500/10 border border-red-500/50 rounded-lg p-4 text-red-400 text-sm" x-text="error"></div>
+        <div x-show="error" class="bg-red-500/10 border border-red-500/50 rounded-lg p-4 text-red-400 text-sm"
+          x-text="error"></div>
         <div class="flex gap-4">
-          <button type="submit" :disabled="loading" class="flex-1 bg-brand-orange hover:bg-orange-600 disabled:bg-zinc-700 disabled:cursor-not-allowed text-white px-6 py-3 rounded-lg font-medium transition" x-text="loading ? 'Calculating...' : 'Calculate'"></button>
-          <button type="button" @click="reset" class="px-6 py-3 bg-zinc-800 hover:bg-zinc-700 text-white rounded-lg font-medium transition">Reset</button>
+          <button type="submit" :disabled="loading"
+            class="flex-1 bg-brand-orange hover:bg-orange-600 disabled:bg-zinc-700 disabled:cursor-not-allowed text-white px-6 py-3 rounded-lg font-medium transition"
+            x-text="loading ? 'Calculating...' : 'Calculate'"></button>
+          <button type="button" @click="reset"
+            class="px-6 py-3 bg-zinc-800 hover:bg-zinc-700 text-white rounded-lg font-medium transition">Reset</button>
         </div>
       </form>
 
@@ -101,16 +116,37 @@
           <div class="bg-zinc-950 rounded-lg p-4 font-mono text-sm">
             <p class="text-zinc-500 text-xs mb-2">SET_SKEW Command:</p>
             <code class="text-green-400 text-xs break-all" x-text="result?.set_skew_command"></code>
-            <button @click="copyToClipboard(result?.set_skew_command)" class="mt-2 text-xs text-brand-orange hover:underline">📋 Copy</button>
+            <button @click="copyToClipboard(result?.set_skew_command)"
+              class="mt-2 text-xs text-brand-orange hover:underline">📋 Copy</button>
           </div>
-          <div class="bg-blue-500/10 border border-blue-500/50 rounded-lg p-4"><p class="text-sm text-zinc-300" x-text="result?.interpretation"></p></div>
-          <div class="bg-zinc-900/50 rounded-lg p-4">
-            <p class="text-sm font-semibold mb-2">Usage Guide:</p>
-            <pre class="text-xs text-zinc-300 whitespace-pre-wrap" x-text="result?.usage_guide"></pre>
+        </div>
+
+        <!-- Hardware Recommendation -->
+        <div class="bg-zinc-900 border border-zinc-700 rounded-lg p-4 flex items-center justify-between">
+          <div>
+            <div class="text-xs text-zinc-500 uppercase tracking-wider font-semibold">Required Tool</div>
+            <div class="text-white font-medium">High Quality Digital Calipers</div>
           </div>
+          <a href="https://amzn.to/4pii9sl" target="_blank"
+            class="flex items-center gap-2 text-sm text-blue-400 hover:text-blue-300 transition-colors">
+            <span>View on Amazon</span>
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+            </svg>
+          </a>
+        </div>
+
+        <div class="bg-blue-500/10 border border-blue-500/50 rounded-lg p-4">
+          <p class="text-sm text-zinc-300" x-text="result?.interpretation"></p>
+        </div>
+        <div class="bg-zinc-900/50 rounded-lg p-4">
+          <p class="text-sm font-semibold mb-2">Usage Guide:</p>
+          <pre class="text-xs text-zinc-300 whitespace-pre-wrap" x-text="result?.usage_guide"></pre>
         </div>
       </div>
     </div>
   </div>
+</div>
 </div>
 {% endblock %}
