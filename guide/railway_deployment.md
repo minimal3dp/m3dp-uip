@@ -71,3 +71,17 @@ Add the following variables:
         PYTHONPATH=backend uvicorn app.main:app --host 0.0.0.0 --port $PORT
         ```
 *   **"Application Error"**: Check the logs. If it's a port issue, ensure `host` is `0.0.0.0` (not localhost).
+
+## 6. Custom Domain Setup (Optional)
+
+To serve the app at `calc.minimal3dp.com`:
+1.  Go to your project in Railway.
+2.  Navigate to **Settings** -> **Environment** -> **Networking** (or just "Domains" depending on current UI).
+3.  Click **"Custom Domain"**.
+4.  Enter `calc.minimal3dp.com`.
+5.  Railway will provide a **DNS Record** to add to your DNS provider (e.g., Cloudflare, GoDaddy).
+    *   **Type**: `CNAME`
+    *   **Name**: `calc`
+    *   **Target**: `(Railway Provided Value, e.g., m3dp-uip-production.up.railway.app)`
+6.  Add this CNAME record to your DNS provider.
+7.  Wait for propagation (usually minutes). Railway will automatically provision an SSL certificate.

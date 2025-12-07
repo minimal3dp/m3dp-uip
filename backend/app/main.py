@@ -228,39 +228,10 @@ async def belt_tension_page(request: Request):
 
 
 # API Root Endpoint
-@app.get("/")
-async def root():
-    """Root endpoint - consolidated health + capability summary."""
-    # Attempt to access CSV loader (lazy init)
-    loader = get_csv_loader()
-    calculators_meta = [
-        {
-            "id": "rotation_distance",
-            "endpoint": "/api/v1/calculators/rotation-distance",
-            "description": "Extruder rotation distance calibration",
-        },
-        {
-            "id": "pressure_advance",
-            "endpoint": "/api/v1/calculators/pressure-advance",
-            "description": "Optimize pressure advance for corners",
-        },
-        {
-            "id": "input_shaping",
-            "endpoint": "/api/v1/calculators/input-shaping",
-            "description": "Resonance compensation guidance",
-        },
-    ]
-    return {
-        "status": "healthy",
-        "service": "M3DP-UIP API",
-        "version": "0.1.0",
-        "environment": settings.ENVIRONMENT,
-        "docs": "/docs",
-        "csv_loaded": loader.is_loaded(),
-        "loaded_csv_files": loader.get_available_csvs(),
-        "validation_error_files": list(loader.get_validation_errors().keys()),
-        "calculators": calculators_meta,
-    }
+@app.get("/", response_class=HTMLResponse, include_in_schema=False)
+async def root(request: Request):
+    """Render homepage (root)"""
+    return templates.TemplateResponse("index.html", {"request": request})
 
 
 @app.get("/health")
