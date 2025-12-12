@@ -19,7 +19,7 @@ IGNORE_EXTS = {
 }
 
 
-def compress_text(text):
+def compress_text(text: str) -> str:
     """
     Applies 'Telegraphic Style' compression:
     1. Removes comments.
