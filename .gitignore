@@ -215,6 +215,7 @@ __marimo__/
 # Note: Actual knowledge base CSVs ARE tracked in git
 # Add user-uploaded or temporary CSVs here if needed
 backend/app/data/**/.gitkeep
+strategy/
 
 # Validation dataset images (too large for git)
 backend/validation_data/*/images/

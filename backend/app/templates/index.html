@@ -15,11 +15,10 @@
 
     <div class="flex justify-center space-x-4">
         <a href="/calculators-ui"
-           class="px-6 py-3 bg-brand-orange text-white rounded-lg font-semibold hover:bg-orange-600 transition-colors">
+            class="px-6 py-3 bg-brand-orange text-white rounded-lg font-semibold hover:bg-orange-600 transition-colors">
             Browse Calculators
         </a>
-        <a href="/docs"
-           class="px-6 py-3 glass text-white rounded-lg font-semibold hover:bg-white/20 transition-colors">
+        <a href="/docs" class="px-6 py-3 glass text-white rounded-lg font-semibold hover:bg-white/20 transition-colors">
             API Docs
         </a>
     </div>
@@ -83,12 +82,13 @@
 </div>
 
 <!-- Quick Stats -->
-<div class="glass rounded-lg p-8 mt-16" x-data="{ stats: null }" x-init="fetch('/api/v1/calculators').then(r => r.json()).then(data => stats = data)">
+<div class="glass rounded-lg p-8 mt-16" x-data="{ stats: null }"
+    x-init="fetch('/api/v1/calculators').then(r => r.json()).then(data => stats = data)">
     <h2 class="text-2xl font-bold mb-6 text-center">Current Status</h2>
     <div class="grid md:grid-cols-3 gap-8 text-center">
         <div>
-            <div class="text-4xl font-bold text-brand-orange" x-text="stats ? stats.total_calculators : '...'">10</div>
-            <div class="text-zinc-400 mt-2">Calculators Implemented</div>
+            <div class="text-4xl font-bold text-brand-orange" x-text="stats ? stats.total_calculators : '17'">17</div>
+            <div class="text-zinc-400 mt-2">Calculators</div>
         </div>
         <div>
             <div class="text-4xl font-bold text-brand-orange">6</div>
@@ -109,7 +109,7 @@
         All calculations are backed by real-world testing and Klipper best practices.
     </p>
     <a href="/calculators-ui"
-       class="inline-block px-8 py-4 bg-brand-orange text-white rounded-lg font-semibold hover:bg-orange-600 transition-colors text-lg">
+        class="inline-block px-8 py-4 bg-brand-orange text-white rounded-lg font-semibold hover:bg-orange-600 transition-colors text-lg">
         Explore Calculators →
     </a>
 </div>

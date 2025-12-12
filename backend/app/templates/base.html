@@ -81,6 +81,32 @@
                             <kbd
                                 class="ml-2 hidden lg:inline-flex h-5 items-center rounded border border-zinc-700 bg-zinc-800 px-1 font-sans text-xs font-medium text-zinc-400">⌘K</kbd>
                         </button>
+
+                        <!-- Ecosystem Dropdown -->
+                        <div class="relative" x-data="{ open: false }">
+                            <button @click="open = !open" @click.away="open = false"
+                                class="flex items-center px-3 py-2 rounded-md text-sm font-medium hover:bg-white/10 transition-colors">
+                                Ecosystem
+                                <svg class="ml-1 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M19 9l-7 7-7-7" />
+                                </svg>
+                            </button>
+                            <div x-show="open" x-transition
+                                class="absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-zinc-800 ring-1 ring-black ring-opacity-5 py-1 z-50 border border-white/10">
+                                <a href="https://minimal3dp.com" target="_blank"
+                                    class="block px-4 py-2 text-sm text-zinc-300 hover:bg-white/10 hover:text-white">Minimal
+                                    3DP</a>
+                                <a href="https://www.youtube.com/@minimal3dp" target="_blank"
+                                    class="block px-4 py-2 text-sm text-zinc-300 hover:bg-white/10 hover:text-white">YouTube
+                                    Channel</a>
+                                <a href="https://filament.minimal3dp.com" target="_blank"
+                                    class="block px-4 py-2 text-sm text-zinc-300 hover:bg-white/10 hover:text-white">Filament
+                                    DB</a>
+                                <a href="https://settings.minimal3dp.com" target="_blank"
+                                    class="block px-4 py-2 text-sm text-zinc-300 hover:bg-white/10 hover:text-white">Settings</a>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -105,6 +131,17 @@
                 <a href="/calculators-ui"
                     class="block px-3 py-2 rounded-md text-base font-medium hover:bg-white/10">Calculators</a>
                 <a href="/docs" class="block px-3 py-2 rounded-md text-base font-medium hover:bg-white/10">API Docs</a>
+                <div class="border-t border-white/10 my-1"></div>
+                <a href="https://minimal3dp.com" target="_blank"
+                    class="block px-3 py-2 rounded-md text-base font-medium hover:bg-white/10 text-zinc-400">Minimal
+                    3DP</a>
+                <a href="https://www.youtube.com/@minimal3dp" target="_blank"
+                    class="block px-3 py-2 rounded-md text-base font-medium hover:bg-white/10 text-zinc-400">YouTube</a>
+                <a href="https://filament.minimal3dp.com" target="_blank"
+                    class="block px-3 py-2 rounded-md text-base font-medium hover:bg-white/10 text-zinc-400">Filament
+                    DB</a>
+                <a href="https://settings.minimal3dp.com" target="_blank"
+                    class="block px-3 py-2 rounded-md text-base font-medium hover:bg-white/10 text-zinc-400">Settings</a>
             </div>
         </div>
     </nav>
@@ -120,7 +157,14 @@
             <div class="text-center text-zinc-400 text-sm">
                 <p>Part of the <a href="https://minimal3dp.com"
                         class="text-brand-orange hover:underline">minimal3dp.com</a> ecosystem</p>
-                <p class="mt-2">AI-powered diagnostic platform for 3D printing</p>
+                <div class="mt-4 flex flex-col items-center gap-2">
+                    <p>AI-powered diagnostic platform for 3D printing</p>
+                    <a href="https://railway.com?referralCode=7BPriG" target="_blank"
+                        class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 hover:bg-white/10 transition-colors text-xs border border-white/10">
+                        <span>Powered by</span>
+                        <span class="font-bold text-white">Railway</span>
+                    </a>
+                </div>
             </div>
         </div>
     </footer>
